@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router';
 import api from '../services/api';
 import '../styles/Auth.css';
 
@@ -41,9 +41,9 @@ function Register() {
       return;
     }
 
-    if (formData.password.length < 6) {
+    if (formData.password.length < 3) {
       console.warn('⚠️ Register: Пароль занадто короткий');
-      setError('Пароль має містити мінімум 6 символів');
+      setError('Пароль має містити мінімум 3 символів');
       return;
     }
 
@@ -121,7 +121,7 @@ function Register() {
               required
               disabled={isLoading}
               autoComplete="new-password"
-              minLength="6"
+              // minLength="6"
             />
           </div>
 
@@ -136,7 +136,7 @@ function Register() {
               required
               disabled={isLoading}
               autoComplete="new-password"
-              minLength="6"
+              // minLength="6"
             />
           </div>
 

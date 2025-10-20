@@ -93,8 +93,8 @@ def login():
     data = request.get_json()
     user = User.query.filter_by(username=data['username']).first()
     if user and user.password == data['password']:
-        access_token = create_access_token(identity=user.id)
-        refresh_token = create_refresh_token(identity=user.id)
+        access_token = create_access_token(identity=str(user.id))
+        refresh_token = create_refresh_token(identity=str(user.id))
         resp = jsonify({"msg": "login successful"})
         set_access_cookies(resp, access_token)
         set_refresh_cookies(resp, refresh_token)
