@@ -1,7 +1,18 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router';
+import { useNavigate, Link } from 'react-router-dom';
+import {
+  Button,
+  Callout,
+  Card,
+  Container,
+  Flex,
+  Heading,
+  Section,
+  Text,
+  TextField,
+} from '@radix-ui/themes';
+import { LockClosedIcon, CheckCircledIcon } from '@radix-ui/react-icons';
 import api from '../services/api';
-import '../styles/Auth.css';
 
 function Login({ onLoginSuccess }) {
   const [formData, setFormData] = useState({ username: '', password: '' });
@@ -14,7 +25,7 @@ function Login({ onLoginSuccess }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     console.log(`📝 Login form change: ${name} =`, name === 'password' ? '***' : value);
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -44,65 +55,88 @@ function Login({ onLoginSuccess }) {
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-container">
-        <h1>🔐 Вхід</h1>
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <label htmlFor="username">Ім'я користувача:</label>
-            <input
-              type="text"
-              id="username"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              required
-              disabled={isLoading}
-              autoComplete="username"
-            />
-          </div>
+    <Section size="3">
+      <Container size="2">
+        <Flex align="center" justify="center" style={{ minHeight: '70vh' }}>
+          <Card size="4" variant="surface" style={{ width: '100%' }}>
+            <Flex direction="column" gap="5">
+              <Flex direction="column" gap="2" align="center">
+                <LockClosedIcon width={24} height={24} />
+                <Heading size="6">Вхід до Budget Tracker</Heading>
+                <Text color="gray" size="3">
+                  Введіть облікові дані, щоб продовжити роботу.
+                </Text>
+              </Flex>
 
-          <div className="form-group">
-            <label htmlFor="password">Пароль:</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              disabled={isLoading}
-              autoComplete="current-password"
-            />
-          </div>
+              <form onSubmit={handleSubmit}>
+                <Flex direction="column" gap="4">
+                  <Flex direction="column" gap="2">
+                    <Text as="label" htmlFor="username">
+                      Ім'я користувача
+                    </Text>
+                    <TextField.Root
+                      id="username"
+                      name="username"
+                      value={formData.username}
+                      onChange={handleChange}
+                      required
+                      disabled={isLoading}
+                      autoComplete="username"
+                      placeholder="Введіть ім'я користувача"
+                    />
+                  </Flex>
 
-          {error && (
-            <div className="error-message">
-              ❌ {error}
-            </div>
-          )}
+                  <Flex direction="column" gap="2">
+                    <Text as="label" htmlFor="password">
+                      Пароль
+                    </Text>
+                    <TextField.Root
+                      type="password"
+                      id="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      required
+                      disabled={isLoading}
+                      autoComplete="current-password"
+                      placeholder="********"
+                    />
+                  </Flex>
 
-          <button 
-            type="submit" 
-            className="btn btn-primary btn-full"
-            disabled={isLoading}
-          >
-            {isLoading ? 'Вхід...' : 'Увійти'}
-          </button>
-        </form>
+                  {error && (
+                    <Callout.Root color="red" variant="surface">
+                      <Callout.Text>{error}</Callout.Text>
+                    </Callout.Root>
+                  )}
 
-        <div className="auth-footer">
-          <p>
-            Ще не маєте акаунту?{' '}
-            <Link 
-              to="/register"
-            >
-              Зареєструватися
-            </Link>
-          </p>
-        </div>
-      </div>
-    </div>
+                  <Button type="submit" size="3" loading={isLoading}>
+                    {isLoading ? 'Вхід...' : 'Увійти'}
+                  </Button>
+                </Flex>
+              </form>
+
+              <Flex direction="column" gap="2" align="center">
+                <Text size="2" color="gray">
+                  Ще не маєте акаунту?
+                </Text>
+                <Button asChild variant="soft" size="2">
+                  <Link to="/register">Зареєструватися</Link>
+                </Button>
+              </Flex>
+
+              <Callout.Root color="mint" variant="soft">
+                <Callout.Icon>
+                  <CheckCircledIcon />
+                </Callout.Icon>
+                <Callout.Text>
+                  Ваші дані захищено, а доступ можна отримати в будь-який момент.
+                </Callout.Text>
+              </Callout.Root>
+            </Flex>
+          </Card>
+        </Flex>
+      </Container>
+    </Section>
   );
 }
 

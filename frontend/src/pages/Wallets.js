@@ -1,18 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import {
+  Badge,
+  Button,
+  Callout,
+  Card,
+  Container,
+  Dialog,
+  Flex,
+  Grid,
+  Heading,
+  IconButton,
+  Section,
+  Select,
+  Text,
+  TextArea,
+  TextField,
+} from '@radix-ui/themes';
+import { PlusCircledIcon, Pencil2Icon, TrashIcon, Cross2Icon } from '@radix-ui/react-icons';
 import api from '../services/api';
-import '../styles/Wallets.css';
 
 function Wallets() {
   const [wallets, setWallets] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [showForm, setShowForm] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingWallet, setEditingWallet] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     icon: '💳',
     initial_balance: '0',
-    currency: 'UAH'
+    currency: 'UAH',
   });
   const [error, setError] = useState('');
 
@@ -27,57 +44,47 @@ function Wallets() {
       if (response.ok) {
         setWallets(data);
       }
-    } catch (error) {
-      console.error('Error loading wallets:', error);
+    } catch (loadError) {
+      console.error('Error loading wallets:', loadError);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+  const updateField = (name, value) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError('');
 
     try {
-      const dataToSend = {
+      const payload = {
         ...formData,
-        initial_balance: parseFloat(formData.initial_balance)
+        initial_balance: parseFloat(formData.initial_balance || '0'),
       };
 
       if (editingWallet) {
-        const { response } = await api.wallets.update(editingWallet.id, dataToSend);
+        const { response } = await api.wallets.update(editingWallet.id, payload);
         if (!response.ok) {
           setError('Помилка оновлення гаманця');
           return;
         }
       } else {
-        const { response } = await api.wallets.create(dataToSend);
+        const { response } = await api.wallets.create(payload);
         if (!response.ok) {
           setError('Помилка створення гаманця');
           return;
         }
       }
 
-      setFormData({
-        name: '',
-        description: '',
-        icon: '💳',
-        initial_balance: '0',
-        currency: 'UAH'
-      });
-      setShowForm(false);
+      setFormData({ name: '', description: '', icon: '💳', initial_balance: '0', currency: 'UAH' });
+      setIsFormOpen(false);
       setEditingWallet(null);
       loadWallets();
-    } catch (error) {
-      console.error('Error saving wallet:', error);
+    } catch (saveError) {
+      console.error('Error saving wallet:', saveError);
       setError('Помилка збереження');
     }
   };
@@ -88,10 +95,10 @@ function Wallets() {
       name: wallet.name,
       description: wallet.description || '',
       icon: wallet.icon || '💳',
-      initial_balance: wallet.initial_balance.toString(),
-      currency: wallet.currency
+      initial_balance: wallet.initial_balance?.toString() || '0',
+      currency: wallet.currency || 'UAH',
     });
-    setShowForm(true);
+    setIsFormOpen(true);
   };
 
   const handleDelete = async (wallet) => {
@@ -106,187 +113,241 @@ function Wallets() {
       } else {
         alert(data?.msg || 'Помилка при видаленні гаманця');
       }
-    } catch (error) {
-      console.error('Error deleting wallet:', error);
+    } catch (deleteError) {
+      console.error('Error deleting wallet:', deleteError);
       alert('Помилка при видаленні гаманця');
     }
   };
 
   const handleCancelForm = () => {
-    setShowForm(false);
+    setIsFormOpen(false);
     setEditingWallet(null);
-    setFormData({
-      name: '',
-      description: '',
-      icon: '💳',
-      initial_balance: '0',
-      currency: 'UAH'
-    });
+    setFormData({ name: '', description: '', icon: '💳', initial_balance: '0', currency: 'UAH' });
     setError('');
   };
 
-  const totalBalance = wallets.reduce((sum, wallet) => sum + (wallet.balance || 0), 0);
+  const handleCreateClick = () => {
+    setEditingWallet(null);
+    setFormData({ name: '', description: '', icon: '💳', initial_balance: '0', currency: 'UAH' });
+    setError('');
+    setIsFormOpen(true);
+  };
+
+  const handleFormOpenChange = (open) => {
+    setIsFormOpen(open);
+    if (!open) {
+      setEditingWallet(null);
+      setFormData({ name: '', description: '', icon: '💳', initial_balance: '0', currency: 'UAH' });
+      setError('');
+    }
+  };
+
+  const totalBalance = wallets.reduce((sum, wallet) => sum + (wallet.balance ?? 0), 0);
+
+  const formatAmount = (amount, currency) =>
+    `${amount >= 0 ? '+' : ''}${amount.toFixed(2)} ${currency || 'UAH'}`;
 
   return (
-    <div className="wallets-page">
-      <div className="wallets-container">
-        <div className="page-header">
-          <h1>💳 Гаманці</h1>
-          <button 
-            className="btn btn-primary"
-            onClick={() => setShowForm(!showForm)}
-          >
-            {showForm ? '❌ Закрити' : '➕ Додати гаманець'}
-          </button>
-        </div>
+    <Section size="3">
+      <Container size="3">
+        <Flex direction="column" gap="6">
+          <Flex align="center" justify="between" wrap="wrap" gap="3">
+            <Flex direction="column" gap="1">
+              <Heading as="h1" size="7">
+                Гаманці
+              </Heading>
+              <Text color="gray">Створюйте гаманці для різних цілей і валют.</Text>
+            </Flex>
+            <Dialog.Root open={isFormOpen} onOpenChange={handleFormOpenChange}>
+              <Dialog.Trigger asChild>
+                <Button onClick={handleCreateClick}>
+                  <PlusCircledIcon /> Додати гаманець
+                </Button>
+              </Dialog.Trigger>
+              <Dialog.Content maxWidth="540px">
+                <Flex direction="column" gap="4">
+                  <Flex align="center" justify="space-between">
+                    <Dialog.Title asChild>
+                      <Heading size="5">
+                        {editingWallet ? 'Редагувати гаманець' : 'Новий гаманець'}
+                      </Heading>
+                    </Dialog.Title>
+                    <Dialog.Close asChild>
+                      <IconButton
+                        variant="ghost"
+                        color="gray"
+                        radius="full"
+                        aria-label="Закрити форму гаманця"
+                      >
+                        <Cross2Icon />
+                      </IconButton>
+                    </Dialog.Close>
+                  </Flex>
 
-        {/* Загальний баланс */}
-        <div className="total-balance-card">
-          <div className="balance-icon">💰</div>
-          <div className="balance-info">
-            <div className="balance-label">Загальний баланс</div>
-            <div className="balance-value">{totalBalance.toFixed(2)} грн</div>
-          </div>
-        </div>
+                  <form onSubmit={handleSubmit}>
+                    <Flex direction="column" gap="4">
+                      <Grid columns={{ initial: '1', md: '2' }} gap="4">
+                        <Flex direction="column" gap="2">
+                          <Text as="label" htmlFor="name">
+                            Назва
+                          </Text>
+                          <TextField.Root
+                            id="name"
+                            name="name"
+                            required
+                            value={formData.name}
+                            onChange={(event) => updateField('name', event.target.value)}
+                            placeholder="Наприклад: Готівка"
+                          />
+                        </Flex>
 
-        {showForm && (
-          <div className="wallet-form">
-            <h3>{editingWallet ? '✏️ Редагувати' : '➕ Додати'} гаманець</h3>
-            <form onSubmit={handleSubmit}>
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="name">Назва *</label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    placeholder="Наприклад: Готівка"
-                  />
-                </div>
+                        <Flex direction="column" gap="2">
+                          <Text as="label" htmlFor="icon">
+                            Іконка
+                          </Text>
+                          <TextField.Root
+                            id="icon"
+                            name="icon"
+                            value={formData.icon}
+                            maxLength={5}
+                            onChange={(event) => updateField('icon', event.target.value)}
+                            placeholder="💳"
+                          />
+                        </Flex>
+                      </Grid>
 
-                <div className="form-group">
-                  <label htmlFor="icon">Іконка</label>
-                  <input
-                    type="text"
-                    id="icon"
-                    name="icon"
-                    value={formData.icon}
-                    onChange={handleChange}
-                    placeholder="💳"
-                    maxLength="10"
-                  />
-                </div>
-              </div>
+                      <Grid columns={{ initial: '1', md: '2' }} gap="4">
+                        <Flex direction="column" gap="2">
+                          <Text as="label" htmlFor="initial_balance">
+                            Початковий баланс
+                          </Text>
+                          <TextField.Root
+                            id="initial_balance"
+                            name="initial_balance"
+                            type="number"
+                            step="0.01"
+                            value={formData.initial_balance}
+                            onChange={(event) => updateField('initial_balance', event.target.value)}
+                            placeholder="0.00"
+                          />
+                        </Flex>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="initial_balance">Початковий баланс</label>
-                  <input
-                    type="number"
-                    id="initial_balance"
-                    name="initial_balance"
-                    value={formData.initial_balance}
-                    onChange={handleChange}
-                    step="0.01"
-                    placeholder="0.00"
-                  />
-                </div>
+                        <Flex direction="column" gap="2">
+                          <Text>Валюта</Text>
+                          <Select.Root value={formData.currency} onValueChange={(value) => updateField('currency', value)}>
+                            <Select.Trigger />
+                            <Select.Content>
+                              <Select.Item value="UAH">UAH (₴)</Select.Item>
+                              <Select.Item value="USD">USD ($)</Select.Item>
+                              <Select.Item value="EUR">EUR (€)</Select.Item>
+                            </Select.Content>
+                          </Select.Root>
+                        </Flex>
+                      </Grid>
 
-                <div className="form-group">
-                  <label htmlFor="currency">Валюта</label>
-                  <select
-                    id="currency"
-                    name="currency"
-                    value={formData.currency}
-                    onChange={handleChange}
-                  >
-                    <option value="UAH">UAH (₴)</option>
-                    <option value="USD">USD ($)</option>
-                    <option value="EUR">EUR (€)</option>
-                  </select>
-                </div>
-              </div>
+                      <Flex direction="column" gap="2">
+                        <Text as="label" htmlFor="description">
+                          Опис
+                        </Text>
+                        <TextArea
+                          id="description"
+                          name="description"
+                          rows={3}
+                          value={formData.description}
+                          onChange={(event) => updateField('description', event.target.value)}
+                          placeholder="Додаткова інформація"
+                        />
+                      </Flex>
 
-              <div className="form-group">
-                <label htmlFor="description">Опис</label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  rows="2"
-                  placeholder="Додаткова інформація"
-                />
-              </div>
+                      {error && (
+                        <Callout.Root color="red" variant="surface">
+                          <Callout.Text>{error}</Callout.Text>
+                        </Callout.Root>
+                      )}
 
-              {error && <div className="error-message">❌ {error}</div>}
+                      <Flex justify="flex-end" gap="3">
+                        <Button type="submit">{editingWallet ? 'Зберегти зміни' : 'Додати гаманець'}</Button>
+                        <Button type="button" variant="soft" color="gray" onClick={handleCancelForm}>
+                          Скасувати
+                        </Button>
+                      </Flex>
+                    </Flex>
+                  </form>
+                </Flex>
+              </Dialog.Content>
+            </Dialog.Root>
+          </Flex>
 
-              <div className="form-buttons">
-                <button type="submit" className="btn btn-primary">
-                  {editingWallet ? '💾 Зберегти' : '➕ Додати'}
-                </button>
-                <button type="button" className="btn btn-secondary" onClick={handleCancelForm}>
-                  ❌ Скасувати
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
+          <Card size="4" variant="surface">
+            <Flex align="center" justify="between" wrap="wrap" gap="3">
+              <Flex align="center" gap="3">
+                <Text size="5">💰</Text>
+                <Flex direction="column" gap="1">
+                  <Text color="gray" size="2">
+                    Загальний баланс
+                  </Text>
+                  <Heading size="5">{totalBalance.toFixed(2)} ₴</Heading>
+                </Flex>
+              </Flex>
+              <Badge variant="soft" color="mint">
+                {wallets.length} гаманців
+              </Badge>
+            </Flex>
+          </Card>
 
-        {isLoading ? (
-          <div className="loading">⏳ Завантаження...</div>
-        ) : wallets.length === 0 ? (
-          <div className="empty-state">
-            <p>📭 У вас ще немає гаманців</p>
-            <p>Створіть перший гаманець, щоб почати відстежувати свої фінанси</p>
-          </div>
-        ) : (
-          <div className="wallets-grid">
-            {wallets.map(wallet => (
-              <div key={wallet.id} className="wallet-card">
-                <div className="wallet-header">
-                  <div className="wallet-icon">{wallet.icon}</div>
-                  <div className="wallet-name">
-                    <h3>{wallet.name}</h3>
-                  </div>
-                </div>
+          {isLoading ? (
+            <Flex align="center" justify="center" style={{ minHeight: 200 }}>
+              <Text color="gray">Завантаження...</Text>
+            </Flex>
+          ) : wallets.length === 0 ? (
+            <Callout.Root>
+              <Callout.Text color="gray">Поки що немає гаманців. Створіть перший, щоб почати.</Callout.Text>
+            </Callout.Root>
+          ) : (
+            <Grid columns={{ initial: '1', sm: '2', lg: '3' }} gap="4">
+              {wallets.map((wallet) => (
+                <Card key={wallet.id} variant="classic">
+                  <Flex direction="column" gap="3">
+                    <Flex align="center" justify="between">
+                      <Flex align="center" gap="3">
+                        <Text size="5">{wallet.icon}</Text>
+                        <Flex direction="column" gap="1">
+                          <Text weight="medium">{wallet.name}</Text>
+                          <Badge color="gray">{wallet.currency}</Badge>
+                        </Flex>
+                      </Flex>
+                      <Flex gap="2">
+                        <IconButton size="2" variant="soft" onClick={() => handleEdit(wallet)}>
+                          <Pencil2Icon />
+                        </IconButton>
+                        <IconButton size="2" variant="soft" color="red" onClick={() => handleDelete(wallet)}>
+                          <TrashIcon />
+                        </IconButton>
+                      </Flex>
+                    </Flex>
 
-                <div className="wallet-balance">
-                  <div className="balance-label">Баланс</div>
-                  <div className={`balance-amount ${wallet.balance >= 0 ? 'positive' : 'negative'}`}>
-                    {wallet.balance >= 0 ? '+' : ''}{wallet.balance.toFixed(2)} {wallet.currency}
-                  </div>
-                </div>
+                    <Flex direction="column" gap="1">
+                      <Text color="gray" size="2">
+                        Поточний баланс
+                      </Text>
+                      <Heading size="5" color={wallet.balance >= 0 ? 'mint' : 'tomato'}>
+                        {formatAmount(wallet.balance ?? 0, wallet.currency)}
+                      </Heading>
+                    </Flex>
 
-                {wallet.description && (
-                  <p className="wallet-description">{wallet.description}</p>
-                )}
-
-                <div className="wallet-actions">
-                  <button
-                    className="btn-icon"
-                    onClick={() => handleEdit(wallet)}
-                    title="Редагувати"
-                  >
-                    ✏️
-                  </button>
-                  <button
-                    className="btn-icon btn-delete"
-                    onClick={() => handleDelete(wallet)}
-                    title="Видалити"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+                    {wallet.description && (
+                      <Text size="2" color="gray">
+                        {wallet.description}
+                      </Text>
+                    )}
+                  </Flex>
+                </Card>
+              ))}
+            </Grid>
+          )}
+        </Flex>
+      </Container>
+    </Section>
   );
 }
 

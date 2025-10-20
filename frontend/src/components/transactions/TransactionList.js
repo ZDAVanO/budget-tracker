@@ -1,5 +1,7 @@
 import React from 'react';
-import './TransactionList.css';
+import { Badge, Box, Button, Card, Callout, Flex, Spinner, Text } from '@radix-ui/themes';
+import { Pencil2Icon, TrashIcon } from '@radix-ui/react-icons';
+
 
 function TransactionList({ transactions, onEdit, onDelete, isLoading }) {
   const emptyMessage = '📭 Транзакцій поки що немає';
@@ -22,83 +24,91 @@ function TransactionList({ transactions, onEdit, onDelete, isLoading }) {
 
   if (isLoading) {
     return (
-      <div className="transaction-list-loading">
-        <div className="loading-spinner">⏳</div>
-        <p>Завантаження...</p>
-      </div>
+      <Flex align="center" justify="center" style={{ minHeight: 180 }}>
+        <Spinner />
+      </Flex>
     );
   }
 
   if (!transactions || transactions.length === 0) {
     return (
-      <div className="transaction-list-empty">
-        <p>{emptyMessage}</p>
-      </div>
+      <Callout.Root variant="surface">
+        <Callout.Text>{emptyMessage}</Callout.Text>
+      </Callout.Root>
     );
   }
 
   return (
-    <div className="transaction-list">
-      {transactions.map(transaction => {
+    <Flex direction="column" gap="3">
+      {transactions.map((transaction) => {
         const isExpense = transaction.type === 'expense';
         const icon = isExpense ? '💸' : '💰';
-        
-        return (
-          <div key={`${transaction.type}-${transaction.id}`} className={`transaction-item ${transaction.type}`}>
-            <div className="transaction-main">
-              <div className="transaction-icon">
-                {transaction.category?.icon || icon}
-              </div>
-              
-              <div className="transaction-info">
-                <div className="transaction-title">{transaction.title}</div>
-                <div className="transaction-meta">
-                  <span className="transaction-date">{formatDate(transaction.date)}</span>
-                  {transaction.category && (
-                    <>
-                      <span className="separator">•</span>
-                      <span className="transaction-category">{transaction.category.name}</span>
-                    </>
-                  )}
-                  {transaction.wallet && (
-                    <>
-                      <span className="separator">•</span>
-                      <span className="transaction-wallet">{transaction.wallet.icon} {transaction.wallet.name}</span>
-                    </>
-                  )}
-                </div>
-                {transaction.description && (
-                  <div className="transaction-description">{transaction.description}</div>
-                )}
-              </div>
-            </div>
 
-            <div className="transaction-actions">
-              <div className={`transaction-amount ${transaction.type}`}>
-                {isExpense ? '-' : '+'} {formatAmount(transaction.amount)} ₴
-              </div>
-              
-              <div className="transaction-buttons">
-                <button
-                  onClick={() => onEdit(transaction)}
-                  className="btn-icon btn-edit"
-                  title="Редагувати"
+        return (
+          <Card key={`${transaction.type}-${transaction.id}`} variant="surface">
+            <Flex align="start" justify="between" gap="4">
+              <Flex align="start" gap="3">
+                <Box
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 12,
+                    display: 'grid',
+                    placeItems: 'center',
+                    background: 'var(--color-panel-solid)',
+                  }}
                 >
-                  ✏️
-                </button>
-                <button
-                  onClick={() => onDelete(transaction)}
-                  className="btn-icon btn-delete"
-                  title="Видалити"
-                >
-                  🗑️
-                </button>
-              </div>
-            </div>
-          </div>
+                  <Text size="5">{transaction.category?.icon || icon}</Text>
+                </Box>
+
+                <Flex direction="column" gap="1">
+                  <Flex align="center" gap="2" wrap="wrap">
+                    <Text as="div" weight="medium">{transaction.title}</Text>
+                    <Badge color={isExpense ? 'tomato' : 'jade'} variant="soft" radius="full">
+                      {isExpense ? 'Витрата' : 'Дохід'}
+                    </Badge>
+                  </Flex>
+
+                  <Flex align="center" gap="2" wrap="wrap">
+                    <Text size="2" color="gray">{formatDate(transaction.date)}</Text>
+                    {transaction.category && (
+                      <>
+                        <Text size="2" color="gray">•</Text>
+                        <Text size="2" color="gray">{transaction.category.name}</Text>
+                      </>
+                    )}
+                    {transaction.wallet && (
+                      <>
+                        <Text size="2" color="gray">•</Text>
+                        <Text size="2" color="gray">{transaction.wallet.icon} {transaction.wallet.name}</Text>
+                      </>
+                    )}
+                  </Flex>
+
+                  {transaction.description && (
+                    <Text size="2" color="gray">{transaction.description}</Text>
+                  )}
+                </Flex>
+              </Flex>
+
+              <Flex align="end" direction="column" gap="2">
+                <Text weight="bold" color={isExpense ? 'tomato' : 'jade'}>
+                  {isExpense ? '-' : '+'} {formatAmount(transaction.amount)} ₴
+                </Text>
+                <Flex gap="2">
+                  <Button size="2" variant="soft" color="gray" onClick={() => onEdit(transaction)}>
+                    <Pencil2Icon /> Редагувати
+                  </Button>
+                  <Button size="2" variant="soft" color="red" onClick={() => onDelete(transaction)}>
+                    <TrashIcon /> Видалити
+                  </Button>
+                </Flex>
+              </Flex>
+            </Flex>
+          </Card>
         );
       })}
-    </div>
+    </Flex>
   );
 }
 

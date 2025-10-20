@@ -1,8 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import {
+  Button,
+  Callout,
+  Flex,
+  Grid,
+  Heading,
+  SegmentedControl,
+  Select,
+  Text,
+  TextArea,
+  TextField,
+} from '@radix-ui/themes';
+import { Pencil2Icon, PlusCircledIcon } from '@radix-ui/react-icons';
 import api from '../../services/api';
-import './TransactionForm.css';
 
-function TransactionForm({ onSuccess, editData = null, onCancel }) {
+function TransactionForm({ onSuccess, editData = null, onCancel, showHeading = true }) {
   const [formData, setFormData] = useState({
     type: 'expense',
     amount: '',
@@ -10,7 +22,7 @@ function TransactionForm({ onSuccess, editData = null, onCancel }) {
     title: '',
     description: '',
     category_id: '',
-    wallet_id: ''
+    wallet_id: '',
   });
   const [categories, setCategories] = useState([]);
   const [wallets, setWallets] = useState([]);
@@ -35,9 +47,9 @@ function TransactionForm({ onSuccess, editData = null, onCancel }) {
       const { response, data } = await api.wallets.getAll();
       if (response.ok) {
         setWallets(data || []);
-        const defaultWallet = data.find(w => w.is_default);
+        const defaultWallet = data.find((wallet) => wallet.is_default);
         if (defaultWallet && !editData) {
-          setFormData(prev => ({ ...prev, wallet_id: defaultWallet.id }));
+          setFormData((prev) => ({ ...prev, wallet_id: defaultWallet.id.toString() }));
         }
       }
     } catch (err) {
@@ -48,65 +60,54 @@ function TransactionForm({ onSuccess, editData = null, onCancel }) {
   useEffect(() => {
     loadCategories();
     loadWallets();
-    
+
     if (editData) {
       setFormData({
         type: editData.type || 'expense',
-        amount: editData.amount || '',
+        amount: editData.amount?.toString() || '',
         date: editData.date ? editData.date.split('T')[0] : new Date().toISOString().split('T')[0],
         title: editData.title || '',
         description: editData.description || '',
-        category_id: editData.category_id || '',
-        wallet_id: editData.wallet_id || ''
+        category_id: editData.category_id?.toString() || '',
+        wallet_id: editData.wallet_id?.toString() || '',
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editData]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const updateField = (name, value) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError('');
     setIsLoading(true);
 
     try {
-      // Конвертуємо дату в ISO формат
-      const dateTime = new Date(formData.date + 'T12:00:00').toISOString();
-      
-      const dataToSend = {
-        amount: parseFloat(formData.amount),
+      const dateTime = new Date(`${formData.date}T12:00:00`).toISOString();
+
+      const payload = {
+        amount: parseFloat(formData.amount || '0'),
         date: dateTime,
         title: formData.title,
         description: formData.description,
-        category_id: formData.category_id ? parseInt(formData.category_id) : null,
-        wallet_id: formData.wallet_id ? parseInt(formData.wallet_id) : null
+        category_id: formData.category_id ? parseInt(formData.category_id, 10) : null,
+        wallet_id: formData.wallet_id ? parseInt(formData.wallet_id, 10) : null,
       };
 
       let result;
       const isExpenseType = formData.type === 'expense';
-      
+
       if (editData) {
-        // Оновлення існуючого запису
-        if (isExpenseType) {
-          result = await api.expenses.update(editData.id, dataToSend);
-        } else {
-          result = await api.incomes.update(editData.id, dataToSend);
-        }
+        result = isExpenseType
+          ? await api.expenses.update(editData.id, payload)
+          : await api.incomes.update(editData.id, payload);
       } else {
-        // Створення нового запису
-        if (isExpenseType) {
-          result = await api.expenses.create(dataToSend);
-        } else {
-          result = await api.incomes.create(dataToSend);
-        }
+        result = isExpenseType ? await api.expenses.create(payload) : await api.incomes.create(payload);
       }
 
       if (result.response.ok) {
-        // Очищаємо форму
         setFormData({
           type: 'expense',
           amount: '',
@@ -114,9 +115,9 @@ function TransactionForm({ onSuccess, editData = null, onCancel }) {
           title: '',
           description: '',
           category_id: '',
-          wallet_id: wallets.find(w => w.is_default)?.id || ''
+          wallet_id: wallets.find((wallet) => wallet.is_default)?.id?.toString() || '',
         });
-        
+
         if (onSuccess) {
           onSuccess();
         }
@@ -131,161 +132,151 @@ function TransactionForm({ onSuccess, editData = null, onCancel }) {
     }
   };
 
-  const filteredCategories = categories.filter(cat => 
-    cat.type === formData.type || cat.type === 'both'
-  );
+  const filteredCategories = categories.filter((cat) => cat.type === formData.type || cat.type === 'both');
 
   return (
-    <div className="transaction-form">
-      <h3>{editData ? '✏️ Редагувати' : '➕ Додати'} транзакцію</h3>
-      
-      <form onSubmit={handleSubmit}>
-        {!editData && (
-          <div className="form-group">
-            <label>Тип транзакції *</label>
-            <div className="type-selector">
-              <button
-                type="button"
-                className={`type-btn ${formData.type === 'expense' ? 'active expense' : ''}`}
-                onClick={() => setFormData(prev => ({ ...prev, type: 'expense' }))}
-                disabled={isLoading}
-              >
-                💸 Витрата
-              </button>
-              <button
-                type="button"
-                className={`type-btn ${formData.type === 'income' ? 'active income' : ''}`}
-                onClick={() => setFormData(prev => ({ ...prev, type: 'income' }))}
-                disabled={isLoading}
-              >
-                💰 Дохід
-              </button>
-            </div>
-          </div>
+    <form onSubmit={handleSubmit}>
+      <Flex direction="column" gap="5">
+        {(showHeading || !editData) && (
+          <Flex align="center" justify={showHeading ? 'between' : 'start'} wrap="wrap" gap="3">
+            {showHeading && (
+              <Flex align="center" gap="2">
+                {editData ? <Pencil2Icon /> : <PlusCircledIcon />}
+                <Heading size="5">{editData ? 'Редагувати транзакцію' : 'Нова транзакція'}</Heading>
+              </Flex>
+            )}
+            {!editData && (
+              <SegmentedControl.Root value={formData.type} onValueChange={(value) => updateField('type', value)}>
+                <SegmentedControl.Item value="expense">💸 Витрата</SegmentedControl.Item>
+                <SegmentedControl.Item value="income">💰 Дохід</SegmentedControl.Item>
+              </SegmentedControl.Root>
+            )}
+          </Flex>
         )}
 
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="amount">Сума *</label>
-            <input
-              type="number"
+        <Grid columns={{ initial: '1', md: '2' }} gap="4">
+          <Flex direction="column" gap="2">
+            <Text as="label" htmlFor="amount">
+              Сума
+            </Text>
+            <TextField.Root
               id="amount"
               name="amount"
-              value={formData.amount}
-              onChange={handleChange}
+              type="number"
               required
               min="0.01"
               step="0.01"
+              value={formData.amount}
+              onChange={(event) => updateField('amount', event.target.value)}
               disabled={isLoading}
               placeholder="0.00"
             />
-          </div>
+          </Flex>
 
-          <div className="form-group">
-            <label htmlFor="date">Дата *</label>
-            <input
-              type="date"
+          <Flex direction="column" gap="2">
+            <Text as="label" htmlFor="date">
+              Дата
+            </Text>
+            <TextField.Root
               id="date"
               name="date"
-              value={formData.date}
-              onChange={handleChange}
+              type="date"
               required
+              value={formData.date}
+              onChange={(event) => updateField('date', event.target.value)}
               disabled={isLoading}
             />
-          </div>
-        </div>
+          </Flex>
+        </Grid>
 
-        <div className="form-group">
-          <label htmlFor="title">Назва *</label>
-          <input
-            type="text"
+        <Flex direction="column" gap="2">
+          <Text as="label" htmlFor="title">
+            Назва
+          </Text>
+          <TextField.Root
             id="title"
             name="title"
-            value={formData.title}
-            onChange={handleChange}
             required
+            value={formData.title}
+            onChange={(event) => updateField('title', event.target.value)}
             disabled={isLoading}
             placeholder={isExpense ? 'Наприклад: Покупки в супермаркеті' : 'Наприклад: Зарплата'}
           />
-        </div>
+        </Flex>
 
-        <div className="form-group">
-          <label htmlFor="category_id">Категорія</label>
-          <select
-            id="category_id"
-            name="category_id"
-            value={formData.category_id}
-            onChange={handleChange}
-            disabled={isLoading}
-          >
-            <option value="">Без категорії</option>
-            {filteredCategories.map(cat => (
-              <option key={cat.id} value={cat.id}>
-                {cat.icon} {cat.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="wallet_id">Гаманець</label>
-          <select
-            id="wallet_id"
-            name="wallet_id"
-            value={formData.wallet_id}
-            onChange={handleChange}
-            disabled={isLoading}
-          >
-            <option value="">Без гаманця</option>
-            {wallets.map(wallet => (
-              <option key={wallet.id} value={wallet.id}>
-                {wallet.icon} {wallet.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="description">Опис</label>
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            disabled={isLoading}
-            rows="3"
-            placeholder="Додаткова інформація (необов'язково)"
-          />
-        </div>
-
-        {error && (
-          <div className="error-message">
-            ❌ {error}
-          </div>
-        )}
-
-        <div className="form-buttons">
-          <button
-            type="submit"
-            className="btn btn-primary"
-            disabled={isLoading}
-          >
-            {isLoading ? '⏳ Збереження...' : editData ? '💾 Зберегти' : '➕ Додати'}
-          </button>
-          
-          {onCancel && (
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={onCancel}
+        <Grid columns={{ initial: '1', md: '2' }} gap="4">
+          <Flex direction="column" gap="2">
+            <Text>Категорія</Text>
+            <Select.Root
+              value={formData.category_id || 'none'}
+              onValueChange={(value) => updateField('category_id', value === 'none' ? '' : value)}
               disabled={isLoading}
             >
-              ❌ Скасувати
-            </button>
+              <Select.Trigger placeholder="Без категорії" />
+              <Select.Content>
+                <Select.Item value="none">Без категорії</Select.Item>
+                {filteredCategories.map((cat) => (
+                  <Select.Item key={cat.id} value={cat.id?.toString()}>
+                    {cat.icon} {cat.name}
+                  </Select.Item>
+                ))}
+              </Select.Content>
+            </Select.Root>
+          </Flex>
+
+          <Flex direction="column" gap="2">
+            <Text>Гаманець</Text>
+            <Select.Root
+              value={formData.wallet_id || 'none'}
+              onValueChange={(value) => updateField('wallet_id', value === 'none' ? '' : value)}
+              disabled={isLoading}
+            >
+              <Select.Trigger placeholder="Без гаманця" />
+              <Select.Content>
+                <Select.Item value="none">Без гаманця</Select.Item>
+                {wallets.map((wallet) => (
+                  <Select.Item key={wallet.id} value={wallet.id?.toString()}>
+                    {wallet.icon} {wallet.name}
+                  </Select.Item>
+                ))}
+              </Select.Content>
+            </Select.Root>
+          </Flex>
+        </Grid>
+
+        <Flex direction="column" gap="2">
+          <Text as="label" htmlFor="description">
+            Опис
+          </Text>
+          <TextArea
+            id="description"
+            name="description"
+            rows={3}
+            value={formData.description}
+            onChange={(event) => updateField('description', event.target.value)}
+            disabled={isLoading}
+            placeholder="Додаткова інформація (необов'язково)"
+          />
+        </Flex>
+
+        {error && (
+          <Callout.Root color="red" variant="surface">
+            <Callout.Text>{error}</Callout.Text>
+          </Callout.Root>
+        )}
+
+        <Flex justify="between" gap="3" wrap="wrap">
+          <Button type="submit" loading={isLoading}>
+            {editData ? 'Зберегти зміни' : 'Додати транзакцію'}
+          </Button>
+          {onCancel && (
+            <Button type="button" variant="soft" color="gray" onClick={onCancel} disabled={isLoading}>
+              Скасувати
+            </Button>
           )}
-        </div>
-      </form>
-    </div>
+        </Flex>
+      </Flex>
+    </form>
   );
 }
 

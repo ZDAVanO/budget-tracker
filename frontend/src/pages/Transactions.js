@@ -1,9 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  Badge,
+  Button,
+  Card,
+  Container,
+  Dialog,
+  Flex,
+  Grid,
+  Heading,
+  IconButton,
+  Section,
+  Text,
+} from '@radix-ui/themes';
+import { Cross2Icon, MixerHorizontalIcon, PlusCircledIcon } from '@radix-ui/react-icons';
 import api from '../services/api';
 import TransactionFilters from '../components/transactions/TransactionFilters';
-import TransactionList from '../components/transactions/TransactionList';
 import TransactionForm from '../components/transactions/TransactionForm';
-import '../styles/Transactions.css';
+import TransactionList from '../components/transactions/TransactionList';
 
 function Transactions() {
   const [transactions, setTransactions] = useState([]);
@@ -18,23 +31,11 @@ function Transactions() {
   });
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showForm, setShowForm] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, [filters]);
+  // loaders are defined below; loadData and effect will be set after them
 
-  const loadData = async () => {
-    setIsLoading(true);
-    await Promise.all([
-      loadTransactions(),
-      loadCategories(),
-      loadWallets()
-    ]);
-    setIsLoading(false);
-  };
-
-  const loadTransactions = async () => {
+  const loadTransactions = useCallback(async () => {
     try {
       const { response, data } = await api.transactions.getAll(filters);
       if (response.ok) {
@@ -43,9 +44,9 @@ function Transactions() {
     } catch (error) {
       console.error('❌ Error loading transactions:', error);
     }
-  };
+  }, [filters]);
 
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     try {
       const { response, data } = await api.categories.getAll();
       if (response.ok) {
@@ -54,9 +55,9 @@ function Transactions() {
     } catch (error) {
       console.error('❌ Error loading categories:', error);
     }
-  };
+  }, []);
 
-  const loadWallets = async () => {
+  const loadWallets = useCallback(async () => {
     try {
       const { response, data } = await api.wallets.getAll();
       if (response.ok) {
@@ -65,17 +66,43 @@ function Transactions() {
     } catch (error) {
       console.error('❌ Error loading wallets:', error);
     }
-  };
+  }, []);
+
+  const loadData = useCallback(async () => {
+    setIsLoading(true);
+    await Promise.all([
+      loadTransactions(),
+      loadCategories(),
+      loadWallets()
+    ]);
+    setIsLoading(false);
+  }, [loadTransactions, loadCategories, loadWallets]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleTransactionSuccess = () => {
-    setShowForm(false);
+    setIsFormOpen(false);
     setEditingTransaction(null);
     loadTransactions();
   };
 
+  const handleFormOpenChange = (open) => {
+    setIsFormOpen(open);
+    if (!open) {
+      setEditingTransaction(null);
+    }
+  };
+
+  const handleCreateClick = () => {
+    setEditingTransaction(null);
+    setIsFormOpen(true);
+  };
+
   const handleEdit = (transaction) => {
     setEditingTransaction(transaction);
-    setShowForm(true);
+    setIsFormOpen(true);
   };
 
   const handleDelete = async (transaction) => {
@@ -99,11 +126,6 @@ function Transactions() {
     }
   };
 
-  const handleCancelForm = () => {
-    setShowForm(false);
-    setEditingTransaction(null);
-  };
-
   const stats = transactions.reduce((acc, t) => {
     if (t.type === 'expense') {
       acc.totalExpenses += t.amount;
@@ -116,76 +138,107 @@ function Transactions() {
   const balance = stats.totalIncomes - stats.totalExpenses;
 
   return (
-    <div className="transactions-page">
-      <div className="transactions-container">
-        <div className="page-header">
-          <h1>📝 Всі транзакції</h1>
-          <button 
-            className="btn btn-primary"
-            onClick={() => setShowForm(!showForm)}
-          >
-            {showForm ? '❌ Закрити' : '➕ Додати транзакцію'}
-          </button>
-        </div>
+    <Section size="3">
+      <Container size="3">
+        <Flex direction="column" gap="6">
+          <Flex align="center" justify="between" wrap="wrap" gap="3">
+            <Flex direction="column" gap="1">
+              <Heading as="h1" size="7">
+                Транзакції
+              </Heading>
+              <Text color="gray">Керуйте всіма операціями в одному місці.</Text>
+            </Flex>
+            <Flex align="center" gap="3">
+              <Badge color="mint" variant="soft">
+                {transactions.length} записів
+              </Badge>
+              <Dialog.Root open={isFormOpen} onOpenChange={handleFormOpenChange}>
+                <Dialog.Trigger asChild>
+                  <Button onClick={handleCreateClick}>
+                    <PlusCircledIcon /> Додати транзакцію
+                  </Button>
+                </Dialog.Trigger>
+                <Dialog.Content maxWidth="520px">
+                  <Flex direction="column" gap="4">
+                    <Flex align="center" justify="between">
+                      <Dialog.Title asChild>
+                        <Heading size="5">
+                          {editingTransaction ? 'Редагувати транзакцію' : 'Нова транзакція'}
+                        </Heading>
+                      </Dialog.Title>
+                      <Dialog.Close asChild>
+                        <IconButton
+                          variant="ghost"
+                          color="gray"
+                          radius="full"
+                          aria-label="Закрити форму транзакції"
+                        >
+                          <Cross2Icon />
+                        </IconButton>
+                      </Dialog.Close>
+                    </Flex>
+                    <TransactionForm
+                      onSuccess={handleTransactionSuccess}
+                      editData={editingTransaction}
+                      onCancel={() => handleFormOpenChange(false)}
+                      showHeading={false}
+                    />
+                  </Flex>
+                </Dialog.Content>
+              </Dialog.Root>
+            </Flex>
+          </Flex>
 
-        {/* Статистика */}
-        <div className="stats-summary">
-          <div className="stat-card income">
-            <div className="stat-icon">💰</div>
-            <div className="stat-info">
-              <div className="stat-label">Доходи</div>
-              <div className="stat-value">+{stats.totalIncomes.toFixed(2)} грн</div>
-            </div>
-          </div>
+          <Grid columns={{ initial: '1', md: '3' }} gap="4">
+            <Card variant="surface" size="4">
+              <Flex direction="column" gap="2">
+                <Text color="gray">Доходи</Text>
+                <Heading size="6" color="mint">+{stats.totalIncomes.toFixed(2)} грн</Heading>
+                <Text size="2" color="gray">Всі надходження за обраний період</Text>
+              </Flex>
+            </Card>
+            <Card variant="surface" size="4">
+              <Flex direction="column" gap="2">
+                <Text color="gray">Витрати</Text>
+                <Heading size="6" color="tomato">-{stats.totalExpenses.toFixed(2)} грн</Heading>
+                <Text size="2" color="gray">Фінансові зобов'язання та покупки</Text>
+              </Flex>
+            </Card>
+            <Card variant="surface" size="4">
+              <Flex direction="column" gap="2">
+                <Text color="gray">Баланс</Text>
+                <Heading size="6" color={balance >= 0 ? 'jade' : 'tomato'}>
+                  {balance >= 0 ? '+' : ''}{balance.toFixed(2)} грн
+                </Heading>
+                <Text size="2" color="gray">Різниця між доходами та витратами</Text>
+              </Flex>
+            </Card>
+          </Grid>
 
-          <div className="stat-card expense">
-            <div className="stat-icon">💸</div>
-            <div className="stat-info">
-              <div className="stat-label">Витрати</div>
-              <div className="stat-value">-{stats.totalExpenses.toFixed(2)} грн</div>
-            </div>
-          </div>
+          <Card variant="surface" size="5">
+            <Flex direction="column" gap="4">
+              <Flex align="center" justify="between" wrap="wrap" gap="3">
+                <Flex align="center" gap="2">
+                  <MixerHorizontalIcon />
+                  <Heading size="4">Фільтри</Heading>
+                </Flex>
+                <Text size="2" color="gray">
+                  Використовуйте комбінації для точного пошуку
+                </Text>
+              </Flex>
+              <TransactionFilters filters={filters} onFilterChange={setFilters} categories={categories} wallets={wallets} />
+            </Flex>
+          </Card>
 
-          <div className={`stat-card balance ${balance >= 0 ? 'positive' : 'negative'}`}>
-            <div className="stat-icon">💵</div>
-            <div className="stat-info">
-              <div className="stat-label">Баланс</div>
-              <div className="stat-value">
-                {balance >= 0 ? '+' : ''}{balance.toFixed(2)} грн
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Форма створення/редагування */}
-        {showForm && (
-          <TransactionForm
-            onSuccess={handleTransactionSuccess}
-            editData={editingTransaction}
-            onCancel={handleCancelForm}
-          />
-        )}
-
-        {/* Фільтри */}
-        <TransactionFilters
-          filters={filters}
-          onFilterChange={setFilters}
-          categories={categories}
-          wallets={wallets}
-        />
-
-        {/* Список транзакцій */}
-        <div className="transactions-list-container">
-          <h3>📋 Транзакції ({transactions.length})</h3>
-          <TransactionList
-            transactions={transactions}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            isLoading={isLoading}
-          />
-        </div>
-      </div>
-    </div>
+          <Card variant="surface" size="5">
+            <Flex direction="column" gap="4">
+              <Heading size="4">Список транзакцій</Heading>
+              <TransactionList transactions={transactions} onEdit={handleEdit} onDelete={handleDelete} isLoading={isLoading} />
+            </Flex>
+          </Card>
+        </Flex>
+      </Container>
+    </Section>
   );
 }
 

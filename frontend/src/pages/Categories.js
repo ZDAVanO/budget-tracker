@@ -1,18 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import {
+  Badge,
+  Button,
+  Callout,
+  Card,
+  Container,
+  Dialog,
+  Flex,
+  Grid,
+  Heading,
+  IconButton,
+  Section,
+  SegmentedControl,
+  Text,
+  TextArea,
+  TextField,
+} from '@radix-ui/themes';
+import { Pencil2Icon, TrashIcon, PlusCircledIcon, Cross2Icon } from '@radix-ui/react-icons';
 import api from '../services/api';
-import '../styles/Categories.css';
 
 function Categories() {
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [showForm, setShowForm] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    icon: '📌',
-    type: 'both'
-  });
+  const [formData, setFormData] = useState({ name: '', description: '', icon: '📌', type: 'both' });
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -26,20 +38,19 @@ function Categories() {
       if (response.ok) {
         setCategories(data);
       }
-    } catch (error) {
-      console.error('Error loading categories:', error);
+    } catch (loadError) {
+      console.error('Error loading categories:', loadError);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const updateField = (name, value) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError('');
 
     try {
@@ -58,11 +69,11 @@ function Categories() {
       }
 
       setFormData({ name: '', description: '', icon: '📌', type: 'both' });
-      setShowForm(false);
+      setIsFormOpen(false);
       setEditingCategory(null);
       loadCategories();
-    } catch (error) {
-      console.error('Error saving category:', error);
+    } catch (saveError) {
+      console.error('Error saving category:', saveError);
       setError('Помилка збереження');
     }
   };
@@ -73,9 +84,9 @@ function Categories() {
       name: category.name,
       description: category.description || '',
       icon: category.icon || '📌',
-      type: category.type
+      type: category.type,
     });
-    setShowForm(true);
+    setIsFormOpen(true);
   };
 
   const handleDelete = async (category) => {
@@ -92,146 +103,206 @@ function Categories() {
         alert(errorMsg);
         console.error('Delete error:', { status: response.status, data });
       }
-    } catch (error) {
-      console.error('Error deleting category:', error);
+    } catch (deleteError) {
+      console.error('Error deleting category:', deleteError);
       alert('Помилка при видаленні категорії');
     }
   };
 
   const handleCancelForm = () => {
-    setShowForm(false);
+    setIsFormOpen(false);
     setEditingCategory(null);
     setFormData({ name: '', description: '', icon: '📌', type: 'both' });
     setError('');
   };
 
+  const handleCreateClick = () => {
+    setEditingCategory(null);
+    setFormData({ name: '', description: '', icon: '📌', type: 'both' });
+    setError('');
+    setIsFormOpen(true);
+  };
+
+  const handleFormOpenChange = (open) => {
+    setIsFormOpen(open);
+    if (!open) {
+      setEditingCategory(null);
+      setFormData({ name: '', description: '', icon: '📌', type: 'both' });
+      setError('');
+    }
+  };
+
+  const typeBadge = (type) => {
+    if (type === 'income') {
+      return <Badge color="mint">Доходи</Badge>;
+    }
+    if (type === 'expense') {
+      return <Badge color="tomato">Витрати</Badge>;
+    }
+    return <Badge color="gray">Для всіх</Badge>;
+  };
+
   return (
-    <div className="categories-page">
-      <div className="categories-container">
-        <div className="page-header">
-          <h1>📂 Категорії</h1>
-          <button 
-            className="btn btn-primary"
-            onClick={() => setShowForm(!showForm)}
-          >
-            {showForm ? '❌ Закрити' : '➕ Додати категорію'}
-          </button>
-        </div>
+    <Section size="3">
+      <Container size="3">
+        <Flex direction="column" gap="6">
+          <Flex align="center" justify="between" wrap="wrap" gap="3">
+            <Flex direction="column" gap="1">
+              <Heading as="h1" size="7">
+                Категорії
+              </Heading>
+              <Text color="gray">Класифікуйте витрати та доходи для точного аналізу.</Text>
+            </Flex>
+            <Dialog.Root open={isFormOpen} onOpenChange={handleFormOpenChange}>
+              <Dialog.Trigger asChild>
+                <Button onClick={handleCreateClick}>
+                  <PlusCircledIcon /> Додати категорію
+                </Button>
+              </Dialog.Trigger>
+              <Dialog.Content maxWidth="540px">
+                <Flex direction="column" gap="4">
+                  <Flex align="center" justify="space-between">
+                    <Dialog.Title asChild>
+                      <Heading size="5">
+                        {editingCategory ? 'Редагувати категорію' : 'Нова категорія'}
+                      </Heading>
+                    </Dialog.Title>
+                    <Dialog.Close asChild>
+                      <IconButton
+                        variant="ghost"
+                        color="gray"
+                        radius="full"
+                        aria-label="Закрити форму категорії"
+                      >
+                        <Cross2Icon />
+                      </IconButton>
+                    </Dialog.Close>
+                  </Flex>
 
-        {showForm && (
-          <div className="category-form">
-            <h3>{editingCategory ? '✏️ Редагувати' : '➕ Додати'} категорію</h3>
-            <form onSubmit={handleSubmit}>
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="name">Назва *</label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    placeholder="Наприклад: Транспорт"
-                  />
-                </div>
+                  <form onSubmit={handleSubmit}>
+                    <Flex direction="column" gap="4">
+                      <Grid columns={{ initial: '1', md: '2' }} gap="4">
+                        <Flex direction="column" gap="2">
+                          <Text as="label" htmlFor="name">
+                            Назва
+                          </Text>
+                          <TextField.Root
+                            id="name"
+                            name="name"
+                            required
+                            value={formData.name}
+                            onChange={(event) => updateField('name', event.target.value)}
+                            placeholder="Наприклад: Транспорт"
+                          />
+                        </Flex>
 
-                <div className="form-group">
-                  <label htmlFor="icon">Іконка</label>
-                  <input
-                    type="text"
-                    id="icon"
-                    name="icon"
-                    value={formData.icon}
-                    onChange={handleChange}
-                    placeholder="📌"
-                    maxLength="10"
-                  />
-                </div>
-              </div>
+                        <Flex direction="column" gap="2">
+                          <Text as="label" htmlFor="icon">
+                            Іконка
+                          </Text>
+                          <TextField.Root
+                            id="icon"
+                            name="icon"
+                            value={formData.icon}
+                            onChange={(event) => updateField('icon', event.target.value)}
+                            maxLength={5}
+                            placeholder="📌"
+                          />
+                        </Flex>
+                      </Grid>
 
-              <div className="form-group">
-                <label htmlFor="type">Тип *</label>
-                <select
-                  id="type"
-                  name="type"
-                  value={formData.type}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="both">Для всіх</option>
-                  <option value="expense">Тільки витрати</option>
-                  <option value="income">Тільки доходи</option>
-                </select>
-              </div>
+                      <Flex direction="column" gap="2">
+                        <Text>Тип категорії</Text>
+                        <SegmentedControl.Root value={formData.type} onValueChange={(value) => updateField('type', value)}>
+                          <SegmentedControl.Item value="both">Для всіх</SegmentedControl.Item>
+                          <SegmentedControl.Item value="expense">Витрати</SegmentedControl.Item>
+                          <SegmentedControl.Item value="income">Доходи</SegmentedControl.Item>
+                        </SegmentedControl.Root>
+                      </Flex>
 
-              <div className="form-group">
-                <label htmlFor="description">Опис</label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  rows="2"
-                  placeholder="Додаткова інформація"
-                />
-              </div>
+                      <Flex direction="column" gap="2">
+                        <Text as="label" htmlFor="description">
+                          Опис
+                        </Text>
+                        <TextArea
+                          id="description"
+                          name="description"
+                          rows={3}
+                          value={formData.description}
+                          onChange={(event) => updateField('description', event.target.value)}
+                          placeholder="Додаткова інформація"
+                        />
+                      </Flex>
 
-              {error && <div className="error-message">❌ {error}</div>}
+                      {error && (
+                        <Callout.Root color="red" variant="surface">
+                          <Callout.Text>{error}</Callout.Text>
+                        </Callout.Root>
+                      )}
 
-              <div className="form-buttons">
-                <button type="submit" className="btn btn-primary">
-                  {editingCategory ? '💾 Зберегти' : '➕ Додати'}
-                </button>
-                <button type="button" className="btn btn-secondary" onClick={handleCancelForm}>
-                  ❌ Скасувати
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
+                      <Flex justify="flex-end" gap="3">
+                        <Button type="submit">{editingCategory ? 'Зберегти зміни' : 'Додати категорію'}</Button>
+                        <Button type="button" variant="soft" color="gray" onClick={handleCancelForm}>
+                          Скасувати
+                        </Button>
+                      </Flex>
+                    </Flex>
+                  </form>
+                </Flex>
+              </Dialog.Content>
+            </Dialog.Root>
+          </Flex>
 
-        {isLoading ? (
-          <div className="loading">⏳ Завантаження...</div>
-        ) : (
-          <div className="categories-section">
-            <h2>� Всі категорії ({categories.length})</h2>
-            <div className="categories-grid">
-              {categories.map(category => (
-                <div key={category.id} className="category-card">
-                  <div className="category-icon">{category.icon}</div>
-                  <div className="category-info">
-                    <h3>{category.name}</h3>
-                    <p className="category-type">
-                      {category.type === 'both' ? '💰💸 Всі' : category.type === 'expense' ? '💸 Витрати' : '💰 Доходи'}
-                    </p>
-                    {category.description && (
-                      <p className="category-description">{category.description}</p>
-                    )}
-                  </div>
-                  <div className="category-actions">
-                    <button
-                      className="btn-icon"
-                      onClick={() => handleEdit(category)}
-                      title="Редагувати"
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      className="btn-icon btn-delete"
-                      onClick={() => handleDelete(category)}
-                      title="Видалити"
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+          {isLoading ? (
+            <Flex align="center" justify="center" style={{ minHeight: 200 }}>
+              <Text color="gray">Завантаження...</Text>
+            </Flex>
+          ) : (
+            <Card variant="surface" size="5">
+              <Flex direction="column" gap="4">
+                <Heading size="5">Усі категорії ({categories.length})</Heading>
+                {categories.length === 0 ? (
+                  <Callout.Root>
+                    <Callout.Text color="gray">Поки що немає категорій. Створіть першу, щоб почати.</Callout.Text>
+                  </Callout.Root>
+                ) : (
+                  <Grid columns={{ initial: '1', sm: '2', lg: '3' }} gap="4">
+                    {categories.map((category) => (
+                      <Card key={category.id} variant="classic">
+                        <Flex direction="column" gap="3">
+                          <Flex align="center" justify="between">
+                            <Flex align="center" gap="3">
+                              <Text size="5">{category.icon}</Text>
+                              <Flex direction="column" gap="1">
+                                <Text weight="medium">{category.name}</Text>
+                                {typeBadge(category.type)}
+                              </Flex>
+                            </Flex>
+                            <Flex gap="2">
+                              <IconButton size="2" variant="soft" onClick={() => handleEdit(category)}>
+                                <Pencil2Icon />
+                              </IconButton>
+                              <IconButton size="2" variant="soft" color="red" onClick={() => handleDelete(category)}>
+                                <TrashIcon />
+                              </IconButton>
+                            </Flex>
+                          </Flex>
+                          {category.description && (
+                            <Text color="gray" size="2">
+                              {category.description}
+                            </Text>
+                          )}
+                        </Flex>
+                      </Card>
+                    ))}
+                  </Grid>
+                )}
+              </Flex>
+            </Card>
+          )}
+        </Flex>
+      </Container>
+    </Section>
   );
 }
 

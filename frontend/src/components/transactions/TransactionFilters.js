@@ -1,9 +1,15 @@
 import React from 'react';
-import './TransactionFilters.css';
+import {
+  Button,
+  Flex,
+  Grid,
+  Select,
+  Text,
+  TextField,
+} from '@radix-ui/themes';
 
 function TransactionFilters({ filters, onFilterChange, categories, wallets = [] }) {
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const updateValue = (name, value) => {
     onFilterChange({ ...filters, [name]: value });
   };
 
@@ -13,94 +19,104 @@ function TransactionFilters({ filters, onFilterChange, categories, wallets = [] 
       wallet_id: '',
       type: '',
       start_date: '',
-      end_date: ''
+      end_date: '',
     });
   };
 
-  const hasActiveFilters = filters.category_id || filters.wallet_id || filters.type || filters.start_date || filters.end_date;
+  const hasActiveFilters =
+    filters.category_id || filters.wallet_id || filters.type || filters.start_date || filters.end_date;
 
   return (
-    <div className="transaction-filters">
-      <h4>🔍 Фільтри</h4>
-      
-      <div className="filters-grid">
-        <div className="filter-group">
-          <label htmlFor="type">Тип</label>
-          <select
-            id="type"
-            name="type"
-            value={filters.type}
-            onChange={handleChange}
+    <Flex direction="column" gap="4">
+      <Grid columns={{ initial: '1', sm: '2', md: '3' }} gap="4">
+        <Flex direction="column" gap="2">
+          <Text size="2" color="gray">
+            Тип
+          </Text>
+          <Select.Root
+            value={filters.type || 'all'}
+            onValueChange={(value) => updateValue('type', value === 'all' ? '' : value)}
           >
-            <option value="">Всі транзакції</option>
-            <option value="income">💰 Доходи</option>
-            <option value="expense">💸 Витрати</option>
-          </select>
-        </div>
+            <Select.Trigger placeholder="Всі транзакції" />
+            <Select.Content>
+              <Select.Item value="all">Всі транзакції</Select.Item>
+              <Select.Item value="income">💰 Доходи</Select.Item>
+              <Select.Item value="expense">💸 Витрати</Select.Item>
+            </Select.Content>
+          </Select.Root>
+        </Flex>
 
-        <div className="filter-group">
-          <label htmlFor="category_id">Категорія</label>
-          <select
-            id="category_id"
-            name="category_id"
-            value={filters.category_id}
-            onChange={handleChange}
+        <Flex direction="column" gap="2">
+          <Text size="2" color="gray">
+            Категорія
+          </Text>
+          <Select.Root
+            value={filters.category_id?.toString() || 'all'}
+            onValueChange={(value) => updateValue('category_id', value === 'all' ? '' : value)}
           >
-            <option value="">Всі категорії</option>
-            {categories.map(cat => (
-              <option key={cat.id} value={cat.id}>
-                {cat.icon} {cat.name}
-              </option>
-            ))}
-          </select>
-        </div>
+            <Select.Trigger placeholder="Всі категорії" />
+            <Select.Content>
+              <Select.Item value="all">Всі категорії</Select.Item>
+              {categories.map((cat) => (
+                <Select.Item key={cat.id} value={cat.id?.toString()}>
+                  {cat.icon} {cat.name}
+                </Select.Item>
+              ))}
+            </Select.Content>
+          </Select.Root>
+        </Flex>
 
-        <div className="filter-group">
-          <label htmlFor="wallet_id">Гаманець</label>
-          <select
-            id="wallet_id"
-            name="wallet_id"
-            value={filters.wallet_id}
-            onChange={handleChange}
+        <Flex direction="column" gap="2">
+          <Text size="2" color="gray">
+            Гаманець
+          </Text>
+          <Select.Root
+            value={filters.wallet_id?.toString() || 'all'}
+            onValueChange={(value) => updateValue('wallet_id', value === 'all' ? '' : value)}
           >
-            <option value="">Всі гаманці</option>
-            {wallets.map(wallet => (
-              <option key={wallet.id} value={wallet.id}>
-                {wallet.icon} {wallet.name}
-              </option>
-            ))}
-          </select>
-        </div>
+            <Select.Trigger placeholder="Всі гаманці" />
+            <Select.Content>
+              <Select.Item value="all">Всі гаманці</Select.Item>
+              {wallets.map((wallet) => (
+                <Select.Item key={wallet.id} value={wallet.id?.toString()}>
+                  {wallet.icon} {wallet.name}
+                </Select.Item>
+              ))}
+            </Select.Content>
+          </Select.Root>
+        </Flex>
 
-        <div className="filter-group">
-          <label htmlFor="start_date">Від дати</label>
-          <input
+        <Flex direction="column" gap="2">
+          <Text size="2" color="gray">
+            Від дати
+          </Text>
+          <TextField.Root
             type="date"
-            id="start_date"
-            name="start_date"
             value={filters.start_date}
-            onChange={handleChange}
+            onChange={(event) => updateValue('start_date', event.target.value)}
           />
-        </div>
+        </Flex>
 
-        <div className="filter-group">
-          <label htmlFor="end_date">До дати</label>
-          <input
+        <Flex direction="column" gap="2">
+          <Text size="2" color="gray">
+            До дати
+          </Text>
+          <TextField.Root
             type="date"
-            id="end_date"
-            name="end_date"
             value={filters.end_date}
-            onChange={handleChange}
+            onChange={(event) => updateValue('end_date', event.target.value)}
           />
-        </div>
-      </div>
+        </Flex>
+      </Grid>
 
       {hasActiveFilters && (
-        <button onClick={handleReset} className="btn-reset-filters">
-          ❌ Скинути фільтри
-        </button>
+        <Flex justify="flex-end">
+          <Button variant="soft" color="gray" onClick={handleReset}>
+            Скинути фільтри
+          </Button>
+        </Flex>
       )}
-    </div>
+    </Flex>
   );
 }
 

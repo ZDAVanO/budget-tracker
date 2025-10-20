@@ -1,0 +1,6 @@
+.footer {
+  margin-top: auto;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-panel-solid) 85%, transparent) 0%, var(--gray-2) 100%);
+  border-top: 1px solid var(--gray-a5);
+}
