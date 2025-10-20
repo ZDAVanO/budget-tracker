@@ -1,0 +1,157 @@
+/* Dashboard page styles */
+.dashboard-page {
+  padding: 2rem 0;
+  min-height: calc(100vh - 200px);
+}
+
+.dashboard-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.dashboard-container h1 {
+  color: #2d3748;
+  margin: 0 0 0.5rem 0;
+  font-size: 2.5rem;
+}
+
+.welcome-message {
+  color: #718096;
+  font-size: 1.2rem;
+  margin: 0 0 2rem 0;
+}
+
+/* Statistics Section */
+.statistics-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+  font-size: 3rem;
+  width: 70px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.stat-card.stat-expense .stat-icon {
+  background-color: #fed7d7;
+}
+
+.stat-card.stat-income .stat-icon {
+  background-color: #c6f6d5;
+}
+
+.stat-card.stat-balance .stat-icon {
+  background-color: #bee3f8;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-label {
+  color: #718096;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #2d3748;
+}
+
+.stat-value.positive {
+  color: #38a169;
+}
+
+.stat-value.negative {
+  color: #e53e3e;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.tab {
+  padding: 1rem 2rem;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #718096;
+  transition: all 0.3s ease;
+  margin-bottom: -2px;
+}
+
+.tab:hover {
+  color: #667eea;
+  background-color: #f7fafc;
+}
+
+.tab.active {
+  color: #667eea;
+  border-bottom-color: #667eea;
+  background-color: #f7fafc;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 0 1rem;
+  }
+
+  .dashboard-container h1 {
+    font-size: 2rem;
+  }
+
+  .statistics-section {
+    grid-template-columns: 1fr;
+  }
+
+  .tabs {
+    flex-direction: column;
+    border-bottom: none;
+  }
+
+  .tab {
+    border-bottom: 1px solid #e2e8f0;
+    border-left: 3px solid transparent;
+    text-align: left;
+  }
+
+  .tab.active {
+    border-left-color: #667eea;
+    border-bottom-color: #e2e8f0;
+  }
+}
+

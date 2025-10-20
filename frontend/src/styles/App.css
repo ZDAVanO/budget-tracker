@@ -1,0 +1,159 @@
+/* @import "./reset.css"; */
+
+/* App.css - Базові стилі додатку */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f7fafc;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+.App {
+  min-height: 100vh;
+}
+
+/* Загальні стилі для кнопок */
+button {
+  font-family: inherit;
+}
+
+/* Загальні стилі для посилань */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Адаптивність */
+@media (max-width: 768px) {
+  .header-container,
+  .footer-container,
+  .main-content {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .hero-section h1 {
+    font-size: 2rem;
+  }
+
+  .subtitle {
+    font-size: 1.2rem;
+  }
+
+  .dashboard-grid,
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Layout styles */
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.loading-page {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-size: 1.5rem;
+  color: #667eea;
+}
+
+.loading-spinner {
+  font-size: 3rem;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.not-found-page {
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.not-found-page h1 {
+  font-size: 6rem;
+  color: #667eea;
+  margin: 0;
+}
+
+.not-found-page p {
+  font-size: 1.5rem;
+  color: #4a5568;
+  margin: 1rem 0 2rem 0;
+}
+
+.not-found-page a {
+  color: #667eea;
+  text-decoration: none;
+  font-size: 1.2rem;
+  padding: 0.75rem 1.5rem;
+  border: 2px solid #667eea;
+  border-radius: 5px;
+  display: inline-block;
+  transition: all 0.3s ease;
+}
+
+.not-found-page a:hover {
+  background-color: #667eea;
+  color: white;
+}
