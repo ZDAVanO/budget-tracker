@@ -12,8 +12,7 @@ function Wallets() {
     description: '',
     icon: '💳',
     initial_balance: '0',
-    currency: 'UAH',
-    is_default: false
+    currency: 'UAH'
   });
   const [error, setError] = useState('');
 
@@ -72,8 +71,7 @@ function Wallets() {
         description: '',
         icon: '💳',
         initial_balance: '0',
-        currency: 'UAH',
-        is_default: false
+        currency: 'UAH'
       });
       setShowForm(false);
       setEditingWallet(null);
@@ -91,8 +89,7 @@ function Wallets() {
       description: wallet.description || '',
       icon: wallet.icon || '💳',
       initial_balance: wallet.initial_balance.toString(),
-      currency: wallet.currency,
-      is_default: wallet.is_default
+      currency: wallet.currency
     });
     setShowForm(true);
   };
@@ -123,8 +120,7 @@ function Wallets() {
       description: '',
       icon: '💳',
       initial_balance: '0',
-      currency: 'UAH',
-      is_default: false
+      currency: 'UAH'
     });
     setError('');
   };
@@ -226,18 +222,6 @@ function Wallets() {
                 />
               </div>
 
-              <div className="form-group checkbox-group">
-                <label>
-                  <input
-                    type="checkbox"
-                    name="is_default"
-                    checked={formData.is_default}
-                    onChange={handleChange}
-                  />
-                  <span>Зробити основним гаманцем</span>
-                </label>
-              </div>
-
               {error && <div className="error-message">❌ {error}</div>}
 
               <div className="form-buttons">
@@ -262,12 +246,11 @@ function Wallets() {
         ) : (
           <div className="wallets-grid">
             {wallets.map(wallet => (
-              <div key={wallet.id} className={`wallet-card ${wallet.is_default ? 'default' : ''}`}>
+              <div key={wallet.id} className="wallet-card">
                 <div className="wallet-header">
                   <div className="wallet-icon">{wallet.icon}</div>
                   <div className="wallet-name">
                     <h3>{wallet.name}</h3>
-                    {wallet.is_default && <span className="default-badge">Основний</span>}
                   </div>
                 </div>
 

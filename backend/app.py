@@ -66,6 +66,61 @@ jwt = JWTManager(app)
 
 
 
+def create_default_categories_for_user(user_id):
+    """Створення стандартних категорій для нового користувача"""
+    default_categories = [
+        # Витрати
+        {'name': 'Їжа', 'icon': '🍔', 'type': 'expense', 'description': 'Продукти, ресторани, кафе'},
+        {'name': 'Транспорт', 'icon': '🚗', 'type': 'expense', 'description': 'Проїзд, паливо, таксі'},
+        {'name': 'Розваги', 'icon': '🎮', 'type': 'expense', 'description': 'Кіно, ігри, хобі'},
+        {'name': 'Здоров\'я', 'icon': '💊', 'type': 'expense', 'description': 'Ліки, лікар, спортзал'},
+        {'name': 'Одяг', 'icon': '👕', 'type': 'expense', 'description': 'Одяг, взуття, аксесуари'},
+        {'name': 'Дім', 'icon': '🏠', 'type': 'expense', 'description': 'Оренда, комунальні, ремонт'},
+        {'name': 'Освіта', 'icon': '📚', 'type': 'expense', 'description': 'Курси, книги, навчання'},
+        {'name': 'Інше', 'icon': '📦', 'type': 'expense', 'description': 'Різні витрати'},
+        
+        # Доходи
+        {'name': 'Зарплата', 'icon': '💰', 'type': 'income', 'description': 'Основний дохід'},
+        {'name': 'Фріланс', 'icon': '💻', 'type': 'income', 'description': 'Додатковий заробіток'},
+        {'name': 'Подарунки', 'icon': '🎁', 'type': 'income', 'description': 'Отримані подарунки'},
+        {'name': 'Інвестиції', 'icon': '📈', 'type': 'income', 'description': 'Пасивний дохід'},
+        {'name': 'Інше', 'icon': '💵', 'type': 'income', 'description': 'Різні доходи'},
+    ]
+    
+    for cat_data in default_categories:
+        category = Category(
+            name=cat_data['name'],
+            icon=cat_data['icon'],
+            type=cat_data['type'],
+            description=cat_data['description'],
+            user_id=user_id
+        )
+        db.session.add(category)
+    
+    db.session.commit()
+
+
+def create_default_wallets_for_user(user_id):
+    """Створення стандартних гаманців для нового користувача"""
+    default_wallets = [
+        {'name': 'Готівка', 'icon': '💵', 'description': 'Кишенькові гроші', 'initial_balance': 0.0, 'currency': 'UAH'},
+        {'name': 'Банківська картка', 'icon': '💳', 'description': 'Основна картка', 'initial_balance': 0.0, 'currency': 'UAH'},
+    ]
+    
+    for wallet_data in default_wallets:
+        wallet = Wallet(
+            name=wallet_data['name'],
+            icon=wallet_data['icon'],
+            description=wallet_data['description'],
+            initial_balance=wallet_data['initial_balance'],
+            currency=wallet_data['currency'],
+            user_id=user_id
+        )
+        db.session.add(wallet)
+    
+    db.session.commit()
+
+
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.get_json()
@@ -82,6 +137,11 @@ def register():
     user = User(username=username, email=email, password=password)
     db.session.add(user)
     db.session.commit()
+    
+    # Створюємо стандартні категорії та гаманці для нового користувача
+    create_default_categories_for_user(user.id)
+    create_default_wallets_for_user(user.id)
+    
     return jsonify({"msg": "Registration successful"}), 201
 
 
@@ -119,7 +179,7 @@ def refresh():
 @app.route('/api/protected', methods=['GET'])
 @jwt_required(locations=['cookies'])
 def protected():
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     user = User.query.get(user_id)
     return jsonify({"username": user.username})
 
@@ -138,61 +198,14 @@ def echo():
 
 
 # MARK: - Categories
-def init_default_categories():
-    """Ініціалізація стандартних категорій"""
-    default_categories = [
-        # Витрати
-        {'name': 'Їжа', 'icon': '🍔', 'type': 'expense', 'description': 'Продукти, ресторани, кафе'},
-        {'name': 'Транспорт', 'icon': '🚗', 'type': 'expense', 'description': 'Проїзд, паливо, таксі'},
-        {'name': 'Розваги', 'icon': '🎮', 'type': 'expense', 'description': 'Кіно, ігри, хобі'},
-        {'name': 'Здоров\'я', 'icon': '💊', 'type': 'expense', 'description': 'Ліки, лікар, спортзал'},
-        {'name': 'Одяг', 'icon': '👕', 'type': 'expense', 'description': 'Одяг, взуття, аксесуари'},
-        {'name': 'Дім', 'icon': '🏠', 'type': 'expense', 'description': 'Оренда, комунальні, ремонт'},
-        {'name': 'Освіта', 'icon': '📚', 'type': 'expense', 'description': 'Курси, книги, навчання'},
-        {'name': 'Інше', 'icon': '📦', 'type': 'expense', 'description': 'Різні витрати'},
-        
-        # Доходи
-        {'name': 'Зарплата', 'icon': '💰', 'type': 'income', 'description': 'Основний дохід'},
-        {'name': 'Фріланс', 'icon': '💻', 'type': 'income', 'description': 'Додатковий заробіток'},
-        {'name': 'Подарунки', 'icon': '🎁', 'type': 'income', 'description': 'Отримані подарунки'},
-        {'name': 'Інвестиції', 'icon': '📈', 'type': 'income', 'description': 'Пасивний дохід'},
-        {'name': 'Інше', 'icon': '💵', 'type': 'income', 'description': 'Різні доходи'},
-    ]
-    
-    for cat_data in default_categories:
-        # Перевіряємо, чи вже існує така категорія
-        existing = Category.query.filter_by(
-            name=cat_data['name'], 
-            type=cat_data['type'],
-            is_default=True,
-            user_id=None
-        ).first()
-        
-        if not existing:
-            category = Category(
-                name=cat_data['name'],
-                icon=cat_data['icon'],
-                type=cat_data['type'],
-                description=cat_data['description'],
-                is_default=True,
-                user_id=None  # Стандартні категорії не прив'язані до користувача
-            )
-            db.session.add(category)
-    
-    db.session.commit()
-
-
 @app.route('/api/categories', methods=['GET'])
 @jwt_required(locations=['cookies'])
 def get_categories():
-    """Отримати всі категорії (стандартні + користувацькі)"""
-    user_id = get_jwt_identity()
+    """Отримати категорії користувача"""
+    user_id = int(get_jwt_identity())
     category_type = request.args.get('type')  # 'expense', 'income', або None для всіх
     
-    # Стандартні категорії + категорії користувача
-    query = Category.query.filter(
-        (Category.is_default == True) | (Category.user_id == user_id)
-    )
+    query = Category.query.filter_by(user_id=user_id)
     
     if category_type:
         query = query.filter(
@@ -206,8 +219,8 @@ def get_categories():
 @app.route('/api/categories', methods=['POST'])
 @jwt_required(locations=['cookies'])
 def create_category():
-    """Створити користувацьку категорію"""
-    user_id = get_jwt_identity()
+    """Створити категорію"""
+    user_id = int(get_jwt_identity())
     data = request.get_json()
     
     category = Category(
@@ -215,7 +228,6 @@ def create_category():
         description=data.get('description'),
         icon=data.get('icon', '📌'),
         type=data.get('type', 'both'),
-        is_default=False,
         user_id=user_id
     )
     
@@ -228,13 +240,13 @@ def create_category():
 @app.route('/api/categories/<int:category_id>', methods=['DELETE'])
 @jwt_required(locations=['cookies'])
 def delete_category(category_id):
-    """Видалити користувацьку категорію"""
-    user_id = get_jwt_identity()
+    """Видалити категорію"""
+    user_id = int(get_jwt_identity())
     category = Category.query.get_or_404(category_id)
     
-    # Перевіряємо, що це категорія користувача (не стандартна)
-    if category.is_default or category.user_id != user_id:
-        return jsonify({"msg": "Cannot delete this category"}), 403
+    # Перевіряємо, що це категорія користувача
+    if category.user_id != user_id:
+        return jsonify({"msg": "Unauthorized"}), 403
     
     db.session.delete(category)
     db.session.commit()
@@ -245,13 +257,13 @@ def delete_category(category_id):
 @app.route('/api/categories/<int:category_id>', methods=['PUT'])
 @jwt_required(locations=['cookies'])
 def update_category(category_id):
-    """Оновити користувацьку категорію"""
-    user_id = get_jwt_identity()
+    """Оновити категорію"""
+    user_id = int(get_jwt_identity())
     category = Category.query.get_or_404(category_id)
     
-    # Перевіряємо, що це категорія користувача (не стандартна)
-    if category.is_default or category.user_id != user_id:
-        return jsonify({"msg": "Cannot edit this category"}), 403
+    # Перевіряємо, що це категорія користувача
+    if category.user_id != user_id:
+        return jsonify({"msg": "Unauthorized"}), 403
     
     data = request.get_json()
     
@@ -274,7 +286,7 @@ def update_category(category_id):
 @jwt_required(locations=['cookies'])
 def get_wallets():
     """Отримати всі гаманці користувача"""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     wallets = Wallet.query.filter_by(user_id=user_id).all()
     return jsonify([wallet.to_dict() for wallet in wallets])
 
@@ -283,15 +295,8 @@ def get_wallets():
 @jwt_required(locations=['cookies'])
 def create_wallet():
     """Створити новий гаманець"""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     data = request.get_json()
-    
-    # Якщо це перший гаманець або явно позначений як default
-    is_default = data.get('is_default', False)
-    if is_default or Wallet.query.filter_by(user_id=user_id).count() == 0:
-        # Знімаємо default з інших гаманців
-        Wallet.query.filter_by(user_id=user_id, is_default=True).update({'is_default': False})
-        is_default = True
     
     wallet = Wallet(
         name=data.get('name'),
@@ -299,7 +304,6 @@ def create_wallet():
         icon=data.get('icon', '💳'),
         initial_balance=float(data.get('initial_balance', 0)),
         currency=data.get('currency', 'UAH'),
-        is_default=is_default,
         user_id=user_id
     )
     
@@ -313,7 +317,7 @@ def create_wallet():
 @jwt_required(locations=['cookies'])
 def update_wallet(wallet_id):
     """Оновити гаманець"""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     wallet = Wallet.query.get_or_404(wallet_id)
     
     if wallet.user_id != user_id:
@@ -331,10 +335,6 @@ def update_wallet(wallet_id):
         wallet.initial_balance = float(data['initial_balance'])
     if 'currency' in data:
         wallet.currency = data['currency']
-    if 'is_default' in data and data['is_default']:
-        # Знімаємо default з інших гаманців
-        Wallet.query.filter_by(user_id=user_id, is_default=True).update({'is_default': False})
-        wallet.is_default = True
     
     db.session.commit()
     
@@ -345,7 +345,7 @@ def update_wallet(wallet_id):
 @jwt_required(locations=['cookies'])
 def delete_wallet(wallet_id):
     """Видалити гаманець"""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     wallet = Wallet.query.get_or_404(wallet_id)
     
     if wallet.user_id != user_id:
@@ -371,7 +371,7 @@ def delete_wallet(wallet_id):
 @jwt_required(locations=['cookies'])
 def get_transactions():
     """Отримати всі транзакції (доходи + витрати) з фільтрацією"""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     
     # Параметри фільтрації
     category_id = request.args.get('category_id')
@@ -423,7 +423,7 @@ def get_transactions():
 @jwt_required(locations=['cookies'])
 def get_expenses():
     """Отримати витрати з фільтрацією"""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     
     query = Expense.query.filter_by(user_id=user_id)
     
@@ -450,7 +450,7 @@ def get_expenses():
 @jwt_required(locations=['cookies'])
 def create_expense():
     """Створити витрату"""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     data = request.get_json()
     
     expense = Expense(
@@ -473,7 +473,7 @@ def create_expense():
 @jwt_required(locations=['cookies'])
 def update_expense(expense_id):
     """Оновити витрату"""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     expense = Expense.query.get_or_404(expense_id)
     
     if expense.user_id != user_id:
@@ -503,7 +503,7 @@ def update_expense(expense_id):
 @jwt_required(locations=['cookies'])
 def delete_expense(expense_id):
     """Видалити витрату"""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     expense = Expense.query.get_or_404(expense_id)
     
     if expense.user_id != user_id:
@@ -520,7 +520,7 @@ def delete_expense(expense_id):
 @jwt_required(locations=['cookies'])
 def get_incomes():
     """Отримати доходи з фільтрацією"""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     
     query = Income.query.filter_by(user_id=user_id)
     
@@ -547,7 +547,7 @@ def get_incomes():
 @jwt_required(locations=['cookies'])
 def create_income():
     """Створити дохід"""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     data = request.get_json()
     
     income = Income(
@@ -570,7 +570,7 @@ def create_income():
 @jwt_required(locations=['cookies'])
 def update_income(income_id):
     """Оновити дохід"""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     income = Income.query.get_or_404(income_id)
     
     if income.user_id != user_id:
@@ -600,7 +600,7 @@ def update_income(income_id):
 @jwt_required(locations=['cookies'])
 def delete_income(income_id):
     """Видалити дохід"""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     income = Income.query.get_or_404(income_id)
     
     if income.user_id != user_id:
@@ -617,7 +617,7 @@ def delete_income(income_id):
 @jwt_required(locations=['cookies'])
 def get_statistics():
     """Отримати статистику"""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     
     # Параметри фільтрації
     start_date = request.args.get('start_date')
@@ -657,6 +657,5 @@ if __name__ == '__main__':
 
     with app.app_context():
         db.create_all()
-        init_default_categories()  # Ініціалізуємо стандартні категорії
         
     app.run(debug=True, port=5000)

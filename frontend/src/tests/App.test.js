@@ -1,10 +1,10 @@
 
 
 import { render, screen } from '@testing-library/react';
-import App from './App';
+import App from '../App';
 
 // Mock the AuthContext
-jest.mock('./contexts/AuthContext', () => ({
+jest.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({
     isLoggedIn: false,
     isLoading: false,

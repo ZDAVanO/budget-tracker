@@ -44,15 +44,15 @@ function Categories() {
 
     try {
       if (editingCategory) {
-        const { response } = await api.categories.update(editingCategory.id, formData);
+        const { response, data } = await api.categories.update(editingCategory.id, formData);
         if (!response.ok) {
-          setError('Помилка оновлення категорії');
+          setError(data?.msg || 'Помилка оновлення категорії');
           return;
         }
       } else {
-        const { response } = await api.categories.create(formData);
+        const { response, data } = await api.categories.create(formData);
         if (!response.ok) {
-          setError('Помилка створення категорії');
+          setError(data?.msg || 'Помилка створення категорії');
           return;
         }
       }
@@ -79,21 +79,18 @@ function Categories() {
   };
 
   const handleDelete = async (category) => {
-    if (category.is_default) {
-      alert('Неможливо видалити стандартну категорію');
-      return;
-    }
-
     if (!window.confirm(`Видалити категорію "${category.name}"?`)) {
       return;
     }
 
     try {
-      const { response } = await api.categories.delete(category.id);
+      const { response, data } = await api.categories.delete(category.id);
       if (response.ok) {
         loadCategories();
       } else {
-        alert('Помилка при видаленні категорії');
+        const errorMsg = data?.msg || 'Помилка при видаленні категорії';
+        alert(errorMsg);
+        console.error('Delete error:', { status: response.status, data });
       }
     } catch (error) {
       console.error('Error deleting category:', error);
@@ -107,9 +104,6 @@ function Categories() {
     setFormData({ name: '', description: '', icon: '📌', type: 'both' });
     setError('');
   };
-
-  const userCategories = categories.filter(cat => !cat.is_default);
-  const defaultCategories = categories.filter(cat => cat.is_default);
 
   return (
     <div className="categories-page">
@@ -200,66 +194,41 @@ function Categories() {
         {isLoading ? (
           <div className="loading">⏳ Завантаження...</div>
         ) : (
-          <>
-            {userCategories.length > 0 && (
-              <div className="categories-section">
-                <h2>👤 Мої категорії ({userCategories.length})</h2>
-                <div className="categories-grid">
-                  {userCategories.map(category => (
-                    <div key={category.id} className="category-card">
-                      <div className="category-icon">{category.icon}</div>
-                      <div className="category-info">
-                        <h3>{category.name}</h3>
-                        <p className="category-type">
-                          {category.type === 'both' ? '💰💸 Всі' : category.type === 'expense' ? '💸 Витрати' : '💰 Доходи'}
-                        </p>
-                        {category.description && (
-                          <p className="category-description">{category.description}</p>
-                        )}
-                      </div>
-                      <div className="category-actions">
-                        <button
-                          className="btn-icon"
-                          onClick={() => handleEdit(category)}
-                          title="Редагувати"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          className="btn-icon btn-delete"
-                          onClick={() => handleDelete(category)}
-                          title="Видалити"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="categories-section">
-              <h2>🔧 Стандартні категорії ({defaultCategories.length})</h2>
-              <div className="categories-grid">
-                {defaultCategories.map(category => (
-                  <div key={category.id} className="category-card default">
-                    <div className="category-icon">{category.icon}</div>
-                    <div className="category-info">
-                      <h3>{category.name}</h3>
-                      <p className="category-type">
-                        {category.type === 'both' ? '💰💸 Всі' : category.type === 'expense' ? '💸 Витрати' : '💰 Доходи'}
-                      </p>
-                      {category.description && (
-                        <p className="category-description">{category.description}</p>
-                      )}
-                    </div>
-                    <div className="default-badge">Стандартна</div>
+          <div className="categories-section">
+            <h2>� Всі категорії ({categories.length})</h2>
+            <div className="categories-grid">
+              {categories.map(category => (
+                <div key={category.id} className="category-card">
+                  <div className="category-icon">{category.icon}</div>
+                  <div className="category-info">
+                    <h3>{category.name}</h3>
+                    <p className="category-type">
+                      {category.type === 'both' ? '💰💸 Всі' : category.type === 'expense' ? '💸 Витрати' : '💰 Доходи'}
+                    </p>
+                    {category.description && (
+                      <p className="category-description">{category.description}</p>
+                    )}
                   </div>
-                ))}
-              </div>
+                  <div className="category-actions">
+                    <button
+                      className="btn-icon"
+                      onClick={() => handleEdit(category)}
+                      title="Редагувати"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      className="btn-icon btn-delete"
+                      onClick={() => handleDelete(category)}
+                      title="Видалити"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>

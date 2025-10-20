@@ -134,11 +134,6 @@
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
 }
 
-.category-card.default {
-  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
-  border: 1px solid #e2e8f0;
-}
-
 .category-icon {
   font-size: 2.5rem;
   min-width: 60px;
@@ -193,18 +188,6 @@
 
 .btn-icon.btn-delete:hover {
   filter: brightness(0.8);
-}
-
-.default-badge {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  background: #edf2f7;
-  color: #4a5568;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
 }
 
 .loading {

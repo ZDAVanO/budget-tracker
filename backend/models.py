@@ -29,7 +29,6 @@ class Wallet(db.Model):
     icon = db.Column(db.String(50), default='💳')
     initial_balance = db.Column(db.Float, default=0.0)
     currency = db.Column(db.String(10), default='UAH')
-    is_default = db.Column(db.Boolean, default=False)
     
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     
@@ -50,7 +49,6 @@ class Wallet(db.Model):
             'icon': self.icon,
             'initial_balance': self.initial_balance,
             'currency': self.currency,
-            'is_default': self.is_default,
             'user_id': self.user_id,
             'balance': self.get_balance()
         }
@@ -126,9 +124,8 @@ class Category(db.Model):
     description = db.Column(db.String(255))
     icon = db.Column(db.String(50))  # Emoji або іконка
     type = db.Column(db.String(20), nullable=False)  # 'expense' або 'income' або 'both'
-    is_default = db.Column(db.Boolean, default=False)  # Стандартна категорія чи ні
 
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # None для стандартних категорій
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     expenses = db.relationship('Expense', backref='category', lazy=True)
     incomes = db.relationship('Income', backref='category', lazy=True)
@@ -140,7 +137,6 @@ class Category(db.Model):
             'description': self.description,
             'icon': self.icon,
             'type': self.type,
-            'is_default': self.is_default,
             'user_id': self.user_id
         }
 
