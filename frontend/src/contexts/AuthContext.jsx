@@ -27,8 +27,9 @@ export const AuthProvider = ({ children }) => {
   const checkAuth = async () => {
     console.log('🔍 AuthProvider: checkAuth() - початок перевірки');
     try {
-      const { response, data } = await api.auth.checkAuth();
-      
+      // Передаємо logout як onLogout у checkAuth
+      const { response, data } = await api.auth.checkAuth(logout);
+
       if (response.ok) {
         console.log('✅ AuthProvider: Користувач авторизований', data);
         setUser(data.username);

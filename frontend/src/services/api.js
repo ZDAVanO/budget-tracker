@@ -33,29 +33,45 @@ const logError = (method, endpoint, error) => {
   });
 };
 
-// Базова функція для виконання запитів
-const fetchWithLogging = async (endpoint, options = {}) => {
+// Базова функція для виконання запитів з автоматичним refresh токена
+const fetchWithLogging = async (endpoint, options = {}, retry = true, onLogout = null) => {
   const method = options.method || 'GET';
   const requestData = options.body ? JSON.parse(options.body) : null;
-  
+
   logRequest(method, endpoint, requestData);
-  
+
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       credentials: 'include'
     });
-    
+
     const data = await response.json().catch(() => null);
     logResponse(method, endpoint, response, data);
-    
+
+    // Якщо токен протух (401) і це не refresh-запит — пробуємо оновити токен і повторити запит
+    if (response.status === 401 && retry && endpoint !== '/refresh') {
+      console.warn('⚠️ API: 401 Unauthorized, пробуємо refresh токена...');
+      const refreshResult = await api.auth.refreshToken();
+      if (refreshResult.response.ok) {
+        // Повторюємо оригінальний запит (тільки 1 раз)
+        return await fetchWithLogging(endpoint, options, false, onLogout);
+      } else {
+        // Refresh не вдався — викликаємо onLogout, якщо передано
+        if (typeof onLogout === 'function') {
+          onLogout();
+        }
+        return { response, data };
+      }
+    }
+
     if (!response.ok) {
       console.warn('⚠️ API Warning: Response not OK', {
         status: response.status,
         data
       });
     }
-    
+
     return { response, data };
   } catch (error) {
     logError(method, endpoint, error);
@@ -98,11 +114,12 @@ const api = {
       return { response, data };
     },
 
-    checkAuth: async () => {
+    checkAuth: async (onLogout) => {
+      // Додаємо onLogout для автоматичного виходу при невдалому refresh
       console.log('api.js checkAuth');
       const { response, data } = await fetchWithLogging('/protected', {
         method: 'GET'
-      });
+      }, true, onLogout);
       console.log('api.js Статус аутентифікації:', response.ok ? 'Авторизовано' : 'Не авторизовано', data);
       return { response, data };
     },
