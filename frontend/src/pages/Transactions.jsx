@@ -32,6 +32,7 @@ function Transactions() {
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] = useState(null);
 
   // loaders are defined below; loadData and effect will be set after them
 
@@ -105,15 +106,16 @@ function Transactions() {
     setIsFormOpen(true);
   };
 
-  const handleDelete = async (transaction) => {
-    if (!window.confirm(`Видалити транзакцію "${transaction.title}"?`)) {
-      return;
-    }
+  const handleDelete = (transaction) => {
+    setTransactionToDelete(transaction);
+  };
 
+  const confirmDelete = async () => {
+    if (!transactionToDelete) return;
     try {
-      const { response } = transaction.type === 'expense' 
-        ? await api.expenses.delete(transaction.id)
-        : await api.incomes.delete(transaction.id);
+      const { response } = transactionToDelete.type === 'expense'
+        ? await api.expenses.delete(transactionToDelete.id)
+        : await api.incomes.delete(transactionToDelete.id);
 
       if (response.ok) {
         loadTransactions();
@@ -123,6 +125,8 @@ function Transactions() {
     } catch (error) {
       console.error('❌ Error deleting transaction:', error);
       alert('Помилка при видаленні транзакції');
+    } finally {
+      setTransactionToDelete(null);
     }
   };
 
@@ -236,6 +240,28 @@ function Transactions() {
               <TransactionList transactions={transactions} onEdit={handleEdit} onDelete={handleDelete} isLoading={isLoading} />
             </Flex>
           </Card>
+
+          <Dialog.Root open={!!transactionToDelete} onOpenChange={(open) => !open && setTransactionToDelete(null)}>
+            <Dialog.Content maxWidth="400px">
+              <Flex direction="column" gap="4">
+                <Dialog.Title asChild>
+                  <Heading size="5">Видалити транзакцію?</Heading>
+                </Dialog.Title>
+                <Text>
+                  Ви дійсно бажаєте видалити транзакцію{' '}
+                  <b>{transactionToDelete?.title}</b>? Цю дію не можна скасувати.
+                </Text>
+                <Flex gap="3" justify="end">
+                  <Button variant="soft" color="gray" onClick={() => setTransactionToDelete(null)}>
+                    Скасувати
+                  </Button>
+                  <Button color="red" onClick={confirmDelete}>
+                    Видалити
+                  </Button>
+                </Flex>
+              </Flex>
+            </Dialog.Content>
+          </Dialog.Root>
         </Flex>
       </Container>
     </Section>

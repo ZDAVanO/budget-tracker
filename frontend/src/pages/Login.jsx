@@ -4,14 +4,11 @@ import {
   Button,
   Callout,
   Card,
-  Container,
-  Flex,
   Heading,
-  Section,
   Text,
   TextField,
 } from '@radix-ui/themes';
-import { LockClosedIcon, CheckCircledIcon } from '@radix-ui/react-icons';
+import { LockClosedIcon } from '@radix-ui/react-icons';
 import api from '../services/api';
 
 function Login({ onLoginSuccess }) {
@@ -44,35 +41,35 @@ function Login({ onLoginSuccess }) {
         navigate('/dashboard');
       } else {
         console.warn('⚠️ Login: Помилка входу', data);
-        setError(data?.msg || 'Невірний логін або пароль');
+        setError(data?.msg || 'Invalid username or password');
       }
     } catch (err) {
       console.error('❌ Login: Виняток при вході', err);
-      setError('Помилка з\'єднання з сервером');
+      setError('Failed to connect to server');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <Section size="3">
-      <Container size="2">
-        <Flex align="center" justify="center" style={{ minHeight: '70vh' }}>
-          <Card size="4" variant="surface" style={{ width: '100%' }}>
-            <Flex direction="column" gap="5">
-              <Flex direction="column" gap="2" align="center">
+    <section className="py-12">
+      <div className="max-w-md mx-auto px-4">
+        <div className="flex items-center justify-center min-h-[70vh]">
+          <Card size="4" variant="surface" >
+            <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-2 items-center">
                 <LockClosedIcon width={24} height={24} />
-                <Heading size="6">Вхід до Budget Tracker</Heading>
+                <Heading size="6">Sign in to Budget Tracker</Heading>
                 <Text color="gray" size="3">
-                  Введіть облікові дані, щоб продовжити роботу.
+                  Enter your credentials to continue.
                 </Text>
-              </Flex>
+              </div>
 
               <form onSubmit={handleSubmit}>
-                <Flex direction="column" gap="4">
-                  <Flex direction="column" gap="2">
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-2">
                     <Text as="label" htmlFor="username">
-                      Ім'я користувача
+                      Username
                     </Text>
                     <TextField.Root
                       id="username"
@@ -82,13 +79,13 @@ function Login({ onLoginSuccess }) {
                       required
                       disabled={isLoading}
                       autoComplete="username"
-                      placeholder="Введіть ім'я користувача"
+                      placeholder="Enter your username"
                     />
-                  </Flex>
+                  </div>
 
-                  <Flex direction="column" gap="2">
+                  <div className="flex flex-col gap-2">
                     <Text as="label" htmlFor="password">
-                      Пароль
+                      Password
                     </Text>
                     <TextField.Root
                       type="password"
@@ -101,7 +98,7 @@ function Login({ onLoginSuccess }) {
                       autoComplete="current-password"
                       placeholder="********"
                     />
-                  </Flex>
+                  </div>
 
                   {error && (
                     <Callout.Root color="red" variant="surface">
@@ -110,33 +107,24 @@ function Login({ onLoginSuccess }) {
                   )}
 
                   <Button type="submit" size="3" loading={isLoading}>
-                    {isLoading ? 'Вхід...' : 'Увійти'}
+                    {isLoading ? 'Signing in...' : 'Sign In'}
                   </Button>
-                </Flex>
+                </div>
               </form>
 
-              <Flex direction="column" gap="2" align="center">
+              <div className="flex flex-row gap-2 items-center justify-center">
                 <Text size="2" color="gray">
-                  Ще не маєте акаунту?
+                  Don't have an account?
                 </Text>
                 <Button asChild variant="soft" size="2">
-                  <Link to="/register">Зареєструватися</Link>
+                  <Link to="/register">Register</Link>
                 </Button>
-              </Flex>
-
-              <Callout.Root color="mint" variant="soft">
-                <Callout.Icon>
-                  <CheckCircledIcon />
-                </Callout.Icon>
-                <Callout.Text>
-                  Ваші дані захищено, а доступ можна отримати в будь-який момент.
-                </Callout.Text>
-              </Callout.Root>
-            </Flex>
+              </div>
+            </div>
           </Card>
-        </Flex>
-      </Container>
-    </Section>
+        </div>
+      </div>
+    </section>
   );
 }
 

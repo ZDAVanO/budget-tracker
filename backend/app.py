@@ -46,7 +46,7 @@ app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=7)
 
 
 # CORS(app)  # Allows all domains (for development)
-CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
+CORS(app, supports_credentials=True, origins=["http://localhost:3000", "http://localhost:5173"])
 
 db.init_app(app)
 jwt = JWTManager(app)

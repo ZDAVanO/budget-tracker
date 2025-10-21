@@ -4,10 +4,7 @@ import {
   Button,
   Callout,
   Card,
-  Container,
-  Flex,
   Heading,
-  Section,
   Text,
   TextField,
 } from '@radix-ui/themes';
@@ -40,13 +37,13 @@ function Register() {
 
     if (formData.password !== formData.confirmPassword) {
       console.warn('⚠️ Register: Паролі не співпадають');
-      setError('Паролі не співпадають');
+      setError('Passwords do not match');
       return;
     }
 
     if (formData.password.length < 6) {
       console.warn('⚠️ Register: Пароль занадто короткий');
-      setError('Пароль має містити мінімум 6 символів');
+      setError('Password must be at least 6 characters');
       return;
     }
 
@@ -57,7 +54,7 @@ function Register() {
 
       if (response.ok) {
         console.log('✅ Register: Реєстрація успішна');
-        setSuccess('Реєстрація успішна! Перенаправлення на сторінку входу...');
+        setSuccess('Registration successful! Redirecting to login page...');
         setFormData({ username: '', email: '', password: '', confirmPassword: '' });
 
         setTimeout(() => {
@@ -66,35 +63,35 @@ function Register() {
         }, 2000);
       } else {
         console.warn('⚠️ Register: Помилка реєстрації', data);
-        setError(data?.msg || 'Помилка реєстрації');
+        setError(data?.msg || 'Registration error');
       }
     } catch (err) {
       console.error('❌ Register: Виняток при реєстрації', err);
-      setError('Помилка з\'єднання з сервером');
+      setError('Server connection error');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <Section size="3">
-      <Container size="2">
-        <Flex align="center" justify="center" style={{ minHeight: '80vh' }}>
-          <Card size="4" variant="surface" style={{ width: '100%' }}>
-            <Flex direction="column" gap="5">
-              <Flex direction="column" gap="2" align="center">
+    <section className="py-12">
+      <div className="max-w-md mx-auto px-4">
+        <div className="flex items-center justify-center min-h-[80vh]">
+          <Card size="4" variant="surface">
+            <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-2 items-center">
                 <PersonIcon width={24} height={24} />
-                <Heading size="6">Створіть новий акаунт</Heading>
-                <Text color="gray" size="3">
-                  Заповніть форму, щоб розпочати керування своїми фінансами.
+                <Heading size="6">Create a new account</Heading>
+                <Text color="gray" size="3" className="text-center">
+                  Fill out the form to start managing your finances.
                 </Text>
-              </Flex>
+              </div>
 
               <form onSubmit={handleSubmit}>
-                <Flex direction="column" gap="4">
-                  <Flex direction="column" gap="2">
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-2">
                     <Text as="label" htmlFor="username">
-                      Ім'я користувача
+                      Username
                     </Text>
                     <TextField.Root
                       id="username"
@@ -106,9 +103,9 @@ function Register() {
                       autoComplete="username"
                       placeholder="finance_pro"
                     />
-                  </Flex>
+                  </div>
 
-                  <Flex direction="column" gap="2">
+                  <div className="flex flex-col gap-2">
                     <Text as="label" htmlFor="email">
                       Email
                     </Text>
@@ -123,11 +120,11 @@ function Register() {
                       autoComplete="email"
                       placeholder="you@example.com"
                     />
-                  </Flex>
+                  </div>
 
-                  <Flex direction="column" gap="2">
+                  <div className="flex flex-col gap-2">
                     <Text as="label" htmlFor="password">
-                      Пароль
+                      Password
                     </Text>
                     <TextField.Root
                       type="password"
@@ -141,11 +138,11 @@ function Register() {
                       placeholder="********"
                       minLength={6}
                     />
-                  </Flex>
+                  </div>
 
-                  <Flex direction="column" gap="2">
+                  <div className="flex flex-col gap-2">
                     <Text as="label" htmlFor="confirmPassword">
-                      Підтвердьте пароль
+                      Confirm password
                     </Text>
                     <TextField.Root
                       type="password"
@@ -159,7 +156,7 @@ function Register() {
                       placeholder="********"
                       minLength={6}
                     />
-                  </Flex>
+                  </div>
 
                   {error && (
                     <Callout.Root color="red" variant="surface">
@@ -177,24 +174,24 @@ function Register() {
                   )}
 
                   <Button type="submit" size="3" loading={isLoading}>
-                    {isLoading ? 'Реєстрація...' : 'Зареєструватися'}
+                    {isLoading ? 'Registering...' : 'Register'}
                   </Button>
-                </Flex>
+                </div>
               </form>
 
-              <Flex direction="column" gap="2" align="center">
+              <div className="flex flex-row gap-2 items-center justify-center">
                 <Text size="2" color="gray">
-                  Вже маєте акаунт?
+                  Already have an account?
                 </Text>
                 <Button asChild variant="soft" size="2">
-                  <Link to="/login">Увійти</Link>
+                  <Link to="/login">Login</Link>
                 </Button>
-              </Flex>
-            </Flex>
+              </div>
+            </div>
           </Card>
-        </Flex>
-      </Container>
-    </Section>
+        </div>
+      </div>
+    </section>
   );
 }
 

@@ -1,6 +1,7 @@
+import './styles/App.css'
 
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import {
   Box,
@@ -15,8 +16,8 @@ import {
 } from '@radix-ui/themes';
 import { ArrowLeftIcon } from '@radix-ui/react-icons';
 
-import Header from './components/header/Header.js';
-import Footer from './components/footer/Footer.js';
+import Header from './components/Header.jsx';
+import Footer from './components/Footer.jsx';
 
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -24,78 +25,94 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
 import Categories from './pages/Categories';
-import Wallets from './pages/Wallets';
+import Wallets from './pages/Wallets.jsx';
+import NotFound from './pages/NotFound';
+
+
 
 const RouteLoader = ({ message }) => (
-  <Section size="3">
-    <Container size="3">
-      <Flex align="center" justify="center" direction="column" gap="3" style={{ minHeight: '55vh' }}>
+  <section className="">
+    <div className="max-w-lg mx-auto">
+      <div className="flex flex-col items-center justify-center gap-3 min-h-screen">
         <Spinner size="3" />
         <Heading size="6">{message}</Heading>
-        <Text color="gray">Будь ласка, зачекайте...</Text>
-      </Flex>
-    </Container>
-  </Section>
+        <Text color="gray">Please wait...</Text>
+      </div>
+    </div>
+  </section>
 );
 
-// Компонент для публічних роутів (доступні тільки неавторизованим)
+// Component for public routes (available only to unauthenticated users)
 function PublicRoute({ children }) {
   const { isLoggedIn, isLoading } = useAuth();
 
   console.log('🌐 PublicRoute:', { isLoggedIn, isLoading });
 
   if (isLoading) {
-    console.log('⏳ PublicRoute: Завантаження...');
-    return <RouteLoader message="Перевірка доступу" />;
+    console.log('⏳ PublicRoute: Loading...');
+    return <RouteLoader message="Checking access" />;
   }
 
   if (isLoggedIn) {
-    console.log('🔐 PublicRoute: Вже авторизовано, перенаправлення на /dashboard');
+    console.log('🔐 PublicRoute: Already authenticated, redirecting to /dashboard');
     return <Navigate to="/dashboard" replace />;
   }
 
-  console.log('✅ PublicRoute: Доступ дозволено');
+  console.log('✅ PublicRoute: Access allowed');
   return children;
 }
 
-// Компонент для захищених роутів
+// Component for protected routes
 function ProtectedRoute({ children }) {
   const { isLoggedIn, isLoading } = useAuth();
 
   console.log('🔒 ProtectedRoute:', { isLoggedIn, isLoading });
 
   if (isLoading) {
-    console.log('⏳ ProtectedRoute: Завантаження...');
-    return <RouteLoader message="Перевірка автентифікації" />;
+    console.log('⏳ ProtectedRoute: Loading...');
+    return <RouteLoader message="Verifying authentication" />;
   }
 
   if (!isLoggedIn) {
-    console.log('🚫 ProtectedRoute: Не авторизовано, перенаправлення на /login');
+    console.log('🚫 ProtectedRoute: Not authenticated, redirecting to /login');
     return <Navigate to="/login" replace />;
   }
 
-  console.log('✅ ProtectedRoute: Доступ дозволено');
+  console.log('✅ ProtectedRoute: Access granted');
   return children;
 }
 
+import { useLocation } from 'react-router-dom';
+
 function AppContent() {
   const { isLoggedIn, user, logout, login, isLoading } = useAuth();
+  const location = useLocation();
 
   console.log('🎨 AppContent render:', { isLoggedIn, user, isLoading });
 
   if (isLoading) {
-    console.log('⏳ AppContent: Перевірка аутентифікації...');
-    return <RouteLoader message="Завантаження застосунку" />;
+    console.log('⏳ AppContent: Checking authentication...');
+    return <RouteLoader message="Loading application" />;
   }
 
+  // Hide Header/Footer on /login and /register
+  const hideHeaderFooter = location.pathname === '/login' || location.pathname === '/register';
+
   return (
-    <Flex direction="column" style={{ minHeight: '100vh' }}>
+    <>
+      {/* {!hideHeaderFooter && <Header isLoggedIn={isLoggedIn} user={user} onLogout={logout} />} */}
       <Header isLoggedIn={isLoggedIn} user={user} onLogout={logout} />
 
-      <Box as="main" flexGrow={1} pb={{ initial: '6', md: '8' }}>
+
+      <div className="grow">
         <Routes>
-          {/* Головна сторінка */}
-          <Route path="/" element={<Home />} />
+          {/* Головна сторінка: редірект якщо залогінений */}
+          <Route
+            path="/"
+            element={
+              isLoggedIn ? <Navigate to="/dashboard" replace /> : <Home />
+            }
+          />
 
           {/* Публічні роути (тільки для неавторизованих) */}
           <Route
@@ -153,38 +170,12 @@ function AppContent() {
           />
 
           {/* 404 - сторінка не знайдена */}
-          <Route
-            path="*"
-            element={
-              <Section size="3">
-                <Container size="2">
-                  <Callout.Root>
-                    <Callout.Icon>
-                      <ArrowLeftIcon />
-                    </Callout.Icon>
-                    <Callout.Text>
-                      <Flex direction="column" gap="3">
-                        <Heading size="7">404 • Сторінку не знайдено</Heading>
-                        <Text color="gray" size="3">
-                          Здається, ви опинилися на невідомій сторінці. Спробуйте повернутися на головну.
-                        </Text>
-                        <Flex>
-                          <Button asChild>
-                            <a href="/">На головну</a>
-                          </Button>
-                        </Flex>
-                      </Flex>
-                    </Callout.Text>
-                  </Callout.Root>
-                </Container>
-              </Section>
-            }
-          />
+          <Route path="*" element={<NotFound />} />
         </Routes>
-      </Box>
+      </div>
 
-      <Footer />
-    </Flex>
+      {!hideHeaderFooter && <Footer />}
+    </>
   );
 }
 
@@ -192,14 +183,15 @@ function App() {
   console.log('🎨 App component render');
 
   return (
-    <Flex direction="column" style={{ minHeight: '100vh' }}>
-      <Router>
+    <div className="min-h-screen flex flex-col">
+      <BrowserRouter>
         <AuthProvider>
           <AppContent />
         </AuthProvider>
-      </Router>
-    </Flex>
+      </BrowserRouter>
+    </div>
   );
 }
 
 export default App;
+

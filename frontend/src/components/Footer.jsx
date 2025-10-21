@@ -1,7 +1,7 @@
 import React from 'react';
-import { Box, Container, Flex, Link as RadixLink, Text } from '@radix-ui/themes';
+import { Link as RadixLink, Text, Separator } from '@radix-ui/themes';
 import { GitHubLogoIcon } from '@radix-ui/react-icons';
-import './style.css';
+
 
 const footerLinks = [
   { href: 'https://github.com', label: 'GitHub', icon: <GitHubLogoIcon /> },
@@ -10,13 +10,15 @@ const footerLinks = [
 function Footer() {
   return (
     <footer>
-      <Box className="footer" py={{ initial: '5', md: '6' }}>
-        <Container size="3">
-          <Flex align="center" justify="between" wrap="wrap" gap="3">
+      <Separator orientation="horizontal" size="4" />
+      <div className="py-5 md:py-6">
+        <div className="max-w-5xl mx-auto px-4">
+          <div className="flex items-center justify-center gap-4 flex-wrap">
             <Text size="3" color="gray">
-              &copy; 2025 Budget Tracker. Всі права захищено.
+              &copy; 2025 Budget Tracker.
             </Text>
-            <Flex align="center" gap="3">
+            <Separator orientation="vertical" className="h-6" />
+            <div className="flex items-center gap-3">
               {footerLinks.map((link) => (
                 <RadixLink
                   key={link.label}
@@ -26,16 +28,16 @@ function Footer() {
                   size="2"
                   color="gray"
                 >
-                  <Flex align="center" gap="2">
+                  <span className="flex items-center gap-2">
                     {link.icon}
                     {link.label}
-                  </Flex>
+                  </span>
                 </RadixLink>
               ))}
-            </Flex>
-          </Flex>
-        </Container>
-      </Box>
+            </div>
+          </div>
+        </div>
+      </div>
     </footer>
   );
 }

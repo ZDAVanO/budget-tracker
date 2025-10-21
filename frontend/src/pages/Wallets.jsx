@@ -32,6 +32,7 @@ function Wallets() {
     currency: 'UAH',
   });
   const [error, setError] = useState('');
+  const [walletToDelete, setWalletToDelete] = useState(null);
 
   useEffect(() => {
     loadWallets();
@@ -101,13 +102,14 @@ function Wallets() {
     setIsFormOpen(true);
   };
 
-  const handleDelete = async (wallet) => {
-    if (!window.confirm(`Видалити гаманець "${wallet.name}"?`)) {
-      return;
-    }
+  const handleDelete = (wallet) => {
+    setWalletToDelete(wallet);
+  };
 
+  const confirmDelete = async () => {
+    if (!walletToDelete) return;
     try {
-      const { response, data } = await api.wallets.delete(wallet.id);
+      const { response, data } = await api.wallets.delete(walletToDelete.id);
       if (response.ok) {
         loadWallets();
       } else {
@@ -116,6 +118,8 @@ function Wallets() {
     } catch (deleteError) {
       console.error('Error deleting wallet:', deleteError);
       alert('Помилка при видаленні гаманця');
+    } finally {
+      setWalletToDelete(null);
     }
   };
 
@@ -294,6 +298,28 @@ function Wallets() {
               </Badge>
             </Flex>
           </Card>
+
+          <Dialog.Root open={!!walletToDelete} onOpenChange={(open) => !open && setWalletToDelete(null)}>
+            <Dialog.Content maxWidth="400px">
+              <Flex direction="column" gap="4">
+                <Dialog.Title asChild>
+                  <Heading size="5">Видалити гаманець?</Heading>
+                </Dialog.Title>
+                <Text>
+                  Ви дійсно бажаєте видалити гаманець{' '}
+                  <b>{walletToDelete?.name}</b>? Цю дію не можна скасувати.
+                </Text>
+                <Flex gap="3" justify="end">
+                  <Button variant="soft" color="gray" onClick={() => setWalletToDelete(null)}>
+                    Скасувати
+                  </Button>
+                  <Button color="red" onClick={confirmDelete}>
+                    Видалити
+                  </Button>
+                </Flex>
+              </Flex>
+            </Dialog.Content>
+          </Dialog.Root>
 
           {isLoading ? (
             <Flex align="center" justify="center" style={{ minHeight: 200 }}>

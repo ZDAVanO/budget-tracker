@@ -26,6 +26,7 @@ function Categories() {
   const [editingCategory, setEditingCategory] = useState(null);
   const [formData, setFormData] = useState({ name: '', description: '', icon: '📌', type: 'both' });
   const [error, setError] = useState('');
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
 
   useEffect(() => {
     loadCategories();
@@ -89,13 +90,14 @@ function Categories() {
     setIsFormOpen(true);
   };
 
-  const handleDelete = async (category) => {
-    if (!window.confirm(`Видалити категорію "${category.name}"?`)) {
-      return;
-    }
+  const handleDelete = (category) => {
+    setCategoryToDelete(category);
+  };
 
+  const confirmDelete = async () => {
+    if (!categoryToDelete) return;
     try {
-      const { response, data } = await api.categories.delete(category.id);
+      const { response, data } = await api.categories.delete(categoryToDelete.id);
       if (response.ok) {
         loadCategories();
       } else {
@@ -106,6 +108,8 @@ function Categories() {
     } catch (deleteError) {
       console.error('Error deleting category:', deleteError);
       alert('Помилка при видаленні категорії');
+    } finally {
+      setCategoryToDelete(null);
     }
   };
 
@@ -252,6 +256,28 @@ function Categories() {
               </Dialog.Content>
             </Dialog.Root>
           </Flex>
+
+          <Dialog.Root open={!!categoryToDelete} onOpenChange={(open) => !open && setCategoryToDelete(null)}>
+            <Dialog.Content maxWidth="400px">
+              <Flex direction="column" gap="4">
+                <Dialog.Title asChild>
+                  <Heading size="5">Видалити категорію?</Heading>
+                </Dialog.Title>
+                <Text>
+                  Ви дійсно бажаєте видалити категорію{' '}
+                  <b>{categoryToDelete?.name}</b>? Цю дію не можна скасувати.
+                </Text>
+                <Flex gap="3" justify="end">
+                  <Button variant="soft" color="gray" onClick={() => setCategoryToDelete(null)}>
+                    Скасувати
+                  </Button>
+                  <Button color="red" onClick={confirmDelete}>
+                    Видалити
+                  </Button>
+                </Flex>
+              </Flex>
+            </Dialog.Content>
+          </Dialog.Root>
 
           {isLoading ? (
             <Flex align="center" justify="center" style={{ minHeight: 200 }}>
