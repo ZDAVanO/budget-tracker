@@ -12,7 +12,7 @@ import {
   TextField,
 } from '@radix-ui/themes';
 import { Pencil2Icon, PlusCircledIcon } from '@radix-ui/react-icons';
-import api from '../../services/api';
+import api from '../services/api';
 
 function TransactionForm({ onSuccess, editData = null, onCancel, showHeading = true }) {
   const [formData, setFormData] = useState({
@@ -38,7 +38,7 @@ function TransactionForm({ onSuccess, editData = null, onCancel, showHeading = t
         setCategories(data || []);
       }
     } catch (err) {
-      console.error('Помилка завантаження категорій:', err);
+      console.error('Error loading categories:', err);
     }
   };
 
@@ -53,7 +53,7 @@ function TransactionForm({ onSuccess, editData = null, onCancel, showHeading = t
         }
       }
     } catch (err) {
-      console.error('Помилка завантаження гаманців:', err);
+      console.error('Error loading wallets:', err);
     }
   };
 
@@ -122,11 +122,11 @@ function TransactionForm({ onSuccess, editData = null, onCancel, showHeading = t
           onSuccess();
         }
       } else {
-        setError(result.data?.msg || 'Помилка збереження');
+        setError(result.data?.msg || 'Error saving');
       }
     } catch (err) {
-      console.error('Помилка:', err);
-      setError('Помилка з\'єднання з сервером');
+      console.error('Error:', err);
+      setError('Server connection error');
     } finally {
       setIsLoading(false);
     }
@@ -137,18 +137,19 @@ function TransactionForm({ onSuccess, editData = null, onCancel, showHeading = t
   return (
     <form onSubmit={handleSubmit}>
       <Flex direction="column" gap="5">
+        
         {(showHeading || !editData) && (
           <Flex align="center" justify={showHeading ? 'between' : 'start'} wrap="wrap" gap="3">
             {showHeading && (
               <Flex align="center" gap="2">
                 {editData ? <Pencil2Icon /> : <PlusCircledIcon />}
-                <Heading size="5">{editData ? 'Редагувати транзакцію' : 'Нова транзакція'}</Heading>
+                <Heading size="5">{editData ? 'Edit transaction' : 'New transaction'}</Heading>
               </Flex>
             )}
             {!editData && (
               <SegmentedControl.Root value={formData.type} onValueChange={(value) => updateField('type', value)}>
-                <SegmentedControl.Item value="expense">💸 Витрата</SegmentedControl.Item>
-                <SegmentedControl.Item value="income">💰 Дохід</SegmentedControl.Item>
+                <SegmentedControl.Item value="expense">💸 Expense</SegmentedControl.Item>
+                <SegmentedControl.Item value="income">💰 Income</SegmentedControl.Item>
               </SegmentedControl.Root>
             )}
           </Flex>
@@ -157,7 +158,7 @@ function TransactionForm({ onSuccess, editData = null, onCancel, showHeading = t
         <Grid columns={{ initial: '1', md: '2' }} gap="4">
           <Flex direction="column" gap="2">
             <Text as="label" htmlFor="amount">
-              Сума
+              Amount
             </Text>
             <TextField.Root
               id="amount"
@@ -175,7 +176,7 @@ function TransactionForm({ onSuccess, editData = null, onCancel, showHeading = t
 
           <Flex direction="column" gap="2">
             <Text as="label" htmlFor="date">
-              Дата
+              Date
             </Text>
             <TextField.Root
               id="date"
@@ -191,7 +192,7 @@ function TransactionForm({ onSuccess, editData = null, onCancel, showHeading = t
 
         <Flex direction="column" gap="2">
           <Text as="label" htmlFor="title">
-            Назва
+            Title
           </Text>
           <TextField.Root
             id="title"
@@ -200,21 +201,21 @@ function TransactionForm({ onSuccess, editData = null, onCancel, showHeading = t
             value={formData.title}
             onChange={(event) => updateField('title', event.target.value)}
             disabled={isLoading}
-            placeholder={isExpense ? 'Наприклад: Покупки в супермаркеті' : 'Наприклад: Зарплата'}
+            placeholder={isExpense ? 'E.g.: Grocery shopping' : 'E.g.: Salary'}
           />
         </Flex>
 
         <Grid columns={{ initial: '1', md: '2' }} gap="4">
           <Flex direction="column" gap="2">
-            <Text>Категорія</Text>
+            <Text>Category</Text>
             <Select.Root
               value={formData.category_id || 'none'}
               onValueChange={(value) => updateField('category_id', value === 'none' ? '' : value)}
               disabled={isLoading}
             >
-              <Select.Trigger placeholder="Без категорії" />
+              <Select.Trigger placeholder="No category" />
               <Select.Content>
-                <Select.Item value="none">Без категорії</Select.Item>
+                <Select.Item value="none">No category</Select.Item>
                 {filteredCategories.map((cat) => (
                   <Select.Item key={cat.id} value={cat.id?.toString()}>
                     {cat.icon} {cat.name}
@@ -225,15 +226,15 @@ function TransactionForm({ onSuccess, editData = null, onCancel, showHeading = t
           </Flex>
 
           <Flex direction="column" gap="2">
-            <Text>Гаманець</Text>
+            <Text>Wallet</Text>
             <Select.Root
               value={formData.wallet_id || 'none'}
               onValueChange={(value) => updateField('wallet_id', value === 'none' ? '' : value)}
               disabled={isLoading}
             >
-              <Select.Trigger placeholder="Без гаманця" />
+              <Select.Trigger placeholder="No wallet" />
               <Select.Content>
-                <Select.Item value="none">Без гаманця</Select.Item>
+                <Select.Item value="none">No wallet</Select.Item>
                 {wallets.map((wallet) => (
                   <Select.Item key={wallet.id} value={wallet.id?.toString()}>
                     {wallet.icon} {wallet.name}
@@ -246,7 +247,7 @@ function TransactionForm({ onSuccess, editData = null, onCancel, showHeading = t
 
         <Flex direction="column" gap="2">
           <Text as="label" htmlFor="description">
-            Опис
+            Description
           </Text>
           <TextArea
             id="description"
@@ -255,7 +256,7 @@ function TransactionForm({ onSuccess, editData = null, onCancel, showHeading = t
             value={formData.description}
             onChange={(event) => updateField('description', event.target.value)}
             disabled={isLoading}
-            placeholder="Додаткова інформація (необов'язково)"
+            placeholder="Additional information (optional)"
           />
         </Flex>
 
@@ -267,11 +268,11 @@ function TransactionForm({ onSuccess, editData = null, onCancel, showHeading = t
 
         <Flex justify="between" gap="3" wrap="wrap">
           <Button type="submit" loading={isLoading}>
-            {editData ? 'Зберегти зміни' : 'Додати транзакцію'}
+            {editData ? 'Save changes' : 'Add transaction'}
           </Button>
           {onCancel && (
             <Button type="button" variant="soft" color="gray" onClick={onCancel} disabled={isLoading}>
-              Скасувати
+              Cancel
             </Button>
           )}
         </Flex>

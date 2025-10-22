@@ -14,9 +14,9 @@ import {
 } from '@radix-ui/themes';
 import { Cross2Icon, MixerHorizontalIcon, PlusCircledIcon } from '@radix-ui/react-icons';
 import api from '../services/api';
-import TransactionFilters from '../components/transactions/TransactionFilters';
-import TransactionForm from '../components/transactions/TransactionForm';
-import TransactionList from '../components/transactions/TransactionList';
+import TransactionFilters from '../components/TransactionFilters';
+import TransactionForm from '../components/TransactionForm';
+import TransactionList from '../components/TransactionList';
 
 function Transactions() {
   const [transactions, setTransactions] = useState([]);
@@ -120,46 +120,46 @@ function Transactions() {
       if (response.ok) {
         loadTransactions();
       } else {
-        alert('Помилка при видаленні транзакції');
+        alert('Error deleting transaction');
       }
     } catch (error) {
       console.error('❌ Error deleting transaction:', error);
-      alert('Помилка при видаленні транзакції');
+      alert('Error deleting transaction');
     } finally {
       setTransactionToDelete(null);
     }
   };
 
-  const stats = transactions.reduce((acc, t) => {
-    if (t.type === 'expense') {
-      acc.totalExpenses += t.amount;
-    } else {
-      acc.totalIncomes += t.amount;
-    }
-    return acc;
-  }, { totalExpenses: 0, totalIncomes: 0 });
+  // const stats = transactions.reduce((acc, t) => {
+  //   if (t.type === 'expense') {
+  //     acc.totalExpenses += t.amount;
+  //   } else {
+  //     acc.totalIncomes += t.amount;
+  //   }
+  //   return acc;
+  // }, { totalExpenses: 0, totalIncomes: 0 });
 
-  const balance = stats.totalIncomes - stats.totalExpenses;
+  // const balance = stats.totalIncomes - stats.totalExpenses;
 
   return (
-    <Section size="3">
+    <Section size="3" className="p-4">
       <Container size="3">
         <Flex direction="column" gap="6">
           <Flex align="center" justify="between" wrap="wrap" gap="3">
             <Flex direction="column" gap="1">
               <Heading as="h1" size="7">
-                Транзакції
+                Transactions
               </Heading>
-              <Text color="gray">Керуйте всіма операціями в одному місці.</Text>
+              <Text color="gray">Manage all your transactions in one place.</Text>
             </Flex>
             <Flex align="center" gap="3">
               <Badge color="mint" variant="soft">
-                {transactions.length} записів
+                {transactions.length} records
               </Badge>
               <Dialog.Root open={isFormOpen} onOpenChange={handleFormOpenChange}>
                 <Dialog.Trigger asChild>
                   <Button onClick={handleCreateClick}>
-                    <PlusCircledIcon /> Додати транзакцію
+                    <PlusCircledIcon /> Add transaction
                   </Button>
                 </Dialog.Trigger>
                 <Dialog.Content maxWidth="520px">
@@ -167,7 +167,7 @@ function Transactions() {
                     <Flex align="center" justify="between">
                       <Dialog.Title asChild>
                         <Heading size="5">
-                          {editingTransaction ? 'Редагувати транзакцію' : 'Нова транзакція'}
+                          {editingTransaction ? 'Edit transaction' : 'New transaction'}
                         </Heading>
                       </Dialog.Title>
                       <Dialog.Close asChild>
@@ -175,7 +175,7 @@ function Transactions() {
                           variant="ghost"
                           color="gray"
                           radius="full"
-                          aria-label="Закрити форму транзакції"
+                          aria-label="Close transaction form"
                         >
                           <Cross2Icon />
                         </IconButton>
@@ -192,71 +192,65 @@ function Transactions() {
               </Dialog.Root>
             </Flex>
           </Flex>
-
-          <Grid columns={{ initial: '1', md: '3' }} gap="4">
-            <Card variant="surface" size="4">
+          {/* <Grid columns={{ initial: '1', md: '3' }} gap="4">
+            <Card variant="surface" size="3">
               <Flex direction="column" gap="2">
-                <Text color="gray">Доходи</Text>
-                <Heading size="6" color="mint">+{stats.totalIncomes.toFixed(2)} грн</Heading>
-                <Text size="2" color="gray">Всі надходження за обраний період</Text>
+                <Text color="gray">Income</Text>
+                <Heading size="6" color="mint">+{stats.totalIncomes.toFixed(2)} UAH</Heading>
+                <Text size="2" color="gray">All income for the selected period</Text>
               </Flex>
             </Card>
-            <Card variant="surface" size="4">
+            <Card variant="surface" size="3">
               <Flex direction="column" gap="2">
-                <Text color="gray">Витрати</Text>
-                <Heading size="6" color="tomato">-{stats.totalExpenses.toFixed(2)} грн</Heading>
-                <Text size="2" color="gray">Фінансові зобов'язання та покупки</Text>
+                <Text color="gray">Expenses</Text>
+                <Heading size="6" color="tomato">-{stats.totalExpenses.toFixed(2)} UAH</Heading>
+                <Text size="2" color="gray">Financial obligations and purchases</Text>
               </Flex>
             </Card>
-            <Card variant="surface" size="4">
+            <Card variant="surface" size="3">
               <Flex direction="column" gap="2">
-                <Text color="gray">Баланс</Text>
+                <Text color="gray">Balance</Text>
                 <Heading size="6" color={balance >= 0 ? 'jade' : 'tomato'}>
-                  {balance >= 0 ? '+' : ''}{balance.toFixed(2)} грн
+                  {balance >= 0 ? '+' : ''}{balance.toFixed(2)} UAH
                 </Heading>
-                <Text size="2" color="gray">Різниця між доходами та витратами</Text>
+                <Text size="2" color="gray">Difference between income and expenses</Text>
               </Flex>
             </Card>
-          </Grid>
+          </Grid> */}
 
-          <Card variant="surface" size="5">
+          <Card variant="surface" size="3">
             <Flex direction="column" gap="4">
               <Flex align="center" justify="between" wrap="wrap" gap="3">
                 <Flex align="center" gap="2">
                   <MixerHorizontalIcon />
-                  <Heading size="4">Фільтри</Heading>
+                  <Heading size="4">Filters</Heading>
                 </Flex>
-                <Text size="2" color="gray">
-                  Використовуйте комбінації для точного пошуку
-                </Text>
               </Flex>
               <TransactionFilters filters={filters} onFilterChange={setFilters} categories={categories} wallets={wallets} />
             </Flex>
           </Card>
-
-          <Card variant="surface" size="5">
+          <Card variant="surface" size="3">
             <Flex direction="column" gap="4">
-              <Heading size="4">Список транзакцій</Heading>
+              <Heading size="4">Transaction list</Heading>
               <TransactionList transactions={transactions} onEdit={handleEdit} onDelete={handleDelete} isLoading={isLoading} />
             </Flex>
           </Card>
-
           <Dialog.Root open={!!transactionToDelete} onOpenChange={(open) => !open && setTransactionToDelete(null)}>
             <Dialog.Content maxWidth="400px">
               <Flex direction="column" gap="4">
                 <Dialog.Title asChild>
-                  <Heading size="5">Видалити транзакцію?</Heading>
+                  <Heading size="5">Delete transaction?</Heading>
                 </Dialog.Title>
                 <Text>
-                  Ви дійсно бажаєте видалити транзакцію{' '}
-                  <b>{transactionToDelete?.title}</b>? Цю дію не можна скасувати.
+                  Are you sure you want to delete the transaction{' '}
+                  <b>{transactionToDelete?.title}</b>? This action cannot be undone.
                 </Text>
                 <Flex gap="3" justify="end">
                   <Button variant="soft" color="gray" onClick={() => setTransactionToDelete(null)}>
-                    Скасувати
+                    Cancel
                   </Button>
                   <Button color="red" onClick={confirmDelete}>
-                    Видалити
+                    Delete
                   </Button>
                 </Flex>
               </Flex>

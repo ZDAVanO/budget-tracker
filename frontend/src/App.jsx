@@ -109,7 +109,7 @@ function AppContent() {
       <div className="md:flex">
         {isLoggedIn && !hideNavs && <SidebarNav />}
 
-        <main className="grow p-4">
+        <main className="grow">
           <Routes>
             <Route
               path="/"

@@ -31,7 +31,7 @@ function Dashboard({ user }) {
       try {
         await Promise.all([loadStatistics(), loadRecentTransactions(), loadWallets()]);
       } catch (err) {
-        console.error('Помилка завантаження даних:', err);
+        console.error('Error loading data:', err);
       } finally {
         setIsLoading(false);
       }
@@ -47,7 +47,7 @@ function Dashboard({ user }) {
         setStatistics(data);
       }
     } catch (err) {
-      console.error('Помилка завантаження статистики:', err);
+      console.error('Error loading statistics:', err);
     }
   };
 
@@ -58,7 +58,7 @@ function Dashboard({ user }) {
         setRecentTransactions((data || []).slice(0, 5));
       }
     } catch (err) {
-      console.error('Помилка завантаження транзакцій:', err);
+      console.error('Error loading transactions:', err);
     }
   };
 
@@ -69,7 +69,7 @@ function Dashboard({ user }) {
         setWallets(data || []);
       }
     } catch (err) {
-      console.error('Помилка завантаження гаманців:', err);
+      console.error('Error loading wallets:', err);
     }
   };
 
@@ -79,63 +79,66 @@ function Dashboard({ user }) {
       maximumFractionDigits: 2,
     }).format(amount);
 
-  const statCards = [
-    {
-      label: 'Витрати',
-      amount: `-${formatAmount(statistics.total_expenses)} ₴`,
-      color: 'tomato',
-      emoji: '💸',
-    },
-    {
-      label: 'Доходи',
-      amount: `+${formatAmount(statistics.total_incomes)} ₴`,
-      color: 'jade',
-      emoji: '💰',
-    },
-    {
-      label: 'Баланс',
-      amount: `${statistics.balance >= 0 ? '+' : ''}${formatAmount(statistics.balance)} ₴`,
-      color: statistics.balance >= 0 ? 'mint' : 'tomato',
-      emoji: '📊',
-    },
-  ];
+
+
+  const stats = recentTransactions.reduce((acc, t) => {
+    if (t.type === 'expense') {
+      acc.totalExpenses += t.amount;
+    } else {
+      acc.totalIncomes += t.amount;
+    }
+    return acc;
+  }, { totalExpenses: 0, totalIncomes: 0 });
+
+  const balance = stats.totalIncomes - stats.totalExpenses;
 
   return (
-    <Section size="3">
+    <Section size="3" className="p-4">
       <Container size="3">
-        <Flex direction="column" gap="6">
+        <Flex direction="column" gap="5">
+          
           <Flex direction="column" gap="2">
             <Heading as="h1" size="7">
-              Привіт, {user}! 👋
+              Hello, {user}! 👋
             </Heading>
             <Text color="gray">
-              Перегляньте фінансовий підсумок, останні транзакції та статус гаманців.
+              View your financial summary, recent transactions, and wallet status.
             </Text>
           </Flex>
 
-          <Grid columns={{ initial: '1', md: '3' }} gap="4">
-            {statCards.map((card) => (
-              <Card key={card.label} size="4" variant="surface">
-                <Flex direction="column" gap="3">
-                  <Badge color={card.color} variant="soft" size="2">
-                    {card.emoji} {card.label}
-                  </Badge>
-                  <Heading size="6">{card.amount}</Heading>
-                  <Text size="2" color="gray">
-                    Оновлено {new Date().toLocaleDateString('uk-UA')}
-                  </Text>
-                </Flex>
-              </Card>
-            ))}
+          <Grid columns={{ initial: '1', md: '3' }} gap="5">
+            <Card variant="surface" size="3">
+              <Flex direction="column" gap="2">
+                <Text color="gray">Income</Text>
+                <Heading size="6" color="mint">+{stats.totalIncomes.toFixed(2)} UAH</Heading>
+
+              </Flex>
+            </Card>
+            <Card variant="surface" size="3">
+              <Flex direction="column" gap="2">
+                <Text color="gray">Expenses</Text>
+                <Heading size="6" color="tomato">-{stats.totalExpenses.toFixed(2)} UAH</Heading>
+
+              </Flex>
+            </Card>
+            <Card variant="surface" size="3">
+              <Flex direction="column" gap="2">
+                <Text color="gray">Balance</Text>
+                <Heading size="6" color={balance >= 0 ? 'jade' : 'tomato'}>
+                  {balance >= 0 ? '+' : ''}{balance.toFixed(2)} UAH
+                </Heading>
+
+              </Flex>
+            </Card>
           </Grid>
 
           <Grid columns={{ initial: '1', md: '2' }} gap="5">
-            <Card size="4" variant="surface">
+            <Card size="3" variant="surface">
               <Flex direction="column" gap="4">
                 <Flex align="center" justify="between">
-                  <Heading size="5">Останні транзакції</Heading>
+                  <Heading size="5">Recent Transactions</Heading>
                   <Button asChild variant="soft" size="2">
-                    <Link to="/transactions">Переглянути всі</Link>
+                    <Link to="/transactions">View All</Link>
                   </Button>
                 </Flex>
 
@@ -149,22 +152,22 @@ function Dashboard({ user }) {
                       <LightningBoltIcon />
                     </Callout.Icon>
                     <Callout.Text>
-                      <Text color="gray">Поки що немає транзакцій. Створіть першу прямо зараз.</Text>
+                      <Text color="gray">No transactions yet. Create your first one now.</Text>
                     </Callout.Text>
                   </Callout.Root>
                 ) : (
                   <Table.Root>
                     <Table.Header>
                       <Table.Row>
-                        <Table.ColumnHeaderCell>Категорія</Table.ColumnHeaderCell>
-                        <Table.ColumnHeaderCell>Опис</Table.ColumnHeaderCell>
-                        <Table.ColumnHeaderCell align="end">Сума</Table.ColumnHeaderCell>
+                        <Table.ColumnHeaderCell>Category</Table.ColumnHeaderCell>
+                        <Table.ColumnHeaderCell>Description</Table.ColumnHeaderCell>
+                        <Table.ColumnHeaderCell align="end">Amount</Table.ColumnHeaderCell>
                       </Table.Row>
                     </Table.Header>
                     <Table.Body>
                       {recentTransactions.map((transaction) => (
                         <Table.Row key={`${transaction.type}-${transaction.id}`}>
-                          <Table.Cell>{transaction.category?.name || 'Без категорії'}</Table.Cell>
+                          <Table.Cell>{transaction.category?.name || 'No category'}</Table.Cell>
                           <Table.Cell>{transaction.description || transaction.title}</Table.Cell>
                           <Table.Cell align="end">
                             <Text weight="bold" color={transaction.type === 'expense' ? 'tomato' : 'jade'}>
@@ -180,47 +183,48 @@ function Dashboard({ user }) {
               </Flex>
             </Card>
 
-            <Card size="4" variant="classic">
+            <Card size="3" variant="classic">
               <Flex direction="column" gap="4">
                 <Flex align="center" justify="between">
-                  <Heading size="5">Гаманці</Heading>
+                  <Heading size="5">Wallets</Heading>
                   <Button asChild variant="soft" size="2">
-                    <Link to="/wallets">Керувати</Link>
+                    <Link to="/wallets">Manage</Link>
                   </Button>
                 </Flex>
 
-                {wallets.length === 0 ? (
+                {isLoading ? (
+                  <Flex align="center" justify="center" style={{ minHeight: 160 }}>
+                    <Spinner />
+                  </Flex>
+                ) :wallets.length === 0 ? (
                   <Callout.Root>
                     <Callout.Text>
                       <Text color="gray">
-                        Немає гаманців. <Link to="/wallets">Додайте перший гаманець</Link>
+                        No wallets. <Link to="/wallets">Add your first wallet</Link>
                       </Text>
                     </Callout.Text>
                   </Callout.Root>
                 ) : (
                   <Flex direction="column" gap="3">
                     {wallets.slice(0, 4).map((wallet) => (
-                      <Flex
+                      <Card
                         key={wallet.id}
-                        justify="between"
-                        align="center"
-                        style={{
-                          padding: 'var(--space-3) var(--space-4)',
-                          borderRadius: 'var(--radius-5)',
-                          backgroundColor: 'color-mix(in srgb, var(--accent-a3) 20%, transparent)',
-                        }}
+                        variant="surface"
+
                       >
-                        <Flex align="center" gap="3">
-                          <Text size="4">{wallet.icon}</Text>
-                          <Flex direction="column" gap="1">
-                            <Text weight="medium">{wallet.name}</Text>
-                            <Text size="2" color="gray">
-                              {wallet.description || 'Без опису'}
-                            </Text>
+                        <Flex justify="between" align="center">
+                          <Flex align="center" gap="3">
+                            <Text size="4">{wallet.icon}</Text>
+                            <Flex direction="column" gap="1">
+                              <Text weight="medium">{wallet.name}</Text>
+                              <Text size="2" color="gray">
+                                {wallet.description || 'No description'}
+                              </Text>
+                            </Flex>
                           </Flex>
+                          <Text weight="bold">{formatAmount(wallet.balance || 0)} ₴</Text>
                         </Flex>
-                        <Text weight="bold">{formatAmount(wallet.balance || 0)} ₴</Text>
-                      </Flex>
+                      </Card>
                     ))}
                   </Flex>
                 )}
@@ -228,21 +232,6 @@ function Dashboard({ user }) {
             </Card>
           </Grid>
 
-          <Card variant="surface" size="4">
-            <Flex align="center" justify="between" wrap="wrap" gap="4">
-              <Flex direction="column" gap="2">
-                <Heading size="5">Прискорте свою фінансову мету</Heading>
-                <Text color="gray">
-                  Керуйте транзакціями, категоріями та гаманцями з єдиного місця.
-                </Text>
-              </Flex>
-              <Button asChild size="3">
-                <Link to="/transactions">
-                  Перейти до транзакцій <ArrowRightIcon />
-                </Link>
-              </Button>
-            </Flex>
-          </Card>
         </Flex>
       </Container>
     </Section>

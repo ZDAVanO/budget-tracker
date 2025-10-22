@@ -15,6 +15,7 @@ import {
   Text,
   TextArea,
   TextField,
+  Spinner,
 } from '@radix-ui/themes';
 import { Pencil2Icon, TrashIcon, PlusCircledIcon, Cross2Icon } from '@radix-ui/react-icons';
 import api from '../services/api';
@@ -58,13 +59,13 @@ function Categories() {
       if (editingCategory) {
         const { response, data } = await api.categories.update(editingCategory.id, formData);
         if (!response.ok) {
-          setError(data?.msg || 'Помилка оновлення категорії');
+          setError(data?.msg || 'Error updating category');
           return;
         }
       } else {
         const { response, data } = await api.categories.create(formData);
         if (!response.ok) {
-          setError(data?.msg || 'Помилка створення категорії');
+          setError(data?.msg || 'Error creating category');
           return;
         }
       }
@@ -75,7 +76,7 @@ function Categories() {
       loadCategories();
     } catch (saveError) {
       console.error('Error saving category:', saveError);
-      setError('Помилка збереження');
+      setError('Error saving');
     }
   };
 
@@ -101,13 +102,13 @@ function Categories() {
       if (response.ok) {
         loadCategories();
       } else {
-        const errorMsg = data?.msg || 'Помилка при видаленні категорії';
+        const errorMsg = data?.msg || 'Error deleting category';
         alert(errorMsg);
         console.error('Delete error:', { status: response.status, data });
       }
     } catch (deleteError) {
       console.error('Error deleting category:', deleteError);
-      alert('Помилка при видаленні категорії');
+      alert('Error deleting category');
     } finally {
       setCategoryToDelete(null);
     }
@@ -136,39 +137,40 @@ function Categories() {
     }
   };
 
-  const typeBadge = (type) => {
+    const typeBadge = (type) => {
+    const style = { width: 'fit-content', paddingRight: 8 };
     if (type === 'income') {
-      return <Badge color="mint">Доходи</Badge>;
+      return <Badge color="mint" style={style}>Income</Badge>;
     }
     if (type === 'expense') {
-      return <Badge color="tomato">Витрати</Badge>;
+      return <Badge color="tomato" style={style}>Expense</Badge>;
     }
-    return <Badge color="gray">Для всіх</Badge>;
+    return <Badge color="gray" style={style}>For all</Badge>;
   };
 
   return (
-    <Section size="3">
+    <Section size="3" className="p-4">
       <Container size="3">
         <Flex direction="column" gap="6">
           <Flex align="center" justify="between" wrap="wrap" gap="3">
             <Flex direction="column" gap="1">
               <Heading as="h1" size="7">
-                Категорії
+                Categories
               </Heading>
-              <Text color="gray">Класифікуйте витрати та доходи для точного аналізу.</Text>
+              <Text color="gray">Classify expenses and income for accurate analysis.</Text>
             </Flex>
             <Dialog.Root open={isFormOpen} onOpenChange={handleFormOpenChange}>
               <Dialog.Trigger asChild>
                 <Button onClick={handleCreateClick}>
-                  <PlusCircledIcon /> Додати категорію
+                  <PlusCircledIcon /> Add category
                 </Button>
               </Dialog.Trigger>
               <Dialog.Content maxWidth="540px">
                 <Flex direction="column" gap="4">
-                  <Flex align="center" justify="space-between">
+                  <Flex align="center" justify="between">
                     <Dialog.Title asChild>
                       <Heading size="5">
-                        {editingCategory ? 'Редагувати категорію' : 'Нова категорія'}
+                        {editingCategory ? 'Edit category' : 'New category'}
                       </Heading>
                     </Dialog.Title>
                     <Dialog.Close asChild>
@@ -176,7 +178,7 @@ function Categories() {
                         variant="ghost"
                         color="gray"
                         radius="full"
-                        aria-label="Закрити форму категорії"
+                        aria-label="Close category form"
                       >
                         <Cross2Icon />
                       </IconButton>
@@ -188,7 +190,7 @@ function Categories() {
                       <Grid columns={{ initial: '1', md: '2' }} gap="4">
                         <Flex direction="column" gap="2">
                           <Text as="label" htmlFor="name">
-                            Назва
+                            Name
                           </Text>
                           <TextField.Root
                             id="name"
@@ -196,13 +198,13 @@ function Categories() {
                             required
                             value={formData.name}
                             onChange={(event) => updateField('name', event.target.value)}
-                            placeholder="Наприклад: Транспорт"
+                            placeholder="e.g. Transport"
                           />
                         </Flex>
 
                         <Flex direction="column" gap="2">
                           <Text as="label" htmlFor="icon">
-                            Іконка
+                            Icon
                           </Text>
                           <TextField.Root
                             id="icon"
@@ -216,17 +218,17 @@ function Categories() {
                       </Grid>
 
                       <Flex direction="column" gap="2">
-                        <Text>Тип категорії</Text>
+                        <Text>Category type</Text>
                         <SegmentedControl.Root value={formData.type} onValueChange={(value) => updateField('type', value)}>
-                          <SegmentedControl.Item value="both">Для всіх</SegmentedControl.Item>
-                          <SegmentedControl.Item value="expense">Витрати</SegmentedControl.Item>
-                          <SegmentedControl.Item value="income">Доходи</SegmentedControl.Item>
+                          <SegmentedControl.Item value="both">For all</SegmentedControl.Item>
+                          <SegmentedControl.Item value="expense">Expense</SegmentedControl.Item>
+                          <SegmentedControl.Item value="income">Income</SegmentedControl.Item>
                         </SegmentedControl.Root>
                       </Flex>
 
                       <Flex direction="column" gap="2">
                         <Text as="label" htmlFor="description">
-                          Опис
+                          Description
                         </Text>
                         <TextArea
                           id="description"
@@ -234,7 +236,7 @@ function Categories() {
                           rows={3}
                           value={formData.description}
                           onChange={(event) => updateField('description', event.target.value)}
-                          placeholder="Додаткова інформація"
+                          placeholder="Additional information"
                         />
                       </Flex>
 
@@ -245,9 +247,9 @@ function Categories() {
                       )}
 
                       <Flex justify="flex-end" gap="3">
-                        <Button type="submit">{editingCategory ? 'Зберегти зміни' : 'Додати категорію'}</Button>
+                        <Button type="submit">{editingCategory ? 'Save changes' : 'Add category'}</Button>
                         <Button type="button" variant="soft" color="gray" onClick={handleCancelForm}>
-                          Скасувати
+                          Cancel
                         </Button>
                       </Flex>
                     </Flex>
@@ -261,18 +263,18 @@ function Categories() {
             <Dialog.Content maxWidth="400px">
               <Flex direction="column" gap="4">
                 <Dialog.Title asChild>
-                  <Heading size="5">Видалити категорію?</Heading>
+                  <Heading size="5">Delete category?</Heading>
                 </Dialog.Title>
                 <Text>
-                  Ви дійсно бажаєте видалити категорію{' '}
-                  <b>{categoryToDelete?.name}</b>? Цю дію не можна скасувати.
+                  Are you sure you want to delete the category{' '}
+                  <b>{categoryToDelete?.name}</b>? This action cannot be undone.
                 </Text>
                 <Flex gap="3" justify="end">
                   <Button variant="soft" color="gray" onClick={() => setCategoryToDelete(null)}>
-                    Скасувати
+                    Cancel
                   </Button>
                   <Button color="red" onClick={confirmDelete}>
-                    Видалити
+                    Delete
                   </Button>
                 </Flex>
               </Flex>
@@ -280,21 +282,21 @@ function Categories() {
           </Dialog.Root>
 
           {isLoading ? (
-            <Flex align="center" justify="center" style={{ minHeight: 200 }}>
-              <Text color="gray">Завантаження...</Text>
+            <Flex justify="center" align="center" style={{ height: '100px' }}>
+                <Spinner size="3" />
             </Flex>
           ) : (
-            <Card variant="surface" size="5">
+            // <Card variant="surface" size="3">
               <Flex direction="column" gap="4">
-                <Heading size="5">Усі категорії ({categories.length})</Heading>
+
                 {categories.length === 0 ? (
                   <Callout.Root>
-                    <Callout.Text color="gray">Поки що немає категорій. Створіть першу, щоб почати.</Callout.Text>
+                    <Callout.Text color="gray">No categories yet. Create your first one to get started.</Callout.Text>
                   </Callout.Root>
                 ) : (
                   <Grid columns={{ initial: '1', sm: '2', lg: '3' }} gap="4">
                     {categories.map((category) => (
-                      <Card key={category.id} variant="classic">
+                      <Card key={category.id} variant="classic" size="1">
                         <Flex direction="column" gap="3">
                           <Flex align="center" justify="between">
                             <Flex align="center" gap="3">
@@ -324,7 +326,7 @@ function Categories() {
                   </Grid>
                 )}
               </Flex>
-            </Card>
+            // </Card>
           )}
         </Flex>
       </Container>

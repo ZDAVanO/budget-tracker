@@ -31,32 +31,32 @@ function TransactionFilters({ filters, onFilterChange, categories, wallets = [] 
       <Grid columns={{ initial: '1', sm: '2', md: '3' }} gap="4">
         <Flex direction="column" gap="2">
           <Text size="2" color="gray">
-            Тип
+            Type
           </Text>
           <Select.Root
             value={filters.type || 'all'}
             onValueChange={(value) => updateValue('type', value === 'all' ? '' : value)}
           >
-            <Select.Trigger placeholder="Всі транзакції" />
+            <Select.Trigger placeholder="All transactions" />
             <Select.Content>
-              <Select.Item value="all">Всі транзакції</Select.Item>
-              <Select.Item value="income">💰 Доходи</Select.Item>
-              <Select.Item value="expense">💸 Витрати</Select.Item>
+              <Select.Item value="all">All transactions</Select.Item>
+              <Select.Item value="income">💰 Income</Select.Item>
+              <Select.Item value="expense">💸 Expense</Select.Item>
             </Select.Content>
           </Select.Root>
         </Flex>
 
         <Flex direction="column" gap="2">
           <Text size="2" color="gray">
-            Категорія
+            Category
           </Text>
           <Select.Root
             value={filters.category_id?.toString() || 'all'}
             onValueChange={(value) => updateValue('category_id', value === 'all' ? '' : value)}
           >
-            <Select.Trigger placeholder="Всі категорії" />
+            <Select.Trigger placeholder="All categories" />
             <Select.Content>
-              <Select.Item value="all">Всі категорії</Select.Item>
+              <Select.Item value="all">All categories</Select.Item>
               {categories.map((cat) => (
                 <Select.Item key={cat.id} value={cat.id?.toString()}>
                   {cat.icon} {cat.name}
@@ -68,15 +68,15 @@ function TransactionFilters({ filters, onFilterChange, categories, wallets = [] 
 
         <Flex direction="column" gap="2">
           <Text size="2" color="gray">
-            Гаманець
+            Wallet
           </Text>
           <Select.Root
             value={filters.wallet_id?.toString() || 'all'}
             onValueChange={(value) => updateValue('wallet_id', value === 'all' ? '' : value)}
           >
-            <Select.Trigger placeholder="Всі гаманці" />
+            <Select.Trigger placeholder="All wallets" />
             <Select.Content>
-              <Select.Item value="all">Всі гаманці</Select.Item>
+              <Select.Item value="all">All wallets</Select.Item>
               {wallets.map((wallet) => (
                 <Select.Item key={wallet.id} value={wallet.id?.toString()}>
                   {wallet.icon} {wallet.name}
@@ -88,7 +88,7 @@ function TransactionFilters({ filters, onFilterChange, categories, wallets = [] 
 
         <Flex direction="column" gap="2">
           <Text size="2" color="gray">
-            Від дати
+            From date
           </Text>
           <TextField.Root
             type="date"
@@ -99,7 +99,7 @@ function TransactionFilters({ filters, onFilterChange, categories, wallets = [] 
 
         <Flex direction="column" gap="2">
           <Text size="2" color="gray">
-            До дати
+            To date
           </Text>
           <TextField.Root
             type="date"
@@ -112,7 +112,7 @@ function TransactionFilters({ filters, onFilterChange, categories, wallets = [] 
       {hasActiveFilters && (
         <Flex justify="flex-end">
           <Button variant="soft" color="gray" onClick={handleReset}>
-            Скинути фільтри
+            Reset filters
           </Button>
         </Flex>
       )}

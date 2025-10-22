@@ -45,7 +45,7 @@ function TransactionList({ transactions, onEdit, onDelete, isLoading }) {
         const icon = isExpense ? '💸' : '💰';
 
         return (
-          <Card key={`${transaction.type}-${transaction.id}`} variant="surface">
+          <Card key={`${transaction.type}-${transaction.id}`} variant="surface" size="2">
             <Flex align="start" justify="between" gap="4">
               <Flex align="start" gap="3">
                 <Box
@@ -97,10 +97,10 @@ function TransactionList({ transactions, onEdit, onDelete, isLoading }) {
                 </Text>
                 <Flex gap="2">
                   <Button size="2" variant="soft" color="gray" onClick={() => onEdit(transaction)}>
-                    <Pencil2Icon /> Редагувати
+                    <Pencil2Icon />
                   </Button>
                   <Button size="2" variant="soft" color="red" onClick={() => onDelete(transaction)}>
-                    <TrashIcon /> Видалити
+                    <TrashIcon />
                   </Button>
                 </Flex>
               </Flex>

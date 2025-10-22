@@ -41,11 +41,11 @@ function Register() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      console.warn('⚠️ Register: Пароль занадто короткий');
-      setError('Password must be at least 6 characters');
-      return;
-    }
+    // if (formData.password.length < 6) {
+    //   console.warn('⚠️ Register: Пароль занадто короткий');
+    //   setError('Password must be at least 6 characters');
+    //   return;
+    // }
 
     setIsLoading(true);
 
@@ -136,7 +136,7 @@ function Register() {
                       disabled={isLoading}
                       autoComplete="new-password"
                       placeholder="********"
-                      minLength={6}
+                      minLength={3}
                     />
                   </div>
 
@@ -154,7 +154,7 @@ function Register() {
                       disabled={isLoading}
                       autoComplete="new-password"
                       placeholder="********"
-                      minLength={6}
+                      minLength={3}
                     />
                   </div>
 

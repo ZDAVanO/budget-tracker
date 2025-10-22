@@ -70,21 +70,21 @@ def create_default_categories_for_user(user_id):
     """Створення стандартних категорій для нового користувача"""
     default_categories = [
         # Витрати
-        {'name': 'Їжа', 'icon': '🍔', 'type': 'expense', 'description': 'Продукти, ресторани, кафе'},
-        {'name': 'Транспорт', 'icon': '🚗', 'type': 'expense', 'description': 'Проїзд, паливо, таксі'},
-        {'name': 'Розваги', 'icon': '🎮', 'type': 'expense', 'description': 'Кіно, ігри, хобі'},
-        {'name': 'Здоров\'я', 'icon': '💊', 'type': 'expense', 'description': 'Ліки, лікар, спортзал'},
-        {'name': 'Одяг', 'icon': '👕', 'type': 'expense', 'description': 'Одяг, взуття, аксесуари'},
-        {'name': 'Дім', 'icon': '🏠', 'type': 'expense', 'description': 'Оренда, комунальні, ремонт'},
-        {'name': 'Освіта', 'icon': '📚', 'type': 'expense', 'description': 'Курси, книги, навчання'},
-        {'name': 'Інше', 'icon': '📦', 'type': 'expense', 'description': 'Різні витрати'},
+        {'name': 'Food', 'icon': '🍔', 'type': 'expense', 'description': 'Groceries, restaurants, cafes'},
+        {'name': 'Transport', 'icon': '🚗', 'type': 'expense', 'description': 'Transport, fuel, taxi'},
+        {'name': 'Entertainment', 'icon': '🎮', 'type': 'expense', 'description': 'Movies, games, hobbies'},
+        {'name': 'Health', 'icon': '💊', 'type': 'expense', 'description': 'Medicine, doctor, gym'},
+        {'name': 'Clothing', 'icon': '👕', 'type': 'expense', 'description': 'Clothes, shoes, accessories'},
+        {'name': 'Home', 'icon': '🏠', 'type': 'expense', 'description': 'Rent, utilities, repairs'},
+        {'name': 'Education', 'icon': '📚', 'type': 'expense', 'description': 'Courses, books, learning'},
+        {'name': 'Other', 'icon': '📦', 'type': 'expense', 'description': 'Other expenses'},
         
         # Доходи
-        {'name': 'Зарплата', 'icon': '💰', 'type': 'income', 'description': 'Основний дохід'},
-        {'name': 'Фріланс', 'icon': '💻', 'type': 'income', 'description': 'Додатковий заробіток'},
-        {'name': 'Подарунки', 'icon': '🎁', 'type': 'income', 'description': 'Отримані подарунки'},
-        {'name': 'Інвестиції', 'icon': '📈', 'type': 'income', 'description': 'Пасивний дохід'},
-        {'name': 'Інше', 'icon': '💵', 'type': 'income', 'description': 'Різні доходи'},
+        {'name': 'Salary', 'icon': '💰', 'type': 'income', 'description': 'Main income'},
+        {'name': 'Freelance', 'icon': '💻', 'type': 'income', 'description': 'Additional earnings'},
+        {'name': 'Gifts', 'icon': '🎁', 'type': 'income', 'description': 'Received gifts'},
+        {'name': 'Investments', 'icon': '📈', 'type': 'income', 'description': 'Passive income'},
+        {'name': 'Other', 'icon': '💵', 'type': 'income', 'description': 'Other incomes'},
     ]
     
     for cat_data in default_categories:
@@ -103,8 +103,8 @@ def create_default_categories_for_user(user_id):
 def create_default_wallets_for_user(user_id):
     """Створення стандартних гаманців для нового користувача"""
     default_wallets = [
-        {'name': 'Готівка', 'icon': '💵', 'description': 'Кишенькові гроші', 'initial_balance': 0.0, 'currency': 'UAH'},
-        {'name': 'Банківська картка', 'icon': '💳', 'description': 'Основна картка', 'initial_balance': 0.0, 'currency': 'UAH'},
+        {'name': 'Cash', 'icon': '💵', 'description': 'Pocket money', 'initial_balance': 0.0, 'currency': 'UAH'},
+        {'name': 'Bank card', 'icon': '💳', 'description': 'Main card', 'initial_balance': 0.0, 'currency': 'UAH'},
     ]
     
     for wallet_data in default_wallets:
@@ -180,7 +180,9 @@ def refresh():
 @jwt_required(locations=['cookies'])
 def protected():
     user_id = int(get_jwt_identity())
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
+    if user is None:
+        return jsonify({"msg": "User not found"}), 404
     return jsonify({"username": user.username})
 
 

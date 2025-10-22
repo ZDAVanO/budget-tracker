@@ -15,6 +15,7 @@ import {
   Text,
   TextArea,
   TextField,
+  Spinner,
 } from '@radix-ui/themes';
 import { PlusCircledIcon, Pencil2Icon, TrashIcon, Cross2Icon } from '@radix-ui/react-icons';
 import api from '../services/api';
@@ -69,13 +70,13 @@ function Wallets() {
       if (editingWallet) {
         const { response } = await api.wallets.update(editingWallet.id, payload);
         if (!response.ok) {
-          setError('Помилка оновлення гаманця');
+          setError('Error updating wallet');
           return;
         }
       } else {
         const { response } = await api.wallets.create(payload);
         if (!response.ok) {
-          setError('Помилка створення гаманця');
+          setError('Error creating wallet');
           return;
         }
       }
@@ -86,7 +87,7 @@ function Wallets() {
       loadWallets();
     } catch (saveError) {
       console.error('Error saving wallet:', saveError);
-      setError('Помилка збереження');
+      setError('Error saving');
     }
   };
 
@@ -113,11 +114,11 @@ function Wallets() {
       if (response.ok) {
         loadWallets();
       } else {
-        alert(data?.msg || 'Помилка при видаленні гаманця');
+        alert(data?.msg || 'Error deleting wallet');
       }
     } catch (deleteError) {
       console.error('Error deleting wallet:', deleteError);
-      alert('Помилка при видаленні гаманця');
+      alert('Error deleting wallet');
     } finally {
       setWalletToDelete(null);
     }
@@ -146,34 +147,39 @@ function Wallets() {
     }
   };
 
-  const totalBalance = wallets.reduce((sum, wallet) => sum + (wallet.balance ?? 0), 0);
+  // const totalBalance = wallets.reduce((sum, wallet) => sum + (wallet.balance ?? 0), 0);
 
   const formatAmount = (amount, currency) =>
     `${amount >= 0 ? '+' : ''}${amount.toFixed(2)} ${currency || 'UAH'}`;
 
   return (
-    <Section size="3">
+    <Section size="3" className="p-4">
       <Container size="3">
         <Flex direction="column" gap="6">
           <Flex align="center" justify="between" wrap="wrap" gap="3">
+
             <Flex direction="column" gap="1">
               <Heading as="h1" size="7">
-                Гаманці
+                Wallets
               </Heading>
-              <Text color="gray">Створюйте гаманці для різних цілей і валют.</Text>
+              <Text color="gray">Create wallets for different purposes and currencies.</Text>
             </Flex>
+
             <Dialog.Root open={isFormOpen} onOpenChange={handleFormOpenChange}>
               <Dialog.Trigger asChild>
                 <Button onClick={handleCreateClick}>
-                  <PlusCircledIcon /> Додати гаманець
+                  <PlusCircledIcon /> Add Wallet
                 </Button>
               </Dialog.Trigger>
+
               <Dialog.Content maxWidth="540px">
+
                 <Flex direction="column" gap="4">
-                  <Flex align="center" justify="space-between">
+
+                  <Flex align="center" justify="between">
                     <Dialog.Title asChild>
                       <Heading size="5">
-                        {editingWallet ? 'Редагувати гаманець' : 'Новий гаманець'}
+                        {editingWallet ? 'Edit Wallet' : 'New Wallet'}
                       </Heading>
                     </Dialog.Title>
                     <Dialog.Close asChild>
@@ -181,11 +187,12 @@ function Wallets() {
                         variant="ghost"
                         color="gray"
                         radius="full"
-                        aria-label="Закрити форму гаманця"
+                        aria-label="Close wallet form"
                       >
                         <Cross2Icon />
                       </IconButton>
                     </Dialog.Close>
+
                   </Flex>
 
                   <form onSubmit={handleSubmit}>
@@ -193,7 +200,7 @@ function Wallets() {
                       <Grid columns={{ initial: '1', md: '2' }} gap="4">
                         <Flex direction="column" gap="2">
                           <Text as="label" htmlFor="name">
-                            Назва
+                            Name
                           </Text>
                           <TextField.Root
                             id="name"
@@ -201,13 +208,13 @@ function Wallets() {
                             required
                             value={formData.name}
                             onChange={(event) => updateField('name', event.target.value)}
-                            placeholder="Наприклад: Готівка"
+                            placeholder="For example: Cash"
                           />
                         </Flex>
 
                         <Flex direction="column" gap="2">
                           <Text as="label" htmlFor="icon">
-                            Іконка
+                            Icon
                           </Text>
                           <TextField.Root
                             id="icon"
@@ -223,7 +230,7 @@ function Wallets() {
                       <Grid columns={{ initial: '1', md: '2' }} gap="4">
                         <Flex direction="column" gap="2">
                           <Text as="label" htmlFor="initial_balance">
-                            Початковий баланс
+                            Initial Balance
                           </Text>
                           <TextField.Root
                             id="initial_balance"
@@ -237,7 +244,7 @@ function Wallets() {
                         </Flex>
 
                         <Flex direction="column" gap="2">
-                          <Text>Валюта</Text>
+                          <Text>Currency</Text>
                           <Select.Root value={formData.currency} onValueChange={(value) => updateField('currency', value)}>
                             <Select.Trigger />
                             <Select.Content>
@@ -251,7 +258,7 @@ function Wallets() {
 
                       <Flex direction="column" gap="2">
                         <Text as="label" htmlFor="description">
-                          Опис
+                          Description
                         </Text>
                         <TextArea
                           id="description"
@@ -259,7 +266,7 @@ function Wallets() {
                           rows={3}
                           value={formData.description}
                           onChange={(event) => updateField('description', event.target.value)}
-                          placeholder="Додаткова інформація"
+                          placeholder="Additional information"
                         />
                       </Flex>
 
@@ -270,9 +277,9 @@ function Wallets() {
                       )}
 
                       <Flex justify="flex-end" gap="3">
-                        <Button type="submit">{editingWallet ? 'Зберегти зміни' : 'Додати гаманець'}</Button>
+                        <Button type="submit">{editingWallet ? 'Save Changes' : 'Add Wallet'}</Button>
                         <Button type="button" variant="soft" color="gray" onClick={handleCancelForm}>
-                          Скасувати
+                          Cancel
                         </Button>
                       </Flex>
                     </Flex>
@@ -280,41 +287,42 @@ function Wallets() {
                 </Flex>
               </Dialog.Content>
             </Dialog.Root>
+
           </Flex>
 
-          <Card size="4" variant="surface">
+          {/* <Card size="2" variant="surface">
             <Flex align="center" justify="between" wrap="wrap" gap="3">
               <Flex align="center" gap="3">
                 <Text size="5">💰</Text>
                 <Flex direction="column" gap="1">
                   <Text color="gray" size="2">
-                    Загальний баланс
+                    Total Balance
                   </Text>
                   <Heading size="5">{totalBalance.toFixed(2)} ₴</Heading>
                 </Flex>
               </Flex>
               <Badge variant="soft" color="mint">
-                {wallets.length} гаманців
+                {wallets.length} wallets
               </Badge>
             </Flex>
-          </Card>
+          </Card> */}
 
           <Dialog.Root open={!!walletToDelete} onOpenChange={(open) => !open && setWalletToDelete(null)}>
             <Dialog.Content maxWidth="400px">
               <Flex direction="column" gap="4">
                 <Dialog.Title asChild>
-                  <Heading size="5">Видалити гаманець?</Heading>
+                  <Heading size="5">Delete wallet?</Heading>
                 </Dialog.Title>
                 <Text>
-                  Ви дійсно бажаєте видалити гаманець{' '}
-                  <b>{walletToDelete?.name}</b>? Цю дію не можна скасувати.
+                  Are you sure you want to delete the wallet{' '}
+                  <b>{walletToDelete?.name}</b>? This action cannot be undone.
                 </Text>
                 <Flex gap="3" justify="end">
                   <Button variant="soft" color="gray" onClick={() => setWalletToDelete(null)}>
-                    Скасувати
+                    Cancel
                   </Button>
                   <Button color="red" onClick={confirmDelete}>
-                    Видалити
+                    Delete
                   </Button>
                 </Flex>
               </Flex>
@@ -322,26 +330,30 @@ function Wallets() {
           </Dialog.Root>
 
           {isLoading ? (
-            <Flex align="center" justify="center" style={{ minHeight: 200 }}>
-              <Text color="gray">Завантаження...</Text>
+            <Flex justify="center" align="center" style={{ height: '100px' }}>
+                <Spinner size="3" />
             </Flex>
           ) : wallets.length === 0 ? (
             <Callout.Root>
-              <Callout.Text color="gray">Поки що немає гаманців. Створіть перший, щоб почати.</Callout.Text>
+              <Callout.Text color="gray">No wallets yet. Create your first one to get started.</Callout.Text>
             </Callout.Root>
           ) : (
             <Grid columns={{ initial: '1', sm: '2', lg: '3' }} gap="4">
               {wallets.map((wallet) => (
-                <Card key={wallet.id} variant="classic">
+                <Card key={wallet.id} variant="classic" size="2">
                   <Flex direction="column" gap="3">
+
                     <Flex align="center" justify="between">
                       <Flex align="center" gap="3">
                         <Text size="5">{wallet.icon}</Text>
                         <Flex direction="column" gap="1">
                           <Text weight="medium">{wallet.name}</Text>
-                          <Badge color="gray">{wallet.currency}</Badge>
+                          <Badge color="gray" style={{ width: 'fit-content', paddingRight: 8 }}>
+                            {wallet.currency}
+                          </Badge>
                         </Flex>
                       </Flex>
+
                       <Flex gap="2">
                         <IconButton size="2" variant="soft" onClick={() => handleEdit(wallet)}>
                           <Pencil2Icon />
@@ -350,11 +362,12 @@ function Wallets() {
                           <TrashIcon />
                         </IconButton>
                       </Flex>
+
                     </Flex>
 
                     <Flex direction="column" gap="1">
                       <Text color="gray" size="2">
-                        Поточний баланс
+                        Current Balance
                       </Text>
                       <Heading size="5" color={wallet.balance >= 0 ? 'mint' : 'tomato'}>
                         {formatAmount(wallet.balance ?? 0, wallet.currency)}
