@@ -19,6 +19,10 @@ import { ArrowLeftIcon } from '@radix-ui/react-icons';
 import Header from './components/Header.jsx';
 import Footer from './components/Footer.jsx';
 
+import BottomNav from './components/BottomNav.jsx';
+import SidebarNav from './components/SidebarNav.jsx';
+
+
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -95,86 +99,82 @@ function AppContent() {
     return <RouteLoader message="Loading application" />;
   }
 
-  // Hide Header/Footer on /login and /register
-  const hideHeaderFooter = location.pathname === '/login' || location.pathname === '/register';
+  // Hide BottomNav and SidebarNav on /, /login, and /register
+  const hideNavs = ["/", "/login", "/register"].includes(location.pathname);
 
   return (
     <>
-      {/* {!hideHeaderFooter && <Header isLoggedIn={isLoggedIn} user={user} onLogout={logout} />} */}
       <Header isLoggedIn={isLoggedIn} user={user} onLogout={logout} />
 
+      <div className="md:flex">
+        {isLoggedIn && !hideNavs && <SidebarNav />}
 
-      <div className="grow">
-        <Routes>
-          {/* Головна сторінка: редірект якщо залогінений */}
-          <Route
-            path="/"
-            element={
-              isLoggedIn ? <Navigate to="/dashboard" replace /> : <Home />
-            }
-          />
+        <main className="grow p-4">
+          <Routes>
+            <Route
+              path="/"
+              element={isLoggedIn ? <Navigate to="/dashboard" replace /> : <Home />}
+            />
 
-          {/* Публічні роути (тільки для неавторизованих) */}
-          <Route
-            path="/login"
-            element={
-              <PublicRoute>
-                <Login onLoginSuccess={login} />
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/register"
-            element={
-              <PublicRoute>
-                <Register />
-              </PublicRoute>
-            }
-          />
+            <Route
+              path="/login"
+              element={
+                <PublicRoute>
+                  <Login onLoginSuccess={login} />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                <PublicRoute>
+                  <Register />
+                </PublicRoute>
+              }
+            />
 
-          {/* Захищені роути (тільки для авторизованих) */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard user={user} />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard user={user} />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/transactions"
-            element={
-              <ProtectedRoute>
-                <Transactions />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/transactions"
+              element={
+                <ProtectedRoute>
+                  <Transactions />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/categories"
-            element={
-              <ProtectedRoute>
-                <Categories />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/categories"
+              element={
+                <ProtectedRoute>
+                  <Categories />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/wallets"
-            element={
-              <ProtectedRoute>
-                <Wallets />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/wallets"
+              element={
+                <ProtectedRoute>
+                  <Wallets />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* 404 - сторінка не знайдена */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </main>
       </div>
 
-      {!hideHeaderFooter && <Footer />}
+      {isLoggedIn && !hideNavs && <BottomNav />}
     </>
   );
 }
@@ -183,13 +183,13 @@ function App() {
   console.log('🎨 App component render');
 
   return (
-    <div className="min-h-screen flex flex-col">
+
       <BrowserRouter>
         <AuthProvider>
           <AppContent />
         </AuthProvider>
       </BrowserRouter>
-    </div>
+
   );
 }
 

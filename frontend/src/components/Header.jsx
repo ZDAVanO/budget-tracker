@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Avatar,
   Button,
@@ -14,16 +14,16 @@ import { ExitIcon, DashboardIcon, CardStackIcon } from '@radix-ui/react-icons';
 
 import ThemeToggleButton from './ThemeToggleButton';
 
-const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
-  { to: '/transactions', label: 'Transactions', icon: <CardStackIcon /> },
-  { to: '/wallets', label: 'Wallets', icon: <DashboardIcon /> },
-  { to: '/categories', label: 'Categories', icon: <DashboardIcon /> },
-];
+// const navItems = [
+//   { to: '/dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
+//   { to: '/transactions', label: 'Transactions', icon: <CardStackIcon /> },
+//   { to: '/wallets', label: 'Wallets', icon: <DashboardIcon /> },
+//   { to: '/categories', label: 'Categories', icon: <DashboardIcon /> },
+// ];
 
 function Header({ isLoggedIn, user, onLogout }) {
   const navigate = useNavigate();
-  const location = useLocation();
+  // const location = useLocation();
 
 
   const handleLogout = () => {
@@ -31,20 +31,20 @@ function Header({ isLoggedIn, user, onLogout }) {
     navigate('/');
   };
 
-  const isActive = (path) => {
-    if (path === '/') {
-      return location.pathname === '/';
-    }
-    return location.pathname === path || location.pathname.startsWith(`${path}/`);
-  };
+  // const isActive = (path) => {
+  //   if (path === '/') {
+  //     return location.pathname === '/';
+  //   }
+  //   return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  // };
 
   return (
-    <header className="sticky top-0 z-10">
+    <header className="sticky top-0 z-50 h-16">
       <div
-        className="backdrop-blur-md backdrop-saturate-150 bg-[color-mix(in_srgb,var(--color-panel-solid)_80%,transparent)] border-b border-(--gray-a5)"
+        className="backdrop-blur-md backdrop-saturate-150 bg-[color-mix(in_srgb,var(--color-panel-solid)_80%,transparent)] border-b border-(--gray-a5) h-full"
       >
-        <div className="max-w-5xl mx-auto px-4 py-3 md:py-4">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="w-full px-4 h-full">
+          <div className="flex items-center justify-between gap-4 flex-wrap h-full">
             <div className="flex items-center gap-4 flex-wrap">
               <Link
                 to="/"
@@ -55,34 +55,11 @@ function Header({ isLoggedIn, user, onLogout }) {
                 </span>
                 <Heading className="" size="5">Budget Tracker</Heading>
               </Link>
-            </div>
-
-            {isLoggedIn && (
-              <div className="flex items-center gap-2 flex-wrap text-(--gray-11)">
-                {navItems.map((item) => (
-                  <Button
-                    key={item.to}
-                    asChild
-                    variant={isActive(item.to) ? 'solid' : 'soft'}
-                    size="2"
-                    color={isActive(item.to) ? 'mint' : 'gray'}
-                  >
-                    <Link
-                      to={item.to}
-                      className="inline-flex items-center gap-2 px-1 text-inherit no-underline"
-                    >
-                      {item.icon} {item.label}
-                      {/* {item.label} */}
-                    </Link>
-                  </Button>
-                ))}
-              </div>
-            )}
-
-            <div className="flex items-center gap-2">
 
               <ThemeToggleButton />
+            </div>
 
+            <div className="flex items-center gap-2">
               {isLoggedIn ? (
                 <DropdownMenu.Root>
                   <DropdownMenu.Trigger>
@@ -122,11 +99,6 @@ function Header({ isLoggedIn, user, onLogout }) {
                   </Button>
                 </div>
               )}
-
-
-
-
-              
             </div>
           </div>
         </div>
