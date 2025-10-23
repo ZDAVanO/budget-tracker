@@ -25,7 +25,15 @@ from flask_jwt_extended import (
 
 from datetime import datetime, timedelta
 
-from models import db, User, Expense, Income, Category, Wallet
+def parse_local_datetime(dt_str):
+    """Парсити дату у форматі YYYY-MM-DDTHH:MM:SS як локальний час"""
+    try:
+        return datetime.strptime(dt_str, "%Y-%m-%dT%H:%M:%S")
+    except Exception:
+        # fallback на ISO (з таймзоною)
+        return datetime.fromisoformat(dt_str)
+
+from models import db, User, Transaction, Category, Wallet
 
 
 
@@ -354,10 +362,7 @@ def delete_wallet(wallet_id):
         return jsonify({"msg": "Unauthorized"}), 403
     
     # Перевіряємо, чи є транзакції прив'язані до цього гаманця
-    has_transactions = (
-        Expense.query.filter_by(wallet_id=wallet_id).count() > 0 or
-        Income.query.filter_by(wallet_id=wallet_id).count() > 0
-    )
+    has_transactions = Transaction.query.filter_by(wallet_id=wallet_id).count() > 0
     
     if has_transactions:
         return jsonify({"msg": "Cannot delete wallet with transactions"}), 400
@@ -368,11 +373,11 @@ def delete_wallet(wallet_id):
     return jsonify({"msg": "Wallet deleted"}), 200
 
 
-# MARK: - Transactions (Combined)
+# MARK: - Transactions
 @app.route('/api/transactions', methods=['GET'])
 @jwt_required(locations=['cookies'])
 def get_transactions():
-    """Отримати всі транзакції (доходи + витрати) з фільтрацією"""
+    """Отримати всі транзакції з фільтрацією"""
     user_id = int(get_jwt_identity())
     
     # Параметри фільтрації
@@ -382,236 +387,108 @@ def get_transactions():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     
-    transactions = []
-    
-    # Отримуємо витрати
-    if not transaction_type or transaction_type == 'expense':
-        expenses_query = Expense.query.filter_by(user_id=user_id)
-        
-        if category_id:
-            expenses_query = expenses_query.filter_by(category_id=int(category_id))
-        if wallet_id:
-            expenses_query = expenses_query.filter_by(wallet_id=int(wallet_id))
-        if start_date:
-            expenses_query = expenses_query.filter(Expense.date >= datetime.fromisoformat(start_date))
-        if end_date:
-            expenses_query = expenses_query.filter(Expense.date <= datetime.fromisoformat(end_date))
-        
-        transactions.extend([e.to_dict() for e in expenses_query.all()])
-    
-    # Отримуємо доходи
-    if not transaction_type or transaction_type == 'income':
-        incomes_query = Income.query.filter_by(user_id=user_id)
-        
-        if category_id:
-            incomes_query = incomes_query.filter_by(category_id=int(category_id))
-        if wallet_id:
-            incomes_query = incomes_query.filter_by(wallet_id=int(wallet_id))
-        if start_date:
-            incomes_query = incomes_query.filter(Income.date >= datetime.fromisoformat(start_date))
-        if end_date:
-            incomes_query = incomes_query.filter(Income.date <= datetime.fromisoformat(end_date))
-        
-        transactions.extend([i.to_dict() for i in incomes_query.all()])
-    
-    # Сортуємо за датою (нові спочатку)
-    transactions.sort(key=lambda x: x['date'], reverse=True)
-    
-    return jsonify(transactions)
-
-
-# MARK: - Expenses
-@app.route('/api/expenses', methods=['GET'])
-@jwt_required(locations=['cookies'])
-def get_expenses():
-    """Отримати витрати з фільтрацією"""
-    user_id = int(get_jwt_identity())
-    
-    query = Expense.query.filter_by(user_id=user_id)
+    query = Transaction.query.filter_by(user_id=user_id)
     
     # Фільтрація
-    category_id = request.args.get('category_id')
     if category_id:
         query = query.filter_by(category_id=int(category_id))
-    
-    start_date = request.args.get('start_date')
+    if wallet_id:
+        query = query.filter_by(wallet_id=int(wallet_id))
+    if transaction_type:
+        query = query.filter_by(type=transaction_type)
     if start_date:
-        query = query.filter(Expense.date >= datetime.fromisoformat(start_date))
-    
-    end_date = request.args.get('end_date')
+        query = query.filter(Transaction.date >= datetime.fromisoformat(start_date))
     if end_date:
-        query = query.filter(Expense.date <= datetime.fromisoformat(end_date))
+        query = query.filter(Transaction.date <= datetime.fromisoformat(end_date))
     
     # Сортування за датою (нові спочатку)
-    expenses = query.order_by(Expense.date.desc()).all()
+    transactions = query.order_by(Transaction.date.desc()).all()
     
-    return jsonify([expense.to_dict() for expense in expenses])
+    return jsonify([t.to_dict() for t in transactions])
 
 
-@app.route('/api/expenses', methods=['POST'])
+@app.route('/api/transactions', methods=['POST'])
 @jwt_required(locations=['cookies'])
-def create_expense():
-    """Створити витрату"""
+def create_transaction():
+    """Створити транзакцію"""
     user_id = int(get_jwt_identity())
     data = request.get_json()
-    
-    expense = Expense(
+
+    # Require wallet_id and type
+    if not data.get('wallet_id'):
+        return jsonify({"msg": "Wallet is required"}), 400
+    if not data.get('type') or data.get('type') not in ['expense', 'income']:
+        return jsonify({"msg": "Valid transaction type is required (expense or income)"}), 400
+
+    transaction = Transaction(
         amount=float(data.get('amount')),
-        date=datetime.fromisoformat(data.get('date')),
+        date=parse_local_datetime(data.get('date')),
         title=data.get('title'),
         description=data.get('description'),
+        type=data.get('type'),
         category_id=data.get('category_id'),
         wallet_id=data.get('wallet_id'),
         user_id=user_id
     )
-    
-    db.session.add(expense)
+
+    db.session.add(transaction)
     db.session.commit()
-    
-    return jsonify(expense.to_dict()), 201
+
+    return jsonify(transaction.to_dict()), 201
 
 
-@app.route('/api/expenses/<int:expense_id>', methods=['PUT'])
+@app.route('/api/transactions/<int:transaction_id>', methods=['PUT'])
 @jwt_required(locations=['cookies'])
-def update_expense(expense_id):
-    """Оновити витрату"""
+def update_transaction(transaction_id):
+    """Оновити транзакцію"""
     user_id = int(get_jwt_identity())
-    expense = Expense.query.get_or_404(expense_id)
-    
-    if expense.user_id != user_id:
+    transaction = Transaction.query.get_or_404(transaction_id)
+
+    if transaction.user_id != user_id:
         return jsonify({"msg": "Unauthorized"}), 403
-    
+
     data = request.get_json()
-    
+
+    # Require wallet_id if present or on update
+    if 'wallet_id' in data and not data['wallet_id']:
+        return jsonify({"msg": "Wallet is required"}), 400
+    if 'type' in data and data['type'] not in ['expense', 'income']:
+        return jsonify({"msg": "Valid transaction type is required (expense or income)"}), 400
+
     if 'amount' in data:
-        expense.amount = float(data['amount'])
+        transaction.amount = float(data['amount'])
     if 'date' in data:
-        expense.date = datetime.fromisoformat(data['date'])
+        transaction.date = parse_local_datetime(data['date'])
     if 'title' in data:
-        expense.title = data['title']
+        transaction.title = data['title']
     if 'description' in data:
-        expense.description = data['description']
+        transaction.description = data['description']
+    if 'type' in data:
+        transaction.type = data['type']
     if 'category_id' in data:
-        expense.category_id = data['category_id']
+        transaction.category_id = data['category_id']
     if 'wallet_id' in data:
-        expense.wallet_id = data['wallet_id']
-    
+        transaction.wallet_id = data['wallet_id']
+
     db.session.commit()
-    
-    return jsonify(expense.to_dict())
+
+    return jsonify(transaction.to_dict())
 
 
-@app.route('/api/expenses/<int:expense_id>', methods=['DELETE'])
+@app.route('/api/transactions/<int:transaction_id>', methods=['DELETE'])
 @jwt_required(locations=['cookies'])
-def delete_expense(expense_id):
-    """Видалити витрату"""
+def delete_transaction(transaction_id):
+    """Видалити транзакцію"""
     user_id = int(get_jwt_identity())
-    expense = Expense.query.get_or_404(expense_id)
+    transaction = Transaction.query.get_or_404(transaction_id)
     
-    if expense.user_id != user_id:
+    if transaction.user_id != user_id:
         return jsonify({"msg": "Unauthorized"}), 403
     
-    db.session.delete(expense)
+    db.session.delete(transaction)
     db.session.commit()
     
-    return jsonify({"msg": "Expense deleted"}), 200
-
-
-# MARK: - Incomes
-@app.route('/api/incomes', methods=['GET'])
-@jwt_required(locations=['cookies'])
-def get_incomes():
-    """Отримати доходи з фільтрацією"""
-    user_id = int(get_jwt_identity())
-    
-    query = Income.query.filter_by(user_id=user_id)
-    
-    # Фільтрація
-    category_id = request.args.get('category_id')
-    if category_id:
-        query = query.filter_by(category_id=int(category_id))
-    
-    start_date = request.args.get('start_date')
-    if start_date:
-        query = query.filter(Income.date >= datetime.fromisoformat(start_date))
-    
-    end_date = request.args.get('end_date')
-    if end_date:
-        query = query.filter(Income.date <= datetime.fromisoformat(end_date))
-    
-    # Сортування за датою (нові спочатку)
-    incomes = query.order_by(Income.date.desc()).all()
-    
-    return jsonify([income.to_dict() for income in incomes])
-
-
-@app.route('/api/incomes', methods=['POST'])
-@jwt_required(locations=['cookies'])
-def create_income():
-    """Створити дохід"""
-    user_id = int(get_jwt_identity())
-    data = request.get_json()
-    
-    income = Income(
-        amount=float(data.get('amount')),
-        date=datetime.fromisoformat(data.get('date')),
-        title=data.get('title'),
-        description=data.get('description'),
-        category_id=data.get('category_id'),
-        wallet_id=data.get('wallet_id'),
-        user_id=user_id
-    )
-    
-    db.session.add(income)
-    db.session.commit()
-    
-    return jsonify(income.to_dict()), 201
-
-
-@app.route('/api/incomes/<int:income_id>', methods=['PUT'])
-@jwt_required(locations=['cookies'])
-def update_income(income_id):
-    """Оновити дохід"""
-    user_id = int(get_jwt_identity())
-    income = Income.query.get_or_404(income_id)
-    
-    if income.user_id != user_id:
-        return jsonify({"msg": "Unauthorized"}), 403
-    
-    data = request.get_json()
-    
-    if 'amount' in data:
-        income.amount = float(data['amount'])
-    if 'date' in data:
-        income.date = datetime.fromisoformat(data['date'])
-    if 'title' in data:
-        income.title = data['title']
-    if 'description' in data:
-        income.description = data['description']
-    if 'category_id' in data:
-        income.category_id = data['category_id']
-    if 'wallet_id' in data:
-        income.wallet_id = data['wallet_id']
-    
-    db.session.commit()
-    
-    return jsonify(income.to_dict())
-
-
-@app.route('/api/incomes/<int:income_id>', methods=['DELETE'])
-@jwt_required(locations=['cookies'])
-def delete_income(income_id):
-    """Видалити дохід"""
-    user_id = int(get_jwt_identity())
-    income = Income.query.get_or_404(income_id)
-    
-    if income.user_id != user_id:
-        return jsonify({"msg": "Unauthorized"}), 403
-    
-    db.session.delete(income)
-    db.session.commit()
-    
-    return jsonify({"msg": "Income deleted"}), 200
+    return jsonify({"msg": "Transaction deleted"}), 200
 
 
 # MARK: - Statistics
@@ -625,22 +502,18 @@ def get_statistics():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     
-    # Запити для витрат
-    expenses_query = Expense.query.filter_by(user_id=user_id)
-    if start_date:
-        expenses_query = expenses_query.filter(Expense.date >= datetime.fromisoformat(start_date))
-    if end_date:
-        expenses_query = expenses_query.filter(Expense.date <= datetime.fromisoformat(end_date))
+    # Запит для всіх транзакцій
+    query = Transaction.query.filter_by(user_id=user_id)
     
-    # Запити для доходів
-    incomes_query = Income.query.filter_by(user_id=user_id)
     if start_date:
-        incomes_query = incomes_query.filter(Income.date >= datetime.fromisoformat(start_date))
+        query = query.filter(Transaction.date >= datetime.fromisoformat(start_date))
     if end_date:
-        incomes_query = incomes_query.filter(Income.date <= datetime.fromisoformat(end_date))
+        query = query.filter(Transaction.date <= datetime.fromisoformat(end_date))
     
-    total_expenses = sum(e.amount for e in expenses_query.all())
-    total_incomes = sum(i.amount for i in incomes_query.all())
+    transactions = query.all()
+    
+    total_expenses = sum(t.amount for t in transactions if t.type == 'expense')
+    total_incomes = sum(t.amount for t in transactions if t.type == 'income')
     balance = total_incomes - total_expenses
     
     return jsonify({

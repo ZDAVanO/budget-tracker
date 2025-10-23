@@ -1,8 +1,8 @@
-// Централізований API сервіс з детальним логуванням
-
+// MARK: Constants
 const API_BASE_URL = 'http://localhost:5000/api';
 
-// Утиліта для логування запитів та відповідей
+// MARK: Logging Utilities
+
 const logRequest = (method, endpoint, data = null) => {
   console.log('🚀 API REQUEST:', {
     timestamp: new Date().toISOString(),
@@ -33,7 +33,8 @@ const logError = (method, endpoint, error) => {
   });
 };
 
-// Базова функція для виконання запитів з автоматичним refresh токена
+// MARK: Fetch with Logging
+// Base function for making requests with automatic token refresh
 const fetchWithLogging = async (endpoint, options = {}, retry = true, onLogout = null) => {
   const method = options.method || 'GET';
   const requestData = options.body ? JSON.parse(options.body) : null;
@@ -49,15 +50,15 @@ const fetchWithLogging = async (endpoint, options = {}, retry = true, onLogout =
     const data = await response.json().catch(() => null);
     logResponse(method, endpoint, response, data);
 
-    // Якщо токен протух (401) і це не refresh-запит — пробуємо оновити токен і повторити запит
+    // If token expired (401) and this is not a refresh request — try to refresh token and retry
     if (response.status === 401 && retry && endpoint !== '/refresh') {
-      console.warn('⚠️ API: 401 Unauthorized, пробуємо refresh токена...');
+      console.warn('⚠️ API: 401 Unauthorized, trying to refresh token...');
       const refreshResult = await api.auth.refreshToken();
       if (refreshResult.response.ok) {
-        // Повторюємо оригінальний запит (тільки 1 раз)
+        // Retry original request (only once)
         return await fetchWithLogging(endpoint, options, false, onLogout);
       } else {
-        // Refresh не вдався — викликаємо onLogout, якщо передано
+        // Refresh failed — call onLogout if provided
         if (typeof onLogout === 'function') {
           onLogout();
         }
@@ -79,290 +80,108 @@ const fetchWithLogging = async (endpoint, options = {}, retry = true, onLogout =
   }
 };
 
-// API методи
 const api = {
-  // Аутентифікація
+  // MARK: Authentication
   auth: {
     login: async (username, password) => {
-      console.log('🔐 Спроба входу користувача:', username);
+      console.log('🔐 User login attempt:', username);
       const { response, data } = await fetchWithLogging('/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
       });
-      console.log('🔐 Результат входу:', response.ok ? 'Успішно' : 'Помилка', data);
+      console.log('🔐 Login result:', response.ok ? 'Success' : 'Error', data);
       return { response, data };
     },
 
     register: async (username, email, password) => {
-      console.log('📝 Спроба реєстрації користувача:', username, email);
+      console.log('📝 User registration attempt:', username, email);
       const { response, data } = await fetchWithLogging('/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password })
       });
-      console.log('📝 Результат реєстрації:', response.ok ? 'Успішно' : 'Помилка', data);
+      console.log('📝 Registration result:', response.ok ? 'Success' : 'Error', data);
       return { response, data };
     },
 
     logout: async () => {
-      console.log('🚪 Вихід користувача');
+      console.log('🚪 User logout');
       const { response, data } = await fetchWithLogging('/logout', {
         method: 'POST'
       });
-      console.log('🚪 Результат виходу:', response.ok ? 'Успішно' : 'Помилка');
+      console.log('🚪 Logout result:', response.ok ? 'Success' : 'Error');
       return { response, data };
     },
 
     checkAuth: async (onLogout) => {
-      // Додаємо onLogout для автоматичного виходу при невдалому refresh
+      // Add onLogout for automatic logout on failed refresh
       console.log('api.js checkAuth');
       const { response, data } = await fetchWithLogging('/protected', {
         method: 'GET'
       }, true, onLogout);
-      console.log('api.js Статус аутентифікації:', response.ok ? 'Авторизовано' : 'Не авторизовано', data);
+      console.log('api.js Auth status:', response.ok ? 'Authorized' : 'Not authorized', data);
       return { response, data };
     },
 
     refreshToken: async () => {
-      console.log('🔄 Оновлення токену');
+      console.log('🔄 Refreshing token');
       const { response, data } = await fetchWithLogging('/refresh', {
         method: 'POST'
       });
-      console.log('🔄 Результат оновлення токену:', response.ok ? 'Успішно' : 'Помилка');
+      console.log('🔄 Token refresh result:', response.ok ? 'Success' : 'Error');
       return { response, data };
     }
   },
 
-  // Тестові ендпоінти
-  test: {
-    ping: async () => {
-      console.log('🏓 Ping до backend');
-      const { response, data } = await fetchWithLogging('/ping', {
-        method: 'GET'
-      });
-      console.log('🏓 Pong від backend:', data);
-      return { response, data };
-    },
-
-    echo: async (message) => {
-      console.log('📡 Відправка echo повідомлення:', message);
-      const { response, data } = await fetchWithLogging('/echo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ test: message })
-      });
-      console.log('📡 Echo відповідь:', data);
-      return { response, data };
-    }
-  },
-
-  // Категорії
+  // MARK: Categories
   categories: {
     getAll: async (type = null) => {
-      console.log('📂 Отримання категорій, тип:', type);
+      console.log('📂 Fetching categories, type:', type);
       const endpoint = type ? `/categories?type=${type}` : '/categories';
       const { response, data } = await fetchWithLogging(endpoint, {
         method: 'GET'
       });
-      console.log('📂 Отримано категорій:', data?.length || 0);
+      console.log('📂 Categories fetched:', data?.length || 0);
       return { response, data };
     },
 
     create: async (categoryData) => {
-      console.log('➕ Створення категорії:', categoryData);
+      console.log('➕ Creating category:', categoryData);
       const { response, data } = await fetchWithLogging('/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(categoryData)
       });
-      console.log('➕ Результат створення категорії:', response.ok ? 'Успішно' : 'Помилка', data);
+      console.log('➕ Category creation result:', response.ok ? 'Success' : 'Error', data);
       return { response, data };
     },
 
     update: async (categoryId, categoryData) => {
-      console.log('✏️ Оновлення категорії:', categoryId, categoryData);
+      console.log('✏️ Updating category:', categoryId, categoryData);
       const { response, data } = await fetchWithLogging(`/categories/${categoryId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(categoryData)
       });
-      console.log('✏️ Результат оновлення категорії:', response.ok ? 'Успішно' : 'Помилка', data);
+      console.log('✏️ Category update result:', response.ok ? 'Success' : 'Error', data);
       return { response, data };
     },
 
     delete: async (categoryId) => {
-      console.log('🗑️ Видалення категорії:', categoryId);
+      console.log('🗑️ Deleting category:', categoryId);
       const { response, data } = await fetchWithLogging(`/categories/${categoryId}`, {
         method: 'DELETE'
       });
-      console.log('🗑️ Результат видалення категорії:', response.ok ? 'Успішно' : 'Помилка');
+      console.log('🗑️ Category deletion result:', response.ok ? 'Success' : 'Error');
       return { response, data };
     }
   },
 
-  // Витрати
-  expenses: {
-    getAll: async (filters = {}) => {
-      console.log('💸 Отримання витрат з фільтрами:', filters);
-      const params = new URLSearchParams();
-      if (filters.category_id) params.append('category_id', filters.category_id);
-      if (filters.start_date) params.append('start_date', filters.start_date);
-      if (filters.end_date) params.append('end_date', filters.end_date);
-      
-      const endpoint = params.toString() ? `/expenses?${params}` : '/expenses';
-      const { response, data } = await fetchWithLogging(endpoint, {
-        method: 'GET'
-      });
-      console.log('💸 Отримано витрат:', data?.length || 0);
-      return { response, data };
-    },
-
-    create: async (expenseData) => {
-      console.log('➕ Створення витрати:', expenseData);
-      const { response, data } = await fetchWithLogging('/expenses', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(expenseData)
-      });
-      console.log('➕ Результат створення витрати:', response.ok ? 'Успішно' : 'Помилка', data);
-      return { response, data };
-    },
-
-    update: async (expenseId, expenseData) => {
-      console.log('✏️ Оновлення витрати:', expenseId, expenseData);
-      const { response, data } = await fetchWithLogging(`/expenses/${expenseId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(expenseData)
-      });
-      console.log('✏️ Результат оновлення витрати:', response.ok ? 'Успішно' : 'Помилка', data);
-      return { response, data };
-    },
-
-    delete: async (expenseId) => {
-      console.log('🗑️ Видалення витрати:', expenseId);
-      const { response, data } = await fetchWithLogging(`/expenses/${expenseId}`, {
-        method: 'DELETE'
-      });
-      console.log('🗑️ Результат видалення витрати:', response.ok ? 'Успішно' : 'Помилка');
-      return { response, data };
-    }
-  },
-
-  // Доходи
-  incomes: {
-    getAll: async (filters = {}) => {
-      console.log('💰 Отримання доходів з фільтрами:', filters);
-      const params = new URLSearchParams();
-      if (filters.category_id) params.append('category_id', filters.category_id);
-      if (filters.start_date) params.append('start_date', filters.start_date);
-      if (filters.end_date) params.append('end_date', filters.end_date);
-      
-      const endpoint = params.toString() ? `/incomes?${params}` : '/incomes';
-      const { response, data } = await fetchWithLogging(endpoint, {
-        method: 'GET'
-      });
-      console.log('💰 Отримано доходів:', data?.length || 0);
-      return { response, data };
-    },
-
-    create: async (incomeData) => {
-      console.log('➕ Створення доходу:', incomeData);
-      const { response, data } = await fetchWithLogging('/incomes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(incomeData)
-      });
-      console.log('➕ Результат створення доходу:', response.ok ? 'Успішно' : 'Помилка', data);
-      return { response, data };
-    },
-
-    update: async (incomeId, incomeData) => {
-      console.log('✏️ Оновлення доходу:', incomeId, incomeData);
-      const { response, data } = await fetchWithLogging(`/incomes/${incomeId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(incomeData)
-      });
-      console.log('✏️ Результат оновлення доходу:', response.ok ? 'Успішно' : 'Помилка', data);
-      return { response, data };
-    },
-
-    delete: async (incomeId) => {
-      console.log('🗑️ Видалення доходу:', incomeId);
-      const { response, data } = await fetchWithLogging(`/incomes/${incomeId}`, {
-        method: 'DELETE'
-      });
-      console.log('🗑️ Результат видалення доходу:', response.ok ? 'Успішно' : 'Помилка');
-      return { response, data };
-    }
-  },
-
-  // Статистика
-  statistics: {
-    get: async (filters = {}) => {
-      console.log('📊 Отримання статистики з фільтрами:', filters);
-      const params = new URLSearchParams();
-      if (filters.start_date) params.append('start_date', filters.start_date);
-      if (filters.end_date) params.append('end_date', filters.end_date);
-      
-      const endpoint = params.toString() ? `/statistics?${params}` : '/statistics';
-      const { response, data } = await fetchWithLogging(endpoint, {
-        method: 'GET'
-      });
-      console.log('📊 Отримано статистику:', data);
-      return { response, data };
-    }
-  },
-
-  // Гаманці
-  wallets: {
-    getAll: async () => {
-      console.log('💳 Отримання гаманців');
-      const { response, data } = await fetchWithLogging('/wallets', {
-        method: 'GET'
-      });
-      console.log('💳 Отримано гаманців:', data?.length || 0);
-      return { response, data };
-    },
-
-    create: async (walletData) => {
-      console.log('➕ Створення гаманця:', walletData);
-      const { response, data } = await fetchWithLogging('/wallets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(walletData)
-      });
-      console.log('➕ Результат створення гаманця:', response.ok ? 'Успішно' : 'Помилка', data);
-      return { response, data };
-    },
-
-    update: async (walletId, walletData) => {
-      console.log('✏️ Оновлення гаманця:', walletId, walletData);
-      const { response, data } = await fetchWithLogging(`/wallets/${walletId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(walletData)
-      });
-      console.log('✏️ Результат оновлення гаманця:', response.ok ? 'Успішно' : 'Помилка', data);
-      return { response, data };
-    },
-
-    delete: async (walletId) => {
-      console.log('🗑️ Видалення гаманця:', walletId);
-      const { response, data} = await fetchWithLogging(`/wallets/${walletId}`, {
-        method: 'DELETE'
-      });
-      console.log('🗑️ Результат видалення гаманця:', response.ok ? 'Успішно' : 'Помилка');
-      return { response, data };
-    }
-  },
-
-  // Транзакції (об'єднані доходи + витрати)
+  // MARK: Transactions
   transactions: {
     getAll: async (filters = {}) => {
-      console.log('📝 Отримання транзакцій з фільтрами:', filters);
+      console.log('� Fetching transactions with filters:', filters);
       const params = new URLSearchParams();
       if (filters.category_id) params.append('category_id', filters.category_id);
       if (filters.wallet_id) params.append('wallet_id', filters.wallet_id);
@@ -374,7 +193,98 @@ const api = {
       const { response, data } = await fetchWithLogging(endpoint, {
         method: 'GET'
       });
-      console.log('📝 Отримано транзакцій:', data?.length || 0);
+      console.log('� Transactions fetched:', data?.length || 0);
+      return { response, data };
+    },
+
+    create: async (transactionData) => {
+      console.log('➕ Creating transaction:', transactionData);
+      const { response, data } = await fetchWithLogging('/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(transactionData)
+      });
+      console.log('➕ Transaction creation result:', response.ok ? 'Success' : 'Error', data);
+      return { response, data };
+    },
+
+    update: async (transactionId, transactionData) => {
+      console.log('✏️ Updating transaction:', transactionId, transactionData);
+      const { response, data } = await fetchWithLogging(`/transactions/${transactionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(transactionData)
+      });
+      console.log('✏️ Transaction update result:', response.ok ? 'Success' : 'Error', data);
+      return { response, data };
+    },
+
+    delete: async (transactionId) => {
+      console.log('🗑️ Deleting transaction:', transactionId);
+      const { response, data } = await fetchWithLogging(`/transactions/${transactionId}`, {
+        method: 'DELETE'
+      });
+      console.log('🗑️ Transaction deletion result:', response.ok ? 'Success' : 'Error');
+      return { response, data };
+    }
+  },
+
+  // MARK: Statistics
+  statistics: {
+    get: async (filters = {}) => {
+      console.log('📊 Fetching statistics with filters:', filters);
+      const params = new URLSearchParams();
+      if (filters.start_date) params.append('start_date', filters.start_date);
+      if (filters.end_date) params.append('end_date', filters.end_date);
+      
+      const endpoint = params.toString() ? `/statistics?${params}` : '/statistics';
+      const { response, data } = await fetchWithLogging(endpoint, {
+        method: 'GET'
+      });
+      console.log('📊 Statistics fetched:', data);
+      return { response, data };
+    }
+  },
+
+  // MARK: Wallets
+  wallets: {
+    getAll: async () => {
+      console.log('💳 Fetching wallets');
+      const { response, data } = await fetchWithLogging('/wallets', {
+        method: 'GET'
+      });
+      console.log('💳 Wallets fetched:', data?.length || 0);
+      return { response, data };
+    },
+
+    create: async (walletData) => {
+      console.log('➕ Creating wallet:', walletData);
+      const { response, data } = await fetchWithLogging('/wallets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(walletData)
+      });
+      console.log('➕ Wallet creation result:', response.ok ? 'Success' : 'Error', data);
+      return { response, data };
+    },
+
+    update: async (walletId, walletData) => {
+      console.log('✏️ Updating wallet:', walletId, walletData);
+      const { response, data } = await fetchWithLogging(`/wallets/${walletId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(walletData)
+      });
+      console.log('✏️ Wallet update result:', response.ok ? 'Success' : 'Error', data);
+      return { response, data };
+    },
+
+    delete: async (walletId) => {
+      console.log('🗑️ Deleting wallet:', walletId);
+      const { response, data} = await fetchWithLogging(`/wallets/${walletId}`, {
+        method: 'DELETE'
+      });
+      console.log('🗑️ Wallet deletion result:', response.ok ? 'Success' : 'Error');
       return { response, data };
     }
   }

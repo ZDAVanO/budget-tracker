@@ -13,8 +13,7 @@ class User(db.Model):
     password = db.Column(db.String(256), nullable=False)
     
     wallets = db.relationship('Wallet', backref='user', lazy=True, cascade='all, delete-orphan')
-    expenses = db.relationship('Expense', backref='user', lazy=True, cascade='all, delete-orphan')
-    incomes = db.relationship('Income', backref='user', lazy=True, cascade='all, delete-orphan')
+    transactions = db.relationship('Transaction', backref='user', lazy=True, cascade='all, delete-orphan')
     categories = db.relationship('Category', backref='user', lazy=True, cascade='all, delete-orphan')
 
     def __repr__(self):
@@ -32,13 +31,12 @@ class Wallet(db.Model):
     
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     
-    expenses = db.relationship('Expense', backref='wallet', lazy=True)
-    incomes = db.relationship('Income', backref='wallet', lazy=True)
+    transactions = db.relationship('Transaction', backref='wallet', lazy=True)
     
     def get_balance(self):
         """Розрахунок поточного балансу гаманця"""
-        total_incomes = sum(i.amount for i in self.incomes)
-        total_expenses = sum(e.amount for e in self.expenses)
+        total_incomes = sum(t.amount for t in self.transactions if t.type == 'income')
+        total_expenses = sum(t.amount for t in self.transactions if t.type == 'expense')
         return self.initial_balance + total_incomes - total_expenses
     
     def to_dict(self):
@@ -54,8 +52,8 @@ class Wallet(db.Model):
         }
 
 
-# MARK: Expense
-class Expense(db.Model):
+# MARK: Transaction
+class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     amount = db.Column(db.Float, nullable=False)
@@ -63,11 +61,11 @@ class Expense(db.Model):
 
     title = db.Column(db.String(100))
     description = db.Column(db.String(255))
-    type = db.Column(db.String(20), default='expense')  # Для сумісності з єдиним списком
+    type = db.Column(db.String(20), nullable=False)  # 'expense' або 'income'
 
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=True)
-    wallet_id = db.Column(db.Integer, db.ForeignKey('wallet.id'), nullable=True)
+    wallet_id = db.Column(db.Integer, db.ForeignKey('wallet.id'), nullable=False)
 
     def to_dict(self):
         return {
@@ -76,7 +74,7 @@ class Expense(db.Model):
             'date': self.date.isoformat() if self.date else None,
             'title': self.title,
             'description': self.description,
-            'type': 'expense',
+            'type': self.type,
             'user_id': self.user_id,
             'category_id': self.category_id,
             'wallet_id': self.wallet_id,
@@ -84,36 +82,6 @@ class Expense(db.Model):
             'wallet': self.wallet.to_dict() if self.wallet else None
         }
 
-
-# MARK: Income
-class Income(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-
-    amount = db.Column(db.Float, nullable=False)
-    date = db.Column(db.DateTime, nullable=False)
-
-    title = db.Column(db.String(100))
-    description = db.Column(db.String(255))
-    type = db.Column(db.String(20), default='income')  # Для сумісності з єдиним списком
-
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=True)
-    wallet_id = db.Column(db.Integer, db.ForeignKey('wallet.id'), nullable=True)
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'amount': self.amount,
-            'date': self.date.isoformat() if self.date else None,
-            'title': self.title,
-            'description': self.description,
-            'type': 'income',
-            'user_id': self.user_id,
-            'category_id': self.category_id,
-            'wallet_id': self.wallet_id,
-            'category': self.category.to_dict() if self.category else None,
-            'wallet': self.wallet.to_dict() if self.wallet else None
-        }
 
 
 # MARK: Category
@@ -127,8 +95,7 @@ class Category(db.Model):
 
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-    expenses = db.relationship('Expense', backref='category', lazy=True)
-    incomes = db.relationship('Income', backref='category', lazy=True)
+    transactions = db.relationship('Transaction', backref='category', lazy=True)
 
     def to_dict(self):
         return {

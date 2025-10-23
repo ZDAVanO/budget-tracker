@@ -11,20 +11,27 @@ import {
 import { LockClosedIcon } from '@radix-ui/react-icons';
 import api from '../services/api';
 
+// MARK: Login 
 function Login({ onLoginSuccess }) {
+
   const [formData, setFormData] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  console.log('🎨 Login page render', { formData: { ...formData, password: '***' } });
 
+  console.log('🎨 Login page render');
+
+
+  // MARK: handleChange
   const handleChange = (e) => {
     const { name, value } = e.target;
     console.log(`📝 Login form change: ${name} =`, name === 'password' ? '***' : value);
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+
+  // MARK: handleSubmit
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -43,20 +50,27 @@ function Login({ onLoginSuccess }) {
         console.warn('⚠️ Login: Помилка входу', data);
         setError(data?.msg || 'Invalid username or password');
       }
+
     } catch (err) {
       console.error('❌ Login: Виняток при вході', err);
       setError('Failed to connect to server');
+
     } finally {
       setIsLoading(false);
     }
   };
 
+
+  // MARK: render
   return (
+
     <section className="py-12">
       <div className="max-w-md mx-auto px-4">
         <div className="flex items-center justify-center min-h-[70vh]">
           <Card size="4" variant="surface" >
             <div className="flex flex-col gap-5">
+
+              {/* MARK: header */}
               <div className="flex flex-col gap-2 items-center">
                 <LockClosedIcon width={24} height={24} />
                 <Heading size="6">Sign in to Budget Tracker</Heading>
@@ -65,8 +79,10 @@ function Login({ onLoginSuccess }) {
                 </Text>
               </div>
 
+              {/* MARK: form */}
               <form onSubmit={handleSubmit}>
                 <div className="flex flex-col gap-4">
+                  {/* MARK: username */}
                   <div className="flex flex-col gap-2">
                     <Text as="label" htmlFor="username">
                       Username
@@ -83,6 +99,7 @@ function Login({ onLoginSuccess }) {
                     />
                   </div>
 
+                  {/* MARK: password */}
                   <div className="flex flex-col gap-2">
                     <Text as="label" htmlFor="password">
                       Password
@@ -100,18 +117,21 @@ function Login({ onLoginSuccess }) {
                     />
                   </div>
 
+                  {/* MARK: error */}
                   {error && (
                     <Callout.Root color="red" variant="surface">
                       <Callout.Text>{error}</Callout.Text>
                     </Callout.Root>
                   )}
 
+                  {/* MARK: submit button */}
                   <Button type="submit" size="3" loading={isLoading}>
                     {isLoading ? 'Signing in...' : 'Sign In'}
                   </Button>
                 </div>
               </form>
 
+              {/* MARK: register link */}
               <div className="flex flex-row gap-2 items-center justify-center">
                 <Text size="2" color="gray">
                   Don't have an account?
@@ -120,11 +140,13 @@ function Login({ onLoginSuccess }) {
                   <Link to="/register">Register</Link>
                 </Button>
               </div>
+              
             </div>
           </Card>
         </div>
       </div>
     </section>
+
   );
 }
 

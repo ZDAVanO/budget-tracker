@@ -10,34 +10,24 @@ import {
   Text,
   Heading,
 } from '@radix-ui/themes';
-import { ExitIcon, DashboardIcon, CardStackIcon } from '@radix-ui/react-icons';
+import { ExitIcon } from '@radix-ui/react-icons';
 
 import ThemeToggleButton from './ThemeToggleButton';
 
-// const navItems = [
-//   { to: '/dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
-//   { to: '/transactions', label: 'Transactions', icon: <CardStackIcon /> },
-//   { to: '/wallets', label: 'Wallets', icon: <DashboardIcon /> },
-//   { to: '/categories', label: 'Categories', icon: <DashboardIcon /> },
-// ];
 
+// MARK: Header
 function Header({ isLoggedIn, user, onLogout }) {
   const navigate = useNavigate();
-  // const location = useLocation();
 
 
+  // MARK: handleLogout
   const handleLogout = () => {
     onLogout();
     navigate('/');
   };
 
-  // const isActive = (path) => {
-  //   if (path === '/') {
-  //     return location.pathname === '/';
-  //   }
-  //   return location.pathname === path || location.pathname.startsWith(`${path}/`);
-  // };
 
+  // MARK: Render
   return (
     <header className="sticky top-0 z-50 h-16">
       <div
@@ -45,6 +35,7 @@ function Header({ isLoggedIn, user, onLogout }) {
       >
         <div className="w-full px-4 h-full">
           <div className="flex items-center justify-between gap-4 flex-wrap h-full">
+            
             <div className="flex items-center gap-4 flex-wrap">
               <Link
                 to="/"
@@ -59,10 +50,12 @@ function Header({ isLoggedIn, user, onLogout }) {
               <ThemeToggleButton />
             </div>
 
+
             <div className="flex items-center gap-2">
               {isLoggedIn ? (
                 <DropdownMenu.Root>
                   <DropdownMenu.Trigger>
+
                     <div className="flex items-center gap-3 cursor-pointer">
                       <Text size="3" color="gray">
                         {user}
@@ -73,20 +66,22 @@ function Header({ isLoggedIn, user, onLogout }) {
                         color="mint"
                       />
                     </div>
+
                   </DropdownMenu.Trigger>
                   <DropdownMenu.Content align="end" variant="soft">
-                    <DropdownMenu.Label>{user}</DropdownMenu.Label>
-                    <DropdownMenu.Separator />
+
                     <DropdownMenu.Item onClick={() => navigate('/dashboard')}>
                       Go to Dashboard
                     </DropdownMenu.Item>
+
                     <DropdownMenu.Separator />
+
                     <DropdownMenu.Item color="red" onClick={handleLogout}>
                       <div className="flex items-center gap-2">
-                        <ExitIcon />
-                        Logout
+                        <ExitIcon /> Logout
                       </div>
                     </DropdownMenu.Item>
+
                   </DropdownMenu.Content>
                 </DropdownMenu.Root>
               ) : (
@@ -100,6 +95,7 @@ function Header({ isLoggedIn, user, onLogout }) {
                 </div>
               )}
             </div>
+
           </div>
         </div>
       </div>

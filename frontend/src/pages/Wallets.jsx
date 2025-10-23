@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+
 import {
   Badge,
   Button,
@@ -20,7 +21,10 @@ import {
 import { PlusCircledIcon, Pencil2Icon, TrashIcon, Cross2Icon } from '@radix-ui/react-icons';
 import api from '../services/api';
 
+
+// MARK: Wallets
 function Wallets() {
+
   const [wallets, setWallets] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -35,10 +39,14 @@ function Wallets() {
   const [error, setError] = useState('');
   const [walletToDelete, setWalletToDelete] = useState(null);
 
+
+  // MARK: effects
   useEffect(() => {
     loadWallets();
   }, []);
 
+
+  // MARK: loadWallets
   const loadWallets = async () => {
     setIsLoading(true);
     try {
@@ -53,10 +61,14 @@ function Wallets() {
     }
   };
 
+
+  // MARK: updateField
   const updateField = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+
+  // MARK: handleSubmit
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
@@ -67,16 +79,21 @@ function Wallets() {
         initial_balance: parseFloat(formData.initial_balance || '0'),
       };
 
+      console.log('💾 Submitting wallet:', payload);
+
+      let result;
       if (editingWallet) {
-        const { response } = await api.wallets.update(editingWallet.id, payload);
-        if (!response.ok) {
-          setError('Error updating wallet');
+        result = await api.wallets.update(editingWallet.id, payload);
+        console.log('📝 Update result:', result);
+        if (!result.response.ok) {
+          setError(result.data?.msg || 'Error updating wallet');
           return;
         }
       } else {
-        const { response } = await api.wallets.create(payload);
-        if (!response.ok) {
-          setError('Error creating wallet');
+        result = await api.wallets.create(payload);
+        console.log('➕ Create result:', result);
+        if (!result.response.ok) {
+          setError(result.data?.msg || 'Error creating wallet');
           return;
         }
       }
@@ -85,12 +102,15 @@ function Wallets() {
       setIsFormOpen(false);
       setEditingWallet(null);
       loadWallets();
+      
     } catch (saveError) {
-      console.error('Error saving wallet:', saveError);
-      setError('Error saving');
+      console.error('❌ Error saving wallet:', saveError);
+      setError(`Error saving: ${saveError.message}`);
     }
   };
 
+
+  // MARK: handleEdit
   const handleEdit = (wallet) => {
     setEditingWallet(wallet);
     setFormData({
@@ -103,10 +123,14 @@ function Wallets() {
     setIsFormOpen(true);
   };
 
+
+  // MARK: handleDelete
   const handleDelete = (wallet) => {
     setWalletToDelete(wallet);
   };
 
+
+  // MARK: confirmDelete
   const confirmDelete = async () => {
     if (!walletToDelete) return;
     try {
@@ -124,6 +148,8 @@ function Wallets() {
     }
   };
 
+
+  // MARK: handleCancelForm
   const handleCancelForm = () => {
     setIsFormOpen(false);
     setEditingWallet(null);
@@ -131,6 +157,8 @@ function Wallets() {
     setError('');
   };
 
+
+  // MARK: handleCreateClick
   const handleCreateClick = () => {
     setEditingWallet(null);
     setFormData({ name: '', description: '', icon: '💳', initial_balance: '0', currency: 'UAH' });
@@ -138,6 +166,8 @@ function Wallets() {
     setIsFormOpen(true);
   };
 
+
+  // MARK: handleFormOpenChange
   const handleFormOpenChange = (open) => {
     setIsFormOpen(open);
     if (!open) {
@@ -149,13 +179,17 @@ function Wallets() {
 
   // const totalBalance = wallets.reduce((sum, wallet) => sum + (wallet.balance ?? 0), 0);
 
+  // MARK: formatAmount
   const formatAmount = (amount, currency) =>
     `${amount >= 0 ? '+' : ''}${amount.toFixed(2)} ${currency || 'UAH'}`;
 
+
+  // MARK: render
   return (
     <Section size="3" className="p-4">
       <Container size="3">
         <Flex direction="column" gap="6">
+          {/* MARK: header & add wallet dialog */}
           <Flex align="center" justify="between" wrap="wrap" gap="3">
 
             <Flex direction="column" gap="1">
@@ -173,7 +207,7 @@ function Wallets() {
               </Dialog.Trigger>
 
               <Dialog.Content maxWidth="540px">
-
+                {/* MARK: wallet form */}
                 <Flex direction="column" gap="4">
 
                   <Flex align="center" justify="between">
@@ -290,6 +324,7 @@ function Wallets() {
 
           </Flex>
 
+          {/* MARK: total balance card (commented) */}
           {/* <Card size="2" variant="surface">
             <Flex align="center" justify="between" wrap="wrap" gap="3">
               <Flex align="center" gap="3">
@@ -307,6 +342,7 @@ function Wallets() {
             </Flex>
           </Card> */}
 
+          {/* MARK: delete dialog */}
           <Dialog.Root open={!!walletToDelete} onOpenChange={(open) => !open && setWalletToDelete(null)}>
             <Dialog.Content maxWidth="400px">
               <Flex direction="column" gap="4">
@@ -329,6 +365,7 @@ function Wallets() {
             </Dialog.Content>
           </Dialog.Root>
 
+          {/* MARK: wallets grid/list */}
           {isLoading ? (
             <Flex justify="center" align="center" style={{ height: '100px' }}>
                 <Spinner size="3" />
@@ -341,6 +378,7 @@ function Wallets() {
             <Grid columns={{ initial: '1', sm: '2', lg: '3' }} gap="4">
               {wallets.map((wallet) => (
                 <Card key={wallet.id} variant="classic" size="2">
+                  {/* MARK: wallet card */}
                   <Flex direction="column" gap="3">
 
                     <Flex align="center" justify="between">
@@ -390,4 +428,5 @@ function Wallets() {
   );
 }
 
+// MARK: export
 export default Wallets;

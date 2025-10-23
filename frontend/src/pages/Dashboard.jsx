@@ -17,21 +17,29 @@ import {
 import { ArrowRightIcon, LightningBoltIcon } from '@radix-ui/react-icons';
 import api from '../services/api';
 
+// MARK: Dashboard
 function Dashboard({ user }) {
+
   const [statistics, setStatistics] = useState({ total_expenses: 0, total_incomes: 0, balance: 0 });
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [wallets, setWallets] = useState([]);
+  
   const [isLoading, setIsLoading] = useState(false);
+
 
   console.log('🎨 Dashboard render, user:', user);
 
+
+  // MARK: useEffect - load data
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
       try {
         await Promise.all([loadStatistics(), loadRecentTransactions(), loadWallets()]);
+
       } catch (err) {
         console.error('Error loading data:', err);
+
       } finally {
         setIsLoading(false);
       }
@@ -40,6 +48,8 @@ function Dashboard({ user }) {
     loadData();
   }, []);
 
+
+  // MARK: loadStatistics
   const loadStatistics = async () => {
     try {
       const { response, data } = await api.statistics.get();
@@ -51,6 +61,8 @@ function Dashboard({ user }) {
     }
   };
 
+
+  // MARK: loadRecentTransactions
   const loadRecentTransactions = async () => {
     try {
       const { response, data } = await api.transactions.getAll();
@@ -62,6 +74,8 @@ function Dashboard({ user }) {
     }
   };
 
+
+  // MARK: loadWallets
   const loadWallets = async () => {
     try {
       const { response, data } = await api.wallets.getAll();
@@ -73,6 +87,8 @@ function Dashboard({ user }) {
     }
   };
 
+
+  // MARK: formatAmount
   const formatAmount = (amount) =>
     new Intl.NumberFormat('uk-UA', {
       minimumFractionDigits: 2,
@@ -81,22 +97,14 @@ function Dashboard({ user }) {
 
 
 
-  const stats = recentTransactions.reduce((acc, t) => {
-    if (t.type === 'expense') {
-      acc.totalExpenses += t.amount;
-    } else {
-      acc.totalIncomes += t.amount;
-    }
-    return acc;
-  }, { totalExpenses: 0, totalIncomes: 0 });
 
-  const balance = stats.totalIncomes - stats.totalExpenses;
-
+  // MARK: render
   return (
     <Section size="3" className="p-4">
       <Container size="3">
         <Flex direction="column" gap="5">
           
+
           <Flex direction="column" gap="2">
             <Heading as="h1" size="7">
               Hello, {user}! 👋
@@ -106,33 +114,34 @@ function Dashboard({ user }) {
             </Text>
           </Flex>
 
+          {/* MARK: Stats cards */}
           <Grid columns={{ initial: '1', md: '3' }} gap="5">
             <Card variant="surface" size="3">
               <Flex direction="column" gap="2">
                 <Text color="gray">Income</Text>
-                <Heading size="6" color="mint">+{stats.totalIncomes.toFixed(2)} UAH</Heading>
+                <Heading size="6" color="mint">+{statistics.total_incomes.toFixed(2)} UAH</Heading>
 
               </Flex>
             </Card>
             <Card variant="surface" size="3">
               <Flex direction="column" gap="2">
                 <Text color="gray">Expenses</Text>
-                <Heading size="6" color="tomato">-{stats.totalExpenses.toFixed(2)} UAH</Heading>
-
+                <Heading size="6" color="tomato">-{statistics.total_expenses.toFixed(2)} UAH</Heading>
               </Flex>
             </Card>
             <Card variant="surface" size="3">
               <Flex direction="column" gap="2">
                 <Text color="gray">Balance</Text>
-                <Heading size="6" color={balance >= 0 ? 'jade' : 'tomato'}>
-                  {balance >= 0 ? '+' : ''}{balance.toFixed(2)} UAH
+                <Heading size="6" color={statistics.balance >= 0 ? 'jade' : 'tomato'}>
+                  {statistics.balance >= 0 ? '+' : ''}{statistics.balance.toFixed(2)} UAH
                 </Heading>
-
               </Flex>
             </Card>
           </Grid>
 
+
           <Grid columns={{ initial: '1', md: '2' }} gap="5">
+            {/* MARK: Recent Transactions */}
             <Card size="3" variant="surface">
               <Flex direction="column" gap="4">
                 <Flex align="center" justify="between">
@@ -183,7 +192,9 @@ function Dashboard({ user }) {
               </Flex>
             </Card>
 
+            {/* MARK: Wallets */}
             <Card size="3" variant="classic">
+              
               <Flex direction="column" gap="4">
                 <Flex align="center" justify="between">
                   <Heading size="5">Wallets</Heading>
@@ -210,8 +221,8 @@ function Dashboard({ user }) {
                       <Card
                         key={wallet.id}
                         variant="surface"
-
                       >
+
                         <Flex justify="between" align="center">
                           <Flex align="center" gap="3">
                             <Text size="4">{wallet.icon}</Text>
@@ -224,11 +235,14 @@ function Dashboard({ user }) {
                           </Flex>
                           <Text weight="bold">{formatAmount(wallet.balance || 0)} ₴</Text>
                         </Flex>
+
                       </Card>
+
                     ))}
                   </Flex>
                 )}
               </Flex>
+
             </Card>
           </Grid>
 
@@ -238,4 +252,5 @@ function Dashboard({ user }) {
   );
 }
 
+// MARK: export
 export default Dashboard;

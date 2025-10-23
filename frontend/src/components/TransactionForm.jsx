@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+
 import {
   Button,
   Callout,
@@ -14,80 +15,93 @@ import {
 import { Pencil2Icon, PlusCircledIcon } from '@radix-ui/react-icons';
 import api from '../services/api';
 
-function TransactionForm({ onSuccess, editData = null, onCancel, showHeading = true }) {
+
+// MARK: getTodayLocalDate
+// функція для отримання локальної дати у форматі YYYY-MM-DD
+function getTodayLocalDate() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+
+// MARK: TransactionForm
+function TransactionForm({ 
+  onSuccess, 
+  editData = null, 
+  onCancel, 
+  showHeading = true,
+  categories = [],
+  wallets = []
+}) {
+
+  // MARK: state
   const [formData, setFormData] = useState({
     type: 'expense',
     amount: '',
-    date: new Date().toISOString().split('T')[0],
+    date: getTodayLocalDate(),
     title: '',
     description: '',
     category_id: '',
-    wallet_id: '',
+    wallet_id: wallets.length > 0 ? wallets[0].id.toString() : '',
   });
-  const [categories, setCategories] = useState([]);
-  const [wallets, setWallets] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
   const isExpense = formData.type === 'expense';
 
-  const loadCategories = async () => {
-    try {
-      const { response, data } = await api.categories.getAll();
-      if (response.ok) {
-        setCategories(data || []);
-      }
-    } catch (err) {
-      console.error('Error loading categories:', err);
-    }
-  };
-
-  const loadWallets = async () => {
-    try {
-      const { response, data } = await api.wallets.getAll();
-      if (response.ok) {
-        setWallets(data || []);
-        const defaultWallet = data.find((wallet) => wallet.is_default);
-        if (defaultWallet && !editData) {
-          setFormData((prev) => ({ ...prev, wallet_id: defaultWallet.id.toString() }));
-        }
-      }
-    } catch (err) {
-      console.error('Error loading wallets:', err);
-    }
-  };
-
+  
+  // MARK: useEffect
   useEffect(() => {
-    loadCategories();
-    loadWallets();
-
     if (editData) {
+      // Режим редагування - заповнюємо дані з транзакції
       setFormData({
         type: editData.type || 'expense',
         amount: editData.amount?.toString() || '',
-        date: editData.date ? editData.date.split('T')[0] : new Date().toISOString().split('T')[0],
+        date: editData.date ? editData.date.split('T')[0] : getTodayLocalDate(),
         title: editData.title || '',
         description: editData.description || '',
         category_id: editData.category_id?.toString() || '',
         wallet_id: editData.wallet_id?.toString() || '',
       });
+
+    } else {
+      // Режим створення - автоматично вибираємо перший гаманець
+      if (wallets.length > 0 && !formData.wallet_id) {
+        setFormData(prev => ({
+          ...prev,
+          wallet_id: wallets[0].id.toString()
+        }));
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editData]);
+  }, [editData, wallets]);
 
+
+  // MARK: handlers
   const updateField = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+
+  // MARK: handleSubmit
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
     setIsLoading(true);
-
     try {
-      const dateTime = new Date(`${formData.date}T12:00:00`).toISOString();
+      // Формуємо дату у локальному форматі без UTC-зсуву
+      const now = new Date();
+      const [year, month, day] = formData.date.split('-');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      const dateTime = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
 
       const payload = {
+        type: formData.type,
         amount: parseFloat(formData.amount || '0'),
         date: dateTime,
         title: formData.title,
@@ -97,25 +111,23 @@ function TransactionForm({ onSuccess, editData = null, onCancel, showHeading = t
       };
 
       let result;
-      const isExpenseType = formData.type === 'expense';
 
       if (editData) {
-        result = isExpenseType
-          ? await api.expenses.update(editData.id, payload)
-          : await api.incomes.update(editData.id, payload);
+        result = await api.transactions.update(editData.id, payload);
       } else {
-        result = isExpenseType ? await api.expenses.create(payload) : await api.incomes.create(payload);
+        result = await api.transactions.create(payload);
       }
 
       if (result.response.ok) {
+        // Скидаємо форму з вибраним першим гаманцем
         setFormData({
           type: 'expense',
           amount: '',
-          date: new Date().toISOString().split('T')[0],
+          date: getTodayLocalDate(),
           title: '',
           description: '',
           category_id: '',
-          wallet_id: wallets.find((wallet) => wallet.is_default)?.id?.toString() || '',
+          wallet_id: wallets.length > 0 ? wallets[0].id.toString() : '',
         });
 
         if (onSuccess) {
@@ -132,29 +144,32 @@ function TransactionForm({ onSuccess, editData = null, onCancel, showHeading = t
     }
   };
 
+
+  // MARK: filtered categories
   const filteredCategories = categories.filter((cat) => cat.type === formData.type || cat.type === 'both');
 
+
+  // MARK: render
   return (
     <form onSubmit={handleSubmit}>
       <Flex direction="column" gap="5">
-        
-        {(showHeading || !editData) && (
-          <Flex align="center" justify={showHeading ? 'between' : 'start'} wrap="wrap" gap="3">
-            {showHeading && (
-              <Flex align="center" gap="2">
-                {editData ? <Pencil2Icon /> : <PlusCircledIcon />}
-                <Heading size="5">{editData ? 'Edit transaction' : 'New transaction'}</Heading>
-              </Flex>
-            )}
-            {!editData && (
-              <SegmentedControl.Root value={formData.type} onValueChange={(value) => updateField('type', value)}>
-                <SegmentedControl.Item value="expense">💸 Expense</SegmentedControl.Item>
-                <SegmentedControl.Item value="income">💰 Income</SegmentedControl.Item>
-              </SegmentedControl.Root>
-            )}
-          </Flex>
-        )}
+        {/* MARK: heading */}
 
+          <Flex align="center" justify='between' wrap="wrap" gap="3">
+            
+            <Flex align="center" gap="2">
+              {/* {editData ? <Pencil2Icon /> : <PlusCircledIcon />} */}
+              <Heading size="5">{editData ? 'Edit transaction' : 'New transaction'}</Heading>
+            </Flex>
+
+            <SegmentedControl.Root value={formData.type} onValueChange={(value) => updateField('type', value)}>
+              <SegmentedControl.Item value="expense">💸 Expense</SegmentedControl.Item>
+              <SegmentedControl.Item value="income">💰 Income</SegmentedControl.Item>
+            </SegmentedControl.Root>
+
+          </Flex>
+
+        {/* MARK: amount & date */}
         <Grid columns={{ initial: '1', md: '2' }} gap="4">
           <Flex direction="column" gap="2">
             <Text as="label" htmlFor="amount">
@@ -190,6 +205,7 @@ function TransactionForm({ onSuccess, editData = null, onCancel, showHeading = t
           </Flex>
         </Grid>
 
+        {/* MARK: title */}
         <Flex direction="column" gap="2">
           <Text as="label" htmlFor="title">
             Title
@@ -197,7 +213,6 @@ function TransactionForm({ onSuccess, editData = null, onCancel, showHeading = t
           <TextField.Root
             id="title"
             name="title"
-            required
             value={formData.title}
             onChange={(event) => updateField('title', event.target.value)}
             disabled={isLoading}
@@ -205,6 +220,7 @@ function TransactionForm({ onSuccess, editData = null, onCancel, showHeading = t
           />
         </Flex>
 
+        {/* MARK: category */}
         <Grid columns={{ initial: '1', md: '2' }} gap="4">
           <Flex direction="column" gap="2">
             <Text>Category</Text>
@@ -225,16 +241,16 @@ function TransactionForm({ onSuccess, editData = null, onCancel, showHeading = t
             </Select.Root>
           </Flex>
 
+          {/* MARK: wallet */}
           <Flex direction="column" gap="2">
             <Text>Wallet</Text>
             <Select.Root
-              value={formData.wallet_id || 'none'}
-              onValueChange={(value) => updateField('wallet_id', value === 'none' ? '' : value)}
+              value={formData.wallet_id}
+              onValueChange={(value) => updateField('wallet_id', value)}
               disabled={isLoading}
             >
-              <Select.Trigger placeholder="No wallet" />
+              <Select.Trigger placeholder="Select wallet" />
               <Select.Content>
-                <Select.Item value="none">No wallet</Select.Item>
                 {wallets.map((wallet) => (
                   <Select.Item key={wallet.id} value={wallet.id?.toString()}>
                     {wallet.icon} {wallet.name}
@@ -245,6 +261,7 @@ function TransactionForm({ onSuccess, editData = null, onCancel, showHeading = t
           </Flex>
         </Grid>
 
+        {/* MARK: description */}
         <Flex direction="column" gap="2">
           <Text as="label" htmlFor="description">
             Description
@@ -260,12 +277,14 @@ function TransactionForm({ onSuccess, editData = null, onCancel, showHeading = t
           />
         </Flex>
 
+        {/* MARK: error */}
         {error && (
           <Callout.Root color="red" variant="surface">
             <Callout.Text>{error}</Callout.Text>
           </Callout.Root>
         )}
 
+        {/* MARK: buttons */}
         <Flex justify="between" gap="3" wrap="wrap">
           <Button type="submit" loading={isLoading}>
             {editData ? 'Save changes' : 'Add transaction'}

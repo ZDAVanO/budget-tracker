@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+
 import {
   Badge,
   Button,
@@ -18,7 +19,9 @@ import TransactionFilters from '../components/TransactionFilters';
 import TransactionForm from '../components/TransactionForm';
 import TransactionList from '../components/TransactionList';
 
+// MARK: Transactions
 function Transactions() {
+
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
   const [wallets, setWallets] = useState([]);
@@ -34,8 +37,9 @@ function Transactions() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState(null);
 
-  // loaders are defined below; loadData and effect will be set after them
 
+
+  // MARK: loadTransactions
   const loadTransactions = useCallback(async () => {
     try {
       const { response, data } = await api.transactions.getAll(filters);
@@ -47,6 +51,8 @@ function Transactions() {
     }
   }, [filters]);
 
+
+  // MARK: loadCategories
   const loadCategories = useCallback(async () => {
     try {
       const { response, data } = await api.categories.getAll();
@@ -58,6 +64,8 @@ function Transactions() {
     }
   }, []);
 
+
+  // MARK: loadWallets
   const loadWallets = useCallback(async () => {
     try {
       const { response, data } = await api.wallets.getAll();
@@ -69,6 +77,8 @@ function Transactions() {
     }
   }, []);
 
+
+  // MARK: loadData
   const loadData = useCallback(async () => {
     setIsLoading(true);
     await Promise.all([
@@ -79,16 +89,22 @@ function Transactions() {
     setIsLoading(false);
   }, [loadTransactions, loadCategories, loadWallets]);
 
+  
+  // MARK: useEffect
   useEffect(() => {
     loadData();
   }, [loadData]);
 
+
+  // MARK: handleTransactionSuccess
   const handleTransactionSuccess = () => {
     setIsFormOpen(false);
     setEditingTransaction(null);
     loadTransactions();
   };
 
+
+  // MARK: handleFormOpenChange
   const handleFormOpenChange = (open) => {
     setIsFormOpen(open);
     if (!open) {
@@ -96,26 +112,32 @@ function Transactions() {
     }
   };
 
+
+  // MARK: handleCreateClick
   const handleCreateClick = () => {
     setEditingTransaction(null);
     setIsFormOpen(true);
   };
 
+
+  // MARK: handleEdit
   const handleEdit = (transaction) => {
     setEditingTransaction(transaction);
     setIsFormOpen(true);
   };
 
+
+  // MARK: handleDelete
   const handleDelete = (transaction) => {
     setTransactionToDelete(transaction);
   };
 
+
+  // MARK: confirmDelete
   const confirmDelete = async () => {
     if (!transactionToDelete) return;
     try {
-      const { response } = transactionToDelete.type === 'expense'
-        ? await api.expenses.delete(transactionToDelete.id)
-        : await api.incomes.delete(transactionToDelete.id);
+      const { response } = await api.transactions.delete(transactionToDelete.id);
 
       if (response.ok) {
         loadTransactions();
@@ -130,21 +152,14 @@ function Transactions() {
     }
   };
 
-  // const stats = transactions.reduce((acc, t) => {
-  //   if (t.type === 'expense') {
-  //     acc.totalExpenses += t.amount;
-  //   } else {
-  //     acc.totalIncomes += t.amount;
-  //   }
-  //   return acc;
-  // }, { totalExpenses: 0, totalIncomes: 0 });
 
-  // const balance = stats.totalIncomes - stats.totalExpenses;
-
+  // MARK: render
   return (
     <Section size="3" className="p-4">
       <Container size="3">
         <Flex direction="column" gap="6">
+
+          {/* MARK: header */}
           <Flex align="center" justify="between" wrap="wrap" gap="3">
             <Flex direction="column" gap="1">
               <Heading as="h1" size="7">
@@ -156,6 +171,7 @@ function Transactions() {
               <Badge color="mint" variant="soft">
                 {transactions.length} records
               </Badge>
+
               <Dialog.Root open={isFormOpen} onOpenChange={handleFormOpenChange}>
                 <Dialog.Trigger asChild>
                   <Button onClick={handleCreateClick}>
@@ -165,11 +181,13 @@ function Transactions() {
                 <Dialog.Content maxWidth="520px">
                   <Flex direction="column" gap="4">
                     <Flex align="center" justify="between">
+
                       <Dialog.Title asChild>
                         <Heading size="5">
                           {editingTransaction ? 'Edit transaction' : 'New transaction'}
                         </Heading>
                       </Dialog.Title>
+
                       <Dialog.Close asChild>
                         <IconButton
                           variant="ghost"
@@ -180,44 +198,27 @@ function Transactions() {
                           <Cross2Icon />
                         </IconButton>
                       </Dialog.Close>
+
                     </Flex>
+
                     <TransactionForm
                       onSuccess={handleTransactionSuccess}
                       editData={editingTransaction}
                       onCancel={() => handleFormOpenChange(false)}
                       showHeading={false}
+                      categories={categories}
+                      wallets={wallets}
                     />
+                    
                   </Flex>
                 </Dialog.Content>
               </Dialog.Root>
+
             </Flex>
           </Flex>
-          {/* <Grid columns={{ initial: '1', md: '3' }} gap="4">
-            <Card variant="surface" size="3">
-              <Flex direction="column" gap="2">
-                <Text color="gray">Income</Text>
-                <Heading size="6" color="mint">+{stats.totalIncomes.toFixed(2)} UAH</Heading>
-                <Text size="2" color="gray">All income for the selected period</Text>
-              </Flex>
-            </Card>
-            <Card variant="surface" size="3">
-              <Flex direction="column" gap="2">
-                <Text color="gray">Expenses</Text>
-                <Heading size="6" color="tomato">-{stats.totalExpenses.toFixed(2)} UAH</Heading>
-                <Text size="2" color="gray">Financial obligations and purchases</Text>
-              </Flex>
-            </Card>
-            <Card variant="surface" size="3">
-              <Flex direction="column" gap="2">
-                <Text color="gray">Balance</Text>
-                <Heading size="6" color={balance >= 0 ? 'jade' : 'tomato'}>
-                  {balance >= 0 ? '+' : ''}{balance.toFixed(2)} UAH
-                </Heading>
-                <Text size="2" color="gray">Difference between income and expenses</Text>
-              </Flex>
-            </Card>
-          </Grid> */}
 
+
+          {/* MARK: filters */}
           <Card variant="surface" size="3">
             <Flex direction="column" gap="4">
               <Flex align="center" justify="between" wrap="wrap" gap="3">
@@ -226,15 +227,26 @@ function Transactions() {
                   <Heading size="4">Filters</Heading>
                 </Flex>
               </Flex>
-              <TransactionFilters filters={filters} onFilterChange={setFilters} categories={categories} wallets={wallets} />
+
+              <TransactionFilters 
+                filters={filters} 
+                onFilterChange={setFilters} 
+                categories={categories} 
+                wallets={wallets} 
+              />
+
             </Flex>
           </Card>
+
+          {/* MARK: list */}
           <Card variant="surface" size="3">
             <Flex direction="column" gap="4">
               <Heading size="4">Transaction list</Heading>
               <TransactionList transactions={transactions} onEdit={handleEdit} onDelete={handleDelete} isLoading={isLoading} />
             </Flex>
           </Card>
+
+          {/* MARK: delete dialog */}
           <Dialog.Root open={!!transactionToDelete} onOpenChange={(open) => !open && setTransactionToDelete(null)}>
             <Dialog.Content maxWidth="400px">
               <Flex direction="column" gap="4">
@@ -256,6 +268,7 @@ function Transactions() {
               </Flex>
             </Dialog.Content>
           </Dialog.Root>
+
         </Flex>
       </Container>
     </Section>

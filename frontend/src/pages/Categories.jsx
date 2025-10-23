@@ -20,7 +20,9 @@ import {
 import { Pencil2Icon, TrashIcon, PlusCircledIcon, Cross2Icon } from '@radix-ui/react-icons';
 import api from '../services/api';
 
+// MARK: Categories
 function Categories() {
+
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -29,10 +31,14 @@ function Categories() {
   const [error, setError] = useState('');
   const [categoryToDelete, setCategoryToDelete] = useState(null);
 
+
+  // MARK: useEffect
   useEffect(() => {
     loadCategories();
   }, []);
 
+
+  // MARK: handlers
   const loadCategories = async () => {
     setIsLoading(true);
     try {
@@ -47,6 +53,7 @@ function Categories() {
     }
   };
 
+  // MARK: updateField
   const updateField = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -74,12 +81,15 @@ function Categories() {
       setIsFormOpen(false);
       setEditingCategory(null);
       loadCategories();
+
     } catch (saveError) {
       console.error('Error saving category:', saveError);
       setError('Error saving');
     }
   };
 
+
+  // MARK: handleEdit
   const handleEdit = (category) => {
     setEditingCategory(category);
     setFormData({
@@ -91,10 +101,14 @@ function Categories() {
     setIsFormOpen(true);
   };
 
+
+  // MARK: handleDelete
   const handleDelete = (category) => {
     setCategoryToDelete(category);
   };
 
+
+  // MARK: confirmDelete
   const confirmDelete = async () => {
     if (!categoryToDelete) return;
     try {
@@ -106,14 +120,18 @@ function Categories() {
         alert(errorMsg);
         console.error('Delete error:', { status: response.status, data });
       }
+
     } catch (deleteError) {
       console.error('Error deleting category:', deleteError);
       alert('Error deleting category');
+
     } finally {
       setCategoryToDelete(null);
     }
   };
 
+
+  // MARK: handleCancelForm
   const handleCancelForm = () => {
     setIsFormOpen(false);
     setEditingCategory(null);
@@ -121,6 +139,8 @@ function Categories() {
     setError('');
   };
 
+  
+  // MARK: handleCreateClick
   const handleCreateClick = () => {
     setEditingCategory(null);
     setFormData({ name: '', description: '', icon: '📌', type: 'both' });
@@ -128,6 +148,8 @@ function Categories() {
     setIsFormOpen(true);
   };
 
+
+  // MARK: handleFormOpenChange
   const handleFormOpenChange = (open) => {
     setIsFormOpen(open);
     if (!open) {
@@ -137,7 +159,9 @@ function Categories() {
     }
   };
 
-    const typeBadge = (type) => {
+  
+  // MARK: typeBadge
+  const typeBadge = (type) => {
     const style = { width: 'fit-content', paddingRight: 8 };
     if (type === 'income') {
       return <Badge color="mint" style={style}>Income</Badge>;
@@ -148,17 +172,22 @@ function Categories() {
     return <Badge color="gray" style={style}>For all</Badge>;
   };
 
+  
+  // MARK: render
   return (
     <Section size="3" className="p-4">
       <Container size="3">
         <Flex direction="column" gap="6">
+          {/* MARK: header & add button */}
           <Flex align="center" justify="between" wrap="wrap" gap="3">
+            
             <Flex direction="column" gap="1">
               <Heading as="h1" size="7">
                 Categories
               </Heading>
               <Text color="gray">Classify expenses and income for accurate analysis.</Text>
             </Flex>
+
             <Dialog.Root open={isFormOpen} onOpenChange={handleFormOpenChange}>
               <Dialog.Trigger asChild>
                 <Button onClick={handleCreateClick}>
@@ -257,8 +286,10 @@ function Categories() {
                 </Flex>
               </Dialog.Content>
             </Dialog.Root>
+
           </Flex>
 
+          {/* MARK: delete dialog */}
           <Dialog.Root open={!!categoryToDelete} onOpenChange={(open) => !open && setCategoryToDelete(null)}>
             <Dialog.Content maxWidth="400px">
               <Flex direction="column" gap="4">
@@ -281,13 +312,13 @@ function Categories() {
             </Dialog.Content>
           </Dialog.Root>
 
+          {/* MARK: categories list */}
           {isLoading ? (
             <Flex justify="center" align="center" style={{ height: '100px' }}>
                 <Spinner size="3" />
             </Flex>
           ) : (
-            // <Card variant="surface" size="3">
-              <Flex direction="column" gap="4">
+            <Flex direction="column" gap="4">
 
                 {categories.length === 0 ? (
                   <Callout.Root>
@@ -326,7 +357,6 @@ function Categories() {
                   </Grid>
                 )}
               </Flex>
-            // </Card>
           )}
         </Flex>
       </Container>

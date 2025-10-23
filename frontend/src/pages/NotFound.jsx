@@ -2,34 +2,32 @@ import {
   Box,
   Button,
   Callout,
-  Container,
   Flex,
   Heading,
-  Section,
   Text,
 } from '@radix-ui/themes';
 
 const NotFound = () => {
   return (
-    <Section size="3">
-      <Container size="2">
+    <div className="py-12 p-4">
+      <div className="max-w-md mx-auto">
         <Callout.Root>
           <Callout.Text>
             <Flex direction="column" gap="3">
-              <Heading size="7">404 • Сторінку не знайдено</Heading>
+              <Heading size="7">404 • Page Not Found</Heading>
               <Text color="gray" size="3">
-                Здається, ви опинилися на невідомій сторінці. Спробуйте повернутися на головну.
+                It looks like you've landed on an unknown page. Try returning to the homepage.
               </Text>
               <Flex>
                 <Button asChild>
-                  <a href="/">На головну</a>
+                  <a href="/">Go to Homepage</a>
                 </Button>
               </Flex>
             </Flex>
           </Callout.Text>
         </Callout.Root>
-      </Container>
-    </Section>
+      </div>
+    </div>
   );
 };
 

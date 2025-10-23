@@ -3,12 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { DashboardIcon, CardStackIcon } from '@radix-ui/react-icons';
 import { Button } from '@radix-ui/themes';
 
-const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
-  { to: '/transactions', label: 'Transactions', icon: <CardStackIcon /> },
-  { to: '/wallets', label: 'Wallets', icon: <DashboardIcon /> },
-  { to: '/categories', label: 'Categories', icon: <DashboardIcon /> },
-];
+import navItems from './navItems';
+
 
 export default function SidebarNav() {
   const location = useLocation();

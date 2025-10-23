@@ -1,8 +1,10 @@
+
 import './styles/App.css'
 
-
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
+import useAuth from './contexts/useAuth';
+
 import {
   Box,
   Button,
@@ -22,7 +24,6 @@ import Footer from './components/Footer.jsx';
 import BottomNav from './components/BottomNav.jsx';
 import SidebarNav from './components/SidebarNav.jsx';
 
-
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -33,7 +34,7 @@ import Wallets from './pages/Wallets.jsx';
 import NotFound from './pages/NotFound';
 
 
-
+// MARK: RouteLoader
 const RouteLoader = ({ message }) => (
   <section className="">
     <div className="max-w-lg mx-auto">
@@ -46,6 +47,8 @@ const RouteLoader = ({ message }) => (
   </section>
 );
 
+
+// MARK: PublicRoute
 // Component for public routes (available only to unauthenticated users)
 function PublicRoute({ children }) {
   const { isLoggedIn, isLoading } = useAuth();
@@ -66,6 +69,8 @@ function PublicRoute({ children }) {
   return children;
 }
 
+
+// MARK: ProtectedRoute
 // Component for protected routes
 function ProtectedRoute({ children }) {
   const { isLoggedIn, isLoading } = useAuth();
@@ -86,6 +91,8 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+
+// MARK: AppContent
 import { useLocation } from 'react-router-dom';
 
 function AppContent() {
@@ -99,8 +106,8 @@ function AppContent() {
     return <RouteLoader message="Loading application" />;
   }
 
-  // Hide BottomNav and SidebarNav on /, /login, and /register
-  const hideNavs = ["/", "/login", "/register"].includes(location.pathname);
+  // Hide BottomNav and SidebarNav on /, /login, and /register, and NotFound pages
+  const hideNavs = ["/", "/login", "/register", "/*"].includes(location.pathname);
 
   return (
     <>
@@ -179,6 +186,7 @@ function AppContent() {
   );
 }
 
+// MARK: App
 function App() {
   console.log('🎨 App component render');
 

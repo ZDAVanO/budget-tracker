@@ -4,19 +4,32 @@ import { Pencil2Icon, TrashIcon } from '@radix-ui/react-icons';
 
 
 function TransactionList({ transactions, onEdit, onDelete, isLoading }) {
-  const emptyMessage = '📭 Транзакцій поки що немає';
+  const emptyMessage = '📭 No transactions yet';
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('uk-UA', {
+    return date.toLocaleDateString('en-GB', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
     });
   };
 
+  // Add full date and time formatting
+  const formatDateTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  };
+
   const formatAmount = (amount) => {
-    return new Intl.NumberFormat('uk-UA', {
+    return new Intl.NumberFormat('en-GB', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);
@@ -38,9 +51,13 @@ function TransactionList({ transactions, onEdit, onDelete, isLoading }) {
     );
   }
 
+  const sortedTransactions = [...transactions].sort(
+    (a, b) => new Date(b.date) - new Date(a.date)
+  );
+
   return (
     <Flex direction="column" gap="3">
-      {transactions.map((transaction) => {
+      {sortedTransactions.map((transaction) => {
         const isExpense = transaction.type === 'expense';
         const icon = isExpense ? '💸' : '💰';
 
@@ -64,13 +81,17 @@ function TransactionList({ transactions, onEdit, onDelete, isLoading }) {
                 <Flex direction="column" gap="1">
                   <Flex align="center" gap="2" wrap="wrap">
                     <Text as="div" weight="medium">{transaction.title}</Text>
-                    <Badge color={isExpense ? 'tomato' : 'jade'} variant="soft" radius="full">
-                      {isExpense ? 'Витрата' : 'Дохід'}
+                    <Badge color={isExpense ? 'tomato' : 'jade'} variant="soft">
+                      {isExpense ? 'Expense' : 'Income'}
                     </Badge>
                   </Flex>
 
                   <Flex align="center" gap="2" wrap="wrap">
                     <Text size="2" color="gray">{formatDate(transaction.date)}</Text>
+                    {/* Add exact date and time */}
+                    <Text size="2" color="gray" style={{ fontStyle: 'italic' }} title="Exact date and time">
+                      ({formatDateTime(transaction.date)})
+                    </Text>
                     {transaction.category && (
                       <>
                         <Text size="2" color="gray">•</Text>
