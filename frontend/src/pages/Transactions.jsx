@@ -402,7 +402,8 @@ function Transactions() {
 
                         <Grid columns={{ initial: '1', md: '2' }} gap="4">
                           <Flex direction="column" gap="2">
-                            <Text>Category <span style={{color:'red'}}>*</span></Text>
+                            {/* <Text>Category <span style={{color:'red'}}>*</span></Text> */}
+                            <Text>Category</Text>
                             <Select.Root
                               value={formData.category_id}
                               onValueChange={(value) => updateField('category_id', value)}
@@ -410,13 +411,41 @@ function Transactions() {
                             >
                               <Select.Trigger placeholder="Select category" />
                               <Select.Content>
-                                {categories
-                                  .filter((cat) => cat.type === formData.type || cat.type === 'both')
-                                  .map((cat) => (
-                                    <Select.Item key={cat.id} value={cat.id?.toString()}>
-                                      {cat.icon} {cat.name}
-                                    </Select.Item>
-                                  ))}
+                                {/* Expense categories */}
+                                <Select.Group>
+                                  <Select.Label>Expense</Select.Label>
+                                  {categories
+                                    .filter((cat) => cat.type === 'expense')
+                                    .map((cat) => (
+                                      <Select.Item key={cat.id} value={cat.id?.toString()}>
+                                        {cat.icon} {cat.name}
+                                      </Select.Item>
+                                    ))}
+                                </Select.Group>
+                                {/* Income categories */}
+                                <Select.Separator />
+                                <Select.Group>
+                                  <Select.Label>Income</Select.Label>
+                                  {categories
+                                    .filter((cat) => cat.type === 'income')
+                                    .map((cat) => (
+                                      <Select.Item key={cat.id} value={cat.id?.toString()}>
+                                        {cat.icon} {cat.name}
+                                      </Select.Item>
+                                    ))}
+                                </Select.Group>
+                                {/* Both categories */}
+                                <Select.Separator />
+                                <Select.Group>
+                                  <Select.Label>Both</Select.Label>
+                                  {categories
+                                    .filter((cat) => cat.type === 'both')
+                                    .map((cat) => (
+                                      <Select.Item key={cat.id} value={cat.id?.toString()}>
+                                        {cat.icon} {cat.name}
+                                      </Select.Item>
+                                    ))}
+                                </Select.Group>
                               </Select.Content>
                             </Select.Root>
                           </Flex>
