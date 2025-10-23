@@ -64,7 +64,7 @@ class Transaction(db.Model):
     type = db.Column(db.String(20), nullable=False)  # 'expense' або 'income'
 
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=True)
+    category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
     wallet_id = db.Column(db.Integer, db.ForeignKey('wallet.id'), nullable=False)
 
     def to_dict(self):

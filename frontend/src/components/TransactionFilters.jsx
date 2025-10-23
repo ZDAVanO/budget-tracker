@@ -6,6 +6,7 @@ import {
   Select,
   Text,
   TextField,
+  SegmentedControl,
 } from '@radix-ui/themes';
 
 function TransactionFilters({ filters, onFilterChange, categories, wallets = [] }) {
@@ -28,23 +29,20 @@ function TransactionFilters({ filters, onFilterChange, categories, wallets = [] 
 
   return (
     <Flex direction="column" gap="4">
-      <Grid columns={{ initial: '1', sm: '2', md: '3' }} gap="4">
-        <Flex direction="column" gap="2">
-          <Text size="2" color="gray">
-            Type
-          </Text>
-          <Select.Root
-            value={filters.type || 'all'}
-            onValueChange={(value) => updateValue('type', value === 'all' ? '' : value)}
-          >
-            <Select.Trigger placeholder="All transactions" />
-            <Select.Content>
-              <Select.Item value="all">All transactions</Select.Item>
-              <Select.Item value="income">💰 Income</Select.Item>
-              <Select.Item value="expense">💸 Expense</Select.Item>
-            </Select.Content>
-          </Select.Root>
-        </Flex>
+      <Flex direction="column" gap="2">
+        <Text size="2" color="gray">
+          Type
+        </Text>
+        <SegmentedControl.Root
+          value={filters.type || 'all'}
+          onValueChange={(value) => updateValue('type', value === 'all' ? '' : value)}
+        >
+          <SegmentedControl.Item value="all">All</SegmentedControl.Item>
+          <SegmentedControl.Item value="income">💰 Income</SegmentedControl.Item>
+          <SegmentedControl.Item value="expense">💸 Expense</SegmentedControl.Item>
+        </SegmentedControl.Root>
+      </Flex>
+      <Grid columns={{ initial: '1', sm: '2', md: '4' }} gap="4">
 
         <Flex direction="column" gap="2">
           <Text size="2" color="gray">

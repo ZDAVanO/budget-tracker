@@ -77,6 +77,8 @@ jwt = JWTManager(app)
 def create_default_categories_for_user(user_id):
     """Створення стандартних категорій для нового користувача"""
     default_categories = [
+        # Uncategorized (must be first, protected)
+        {'name': 'Uncategorized', 'icon': '📂', 'type': 'both', 'description': 'Default category for uncategorized transactions', 'uncategorized': True},
         # Витрати
         {'name': 'Food', 'icon': '🍔', 'type': 'expense', 'description': 'Groceries, restaurants, cafes'},
         {'name': 'Transport', 'icon': '🚗', 'type': 'expense', 'description': 'Transport, fuel, taxi'},
@@ -104,6 +106,7 @@ def create_default_categories_for_user(user_id):
             user_id=user_id
         )
         db.session.add(category)
+        # Store uncategorized category id for later use if needed
     
     db.session.commit()
 
@@ -257,7 +260,11 @@ def delete_category(category_id):
     # Перевіряємо, що це категорія користувача
     if category.user_id != user_id:
         return jsonify({"msg": "Unauthorized"}), 403
-    
+
+    # Заборонити видалення категорії 'Uncategorized'
+    if category.name == 'Uncategorized':
+        return jsonify({"msg": "Cannot delete 'Uncategorized' category"}), 400
+
     db.session.delete(category)
     db.session.commit()
     
@@ -414,11 +421,13 @@ def create_transaction():
     user_id = int(get_jwt_identity())
     data = request.get_json()
 
-    # Require wallet_id and type
+    # Require wallet_id, type, and category_id
     if not data.get('wallet_id'):
         return jsonify({"msg": "Wallet is required"}), 400
     if not data.get('type') or data.get('type') not in ['expense', 'income']:
         return jsonify({"msg": "Valid transaction type is required (expense or income)"}), 400
+    if not data.get('category_id'):
+        return jsonify({"msg": "Category is required"}), 400
 
     transaction = Transaction(
         amount=float(data.get('amount')),
@@ -449,11 +458,13 @@ def update_transaction(transaction_id):
 
     data = request.get_json()
 
-    # Require wallet_id if present or on update
+    # Require wallet_id and category_id if present or on update
     if 'wallet_id' in data and not data['wallet_id']:
         return jsonify({"msg": "Wallet is required"}), 400
     if 'type' in data and data['type'] not in ['expense', 'income']:
         return jsonify({"msg": "Valid transaction type is required (expense or income)"}), 400
+    if 'category_id' in data and not data['category_id']:
+        return jsonify({"msg": "Category is required"}), 400
 
     if 'amount' in data:
         transaction.amount = float(data['amount'])

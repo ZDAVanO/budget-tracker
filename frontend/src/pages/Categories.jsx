@@ -45,6 +45,7 @@ function Categories() {
       const { response, data } = await api.categories.getAll();
       if (response.ok) {
         setCategories(data);
+        console.log('Categories loaded:', data);
       }
     } catch (loadError) {
       console.error('Error loading categories:', loadError);
@@ -91,6 +92,7 @@ function Categories() {
 
   // MARK: handleEdit
   const handleEdit = (category) => {
+    if (isProtectedCategory(category)) return; // Забороняємо редагування
     setEditingCategory(category);
     setFormData({
       name: category.name,
@@ -104,6 +106,7 @@ function Categories() {
 
   // MARK: handleDelete
   const handleDelete = (category) => {
+    if (isProtectedCategory(category)) return; // Забороняємо видалення
     setCategoryToDelete(category);
   };
 
@@ -111,6 +114,11 @@ function Categories() {
   // MARK: confirmDelete
   const confirmDelete = async () => {
     if (!categoryToDelete) return;
+    if (isProtectedCategory(categoryToDelete)) {
+      alert('This category cannot be deleted.');
+      setCategoryToDelete(null);
+      return;
+    }
     try {
       const { response, data } = await api.categories.delete(categoryToDelete.id);
       if (response.ok) {
@@ -173,6 +181,13 @@ function Categories() {
   };
 
   
+  // MARK: Protected categories
+  // Назви категорій, які не можна редагувати чи видаляти
+  const protectedCategoryNames = ['Uncategorized'];
+  const isProtectedCategory = (category) =>
+    protectedCategoryNames.includes(category.name);
+
+
   // MARK: render
   return (
     <Section size="3" className="p-4">
@@ -338,10 +353,23 @@ function Categories() {
                               </Flex>
                             </Flex>
                             <Flex gap="2">
-                              <IconButton size="2" variant="soft" onClick={() => handleEdit(category)}>
+                              <IconButton
+                                size="2"
+                                variant="soft"
+                                onClick={() => handleEdit(category)}
+                                disabled={isProtectedCategory(category)}
+                                title={isProtectedCategory(category) ? 'This category cannot be edited' : undefined}
+                              >
                                 <Pencil2Icon />
                               </IconButton>
-                              <IconButton size="2" variant="soft" color="red" onClick={() => handleDelete(category)}>
+                              <IconButton
+                                size="2"
+                                variant="soft"
+                                color="red"
+                                onClick={() => handleDelete(category)}
+                                disabled={isProtectedCategory(category)}
+                                title={isProtectedCategory(category) ? 'This category cannot be deleted' : undefined}
+                              >
                                 <TrashIcon />
                               </IconButton>
                             </Flex>

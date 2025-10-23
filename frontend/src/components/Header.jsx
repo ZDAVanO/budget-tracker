@@ -10,7 +10,7 @@ import {
   Text,
   Heading,
 } from '@radix-ui/themes';
-import { ExitIcon } from '@radix-ui/react-icons';
+import { ExitIcon, GearIcon } from '@radix-ui/react-icons';
 
 import ThemeToggleButton from './ThemeToggleButton';
 
@@ -70,16 +70,16 @@ function Header({ isLoggedIn, user, onLogout }) {
                   </DropdownMenu.Trigger>
                   <DropdownMenu.Content align="end" variant="soft">
 
-                    <DropdownMenu.Item onClick={() => navigate('/dashboard')}>
-                      Go to Dashboard
+                    <DropdownMenu.Item onClick={() => navigate('/settings')}>
+                      <GearIcon /> Settings
                     </DropdownMenu.Item>
 
                     <DropdownMenu.Separator />
 
                     <DropdownMenu.Item color="red" onClick={handleLogout}>
-                      <div className="flex items-center gap-2">
+                      {/* <div className="flex items-center gap-2"> */}
                         <ExitIcon /> Logout
-                      </div>
+                      {/* </div> */}
                     </DropdownMenu.Item>
 
                   </DropdownMenu.Content>

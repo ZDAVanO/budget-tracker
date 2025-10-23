@@ -1,4 +1,3 @@
-
 import './styles/App.css'
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -31,6 +30,7 @@ import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
 import Categories from './pages/Categories';
 import Wallets from './pages/Wallets.jsx';
+import Settings from './pages/Settings.jsx';
 import NotFound from './pages/NotFound';
 
 
@@ -172,6 +172,15 @@ function AppContent() {
               element={
                 <ProtectedRoute>
                   <Wallets />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
                 </ProtectedRoute>
               }
             />
