@@ -98,14 +98,33 @@ function Dashboard({ user }) {
     }).format(amount);
 
 
+  // MARK: get current month/year
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  // MARK: filter transactions for current month
+  const monthlyTransactions = allTransactions.filter(t => {
+    const date = new Date(t.date);
+    return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+  });
+
+  // Підрахунок кількості транзакцій за місяць
+  // const totalCount = monthlyTransactions.length;
+  const incomeCount = monthlyTransactions.filter(t => t.type === 'income').length;
+  const expenseCount = monthlyTransactions.filter(t => t.type === 'expense').length;
+
+  // Підрахунок суми доходів/витрат за місяць
+  const monthlyExpenses = monthlyTransactions
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const monthlyIncomes = monthlyTransactions
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
 
 
   // MARK: render
-  // Підрахунок кількості транзакцій
-  const totalCount = allTransactions.length;
-  const incomeCount = allTransactions.filter(t => t.type === 'income').length;
-  const expenseCount = allTransactions.filter(t => t.type === 'expense').length;
-
   return (
     <Section size="3" className="p-4">
       <Container size="3">
@@ -127,7 +146,7 @@ function Dashboard({ user }) {
               <Heading size="7" align="center" color={statistics.balance >= 0 ? 'jade' : 'tomato'}>
                 {statistics.balance >= 0 ? '+' : ''}{statistics.balance.toFixed(2)} UAH
               </Heading>
-              <Text align="center" color="gray" size="2">{totalCount} transactions</Text>
+              <Text align="center" color="gray" size="2">{allTransactions.length} transactions</Text>
             </Flex>
           </Card>
 
@@ -137,7 +156,7 @@ function Dashboard({ user }) {
             <Card variant="surface" size="3">
               <Flex direction="column" gap="2">
                 <Heading size="6" align="center">Expenses</Heading>
-                <Heading size="6" align="center" color="tomato">{statistics.total_expenses.toFixed(2)} UAH</Heading>
+                <Heading size="6" align="center" color="tomato">{monthlyExpenses.toFixed(2)} UAH</Heading>
                 <Text color="gray" align="center" size="2">{expenseCount} transactions</Text>
               </Flex>
             </Card>
@@ -146,7 +165,7 @@ function Dashboard({ user }) {
             <Card variant="surface" size="3">
               <Flex direction="column" gap="2">
                 <Heading size="6" align="center">Income</Heading>
-                <Heading size="6" align="center" color="mint">{statistics.total_incomes.toFixed(2)} UAH</Heading>
+                <Heading size="6" align="center" color="mint">{monthlyIncomes.toFixed(2)} UAH</Heading>
                 <Text color="gray" align="center" size="2">{incomeCount} transactions</Text>
               </Flex>
             </Card>
