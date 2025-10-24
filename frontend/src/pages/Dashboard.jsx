@@ -16,14 +16,16 @@ import {
 } from '@radix-ui/themes';
 import { ArrowRightIcon, LightningBoltIcon } from '@radix-ui/react-icons';
 import api from '../services/api';
+import DonutPieChart from '../components/DonutPieChart';
 
 // MARK: Dashboard
 function Dashboard({ user }) {
 
   const [statistics, setStatistics] = useState({ total_expenses: 0, total_incomes: 0, balance: 0 });
   const [recentTransactions, setRecentTransactions] = useState([]);
-  const [allTransactions, setAllTransactions] = useState([]); // для підрахунку
+  const [allTransactions, setAllTransactions] = useState([]); // for calculation
   const [wallets, setWallets] = useState([]);
+  const [categories, setCategories] = useState([]);
   
   const [isLoading, setIsLoading] = useState(false);
 
@@ -33,14 +35,18 @@ function Dashboard({ user }) {
 
   // MARK: useEffect - load data
   useEffect(() => {
+
     const loadData = async () => {
       setIsLoading(true);
       try {
-        await Promise.all([loadStatistics(), loadRecentTransactions(), loadWallets()]);
-
+        await Promise.all([
+          loadStatistics(),
+          loadRecentTransactions(),
+          loadWallets(),
+          loadCategories()
+        ]);
       } catch (err) {
         console.error('Error loading data:', err);
-
       } finally {
         setIsLoading(false);
       }
@@ -48,6 +54,71 @@ function Dashboard({ user }) {
 
     loadData();
   }, []);
+
+  // MARK: loadCategories
+  const loadCategories = async () => {
+    try {
+      const { response, data } = await api.categories.getAll('expense');
+      if (response.ok) {
+        setCategories(data || []);
+      }
+    } catch (err) {
+      console.error('Error loading categories:', err);
+    }
+  };
+  // MARK: Pie chart data for last 30 days
+  // Expenses by category for the last 30 days
+  const nowDate = new Date();
+  const last30Days = new Date(nowDate);
+  last30Days.setDate(nowDate.getDate() - 29);
+
+  // Expenses by category (last 30 days)
+  const last30DaysExpenses = allTransactions.filter(t => {
+    if (t.type !== 'expense') return false;
+    const date = new Date(t.date);
+    return date >= last30Days && date <= nowDate;
+  });
+  const expenseByCategory = {};
+  last30DaysExpenses.forEach(t => {
+    const catId = t.category?.id || t.category_id || 'uncat';
+    if (!expenseByCategory[catId]) {
+      expenseByCategory[catId] = {
+        name: t.category?.name || 'No category',
+        icon: t.category?.icon || '',
+        amount: 0,
+      };
+    }
+    expenseByCategory[catId].amount += t.amount;
+  });
+  const chartLabels = Object.values(expenseByCategory).map(cat => `${cat.icon ? cat.icon + ' ' : ''}${cat.name}`);
+  const chartData = Object.values(expenseByCategory).map(cat => cat.amount);
+
+  // Incomes by category (last 30 days)
+  const last30DaysIncomes = allTransactions.filter(t => {
+    if (t.type !== 'income') return false;
+    const date = new Date(t.date);
+    return date >= last30Days && date <= nowDate;
+  });
+  const incomeByCategory = {};
+  last30DaysIncomes.forEach(t => {
+    const catId = t.category?.id || t.category_id || 'uncat';
+    if (!incomeByCategory[catId]) {
+      incomeByCategory[catId] = {
+        name: t.category?.name || 'No category',
+        icon: t.category?.icon || '',
+        amount: 0,
+      };
+    }
+    incomeByCategory[catId].amount += t.amount;
+  });
+  const incomeChartLabels = Object.values(incomeByCategory).map(cat => `${cat.icon ? cat.icon + ' ' : ''}${cat.name}`);
+  const incomeChartData = Object.values(incomeByCategory).map(cat => cat.amount);
+
+  // Colors for the chart (random or fixed)
+  const chartColors = [
+    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#B4FF9F', '#FFB4B4', '#B4D4FF', '#FFD6A5',
+    '#CDB4DB', '#F1C0E8', '#A3C4F3', '#B5EAD7', '#E2F0CB', '#FFB7B2', '#FFDAC1', '#B5EAD7', '#C7CEEA', '#E2F0CB'
+  ];
 
 
   // MARK: loadStatistics
@@ -109,12 +180,12 @@ function Dashboard({ user }) {
     return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
   });
 
-  // Підрахунок кількості транзакцій за місяць
+  // Counting the number of transactions for the month
   // const totalCount = monthlyTransactions.length;
   const incomeCount = monthlyTransactions.filter(t => t.type === 'income').length;
   const expenseCount = monthlyTransactions.filter(t => t.type === 'expense').length;
 
-  // Підрахунок суми доходів/витрат за місяць
+  // Calculating the sum of incomes/expenses for the month
   const monthlyExpenses = monthlyTransactions
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
@@ -125,6 +196,7 @@ function Dashboard({ user }) {
 
 
   // MARK: render
+
   return (
     <Section size="3" className="p-4">
       <Container size="3">
@@ -139,7 +211,7 @@ function Dashboard({ user }) {
             </Heading>
           </Flex>
 
-          {/* MARK: Net Worth card окремо */}
+          {/* MARK: Net Worth card separately */}
           <Card variant="surface" size="4">
             <Flex direction="column" gap="2">
               <Heading size="6" align="center">Net Worth</Heading>
@@ -150,7 +222,7 @@ function Dashboard({ user }) {
             </Flex>
           </Card>
 
-          {/* MARK: Income & Expenses cards в рядок */}
+          {/* MARK: Income & Expenses cards in a row */}
           <Grid columns={{ initial: '2', md: '2' }} gap="5">
 
             <Card variant="surface" size="3">
@@ -280,6 +352,45 @@ function Dashboard({ user }) {
 
             </Card>
           </Grid>
+
+
+          {/* MARK: Donut Pie Chart for Expenses by Category (last 30 days) */}
+          <Card variant="surface" size="4">
+            <Flex direction="column" gap="5">
+              <Heading size="5" align="center">Expenses (last 30 days)</Heading>
+              {chartData.length > 0 ? (
+                <DonutPieChart
+                  data={chartData}
+                  labels={chartLabels}
+                  colors={chartColors.slice(0, chartData.length)}
+                  title={null}
+                />
+              ) : (
+                <Text align="center" color="gray">No expenses in the last 30 days</Text>
+              )}
+            </Flex>
+          </Card>
+
+          {/* MARK: Donut Pie Chart for Incomes by Category (last 30 days) */}
+          <Card variant="surface" size="4">
+            <Flex direction="column" gap="5">
+              <Heading size="5" align="center">Income (last 30 days)</Heading>
+              {incomeChartData.length > 0 ? (
+                <DonutPieChart
+                  data={incomeChartData}
+                  labels={incomeChartLabels}
+                  colors={chartColors.slice(0, incomeChartData.length)}
+                  title={null}
+                />
+              ) : (
+                <Text align="center" color="gray">No income in the last 30 days</Text>
+              )}
+            </Flex>
+          </Card>
+
+
+
+
 
         </Flex>
       </Container>
