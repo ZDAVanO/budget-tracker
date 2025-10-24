@@ -79,7 +79,7 @@ function Transactions() {
   // refs for auto-scroll Tabs
   const tabsListRef = useRef(null);
   const tabRefs = useRef({});
-
+  const [searchQuery, setSearchQuery] = useState('');
 
 
   // MARK: loadTransactions
@@ -353,12 +353,21 @@ function Transactions() {
   };
 
   // Фільтруємо транзакції за вибраним місяцем
-  const filteredTransactions = transactions.filter(tx => {
-    const d = new Date(tx.date);
-    return d.getFullYear() === selectedMonth.year && (d.getMonth() + 1) === selectedMonth.month;
-  });
+  const filteredTransactions = searchQuery.trim()
+    ? transactions.filter(tx => {
+        const q = searchQuery.trim().toLowerCase();
+        return (
+          tx.title?.toLowerCase().includes(q) ||
+          tx.description?.toLowerCase().includes(q) ||
+          tx.amount?.toString().includes(q)
+        );
+      })
+    : transactions.filter(tx => {
+        const d = new Date(tx.date);
+        return d.getFullYear() === selectedMonth.year && (d.getMonth() + 1) === selectedMonth.month;
+      });
 
-  // MARK: summary for selected month
+  // summary для вибраного місяця або для пошуку
   const summary = filteredTransactions.reduce(
     (acc, tx) => {
       if (tx.type === 'expense') acc.expense += tx.amount;
@@ -425,6 +434,32 @@ function Transactions() {
             </Flex>
 
             <Flex align="center" gap="3">
+              {/* Поле пошуку з кнопкою очистити справа */}
+              <TextField.Root
+                placeholder="Search"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                size="2"
+                style={{ minWidth: 220 }}
+              >
+                {/* Кнопка очистити справа, показується якщо щось введено */}
+                {searchQuery && (
+                  <TextField.Slot pr="3" side="right">
+                    <Tooltip content="Clear">
+                      <IconButton
+                        size="2"
+                        variant="ghost"
+                        color="gray"
+                        onClick={() => setSearchQuery('')}
+                        type="button"
+                        aria-label="Clear search"
+                      >
+                        <Cross2Icon height="16" width="16" />
+                      </IconButton>
+                    </Tooltip>
+                  </TextField.Slot>
+                )}
+              </TextField.Root>
               <TransactionFilters 
                 filters={filters} 
                 onFilterChange={setFilters} 
@@ -435,133 +470,90 @@ function Transactions() {
 
           </Flex>
 
-          
-          {/* MARK: month selector */}
-          <Tabs.Root
-            value={tabValue}
-            onValueChange={setTabValue}
-            activationMode="manual"
-            style={{
-              width: '100%',
-              overflow: "hidden",
-            }}
-          >
-            <Tabs.List
-              size="2"
-              ref={tabsListRef}
-              style={{
-                display: "flex",
-                flexWrap: "nowrap",
-                overflowX: "auto",
-                overflowY: "hidden",
-                width: "100%",
-                // scrollbarWidth: "thin",
-              }}
-            >
-              {availableMonths.map((m) => {
-                const value = getMonthTabValue(m);
-                const now = new Date();
-                const isCurrentMonth = m.year === now.getFullYear() && m.month === (now.getMonth() + 1);
-                const isCurrentYear = m.year === now.getFullYear();
-                return (
-                  <Tabs.Trigger
-                    key={value}
-                    value={value}
-                    ref={el => { tabRefs.current[value] = el; }}
-                    style={{
-                      minWidth: 70,
-                      flex: "0 0 auto",
-                    }}
-                  >
-                    <span style={isCurrentMonth ? { color: "var(--accent-11)", fontWeight: "bold" } : undefined}>
-                      {new Date(m.year, m.month - 1, 1).toLocaleString('en-US', { month: 'short' })}
-                    </span>
-                    
-                    {!isCurrentYear && (
-                      <span style={{ fontSize: 10, marginLeft: 2 }}>
-                        {String(m.year).slice(2)}
-                      </span>
-                    )}
-                  </Tabs.Trigger>
-                );
-              })}
-            </Tabs.List>
-          </Tabs.Root>
+          {/* Показуємо Tabs та summary тільки якщо пошук порожній */}
+          {!searchQuery.trim() && (
+            <>
+              {/* MARK: month selector */}
+              <Tabs.Root
+                value={tabValue}
+                onValueChange={setTabValue}
+                activationMode="manual"
+                style={{
+                  width: '100%',
+                  overflow: "hidden",
+                }}
+              >
+                <Tabs.List
+                  size="2"
+                  ref={tabsListRef}
+                  style={{
+                    display: "flex",
+                    flexWrap: "nowrap",
+                    overflowX: "auto",
+                    overflowY: "hidden",
+                    width: "100%",
+                    // scrollbarWidth: "thin",
+                  }}
+                >
+                  {availableMonths.map((m) => {
+                    const value = getMonthTabValue(m);
+                    const now = new Date();
+                    const isCurrentMonth = m.year === now.getFullYear() && m.month === (now.getMonth() + 1);
+                    const isCurrentYear = m.year === now.getFullYear();
+                    return (
+                      <Tabs.Trigger
+                        key={value}
+                        value={value}
+                        ref={el => { tabRefs.current[value] = el; }}
+                        style={{
+                          minWidth: 70,
+                          flex: "0 0 auto",
+                        }}
+                      >
+                        <span style={isCurrentMonth ? { color: "var(--accent-11)", fontWeight: "bold" } : undefined}>
+                          {new Date(m.year, m.month - 1, 1).toLocaleString('en-US', { month: 'short' })}
+                        </span>
+                        
+                        {!isCurrentYear && (
+                          <span style={{ fontSize: 10, marginLeft: 2 }}>
+                            {String(m.year).slice(2)}
+                          </span>
+                        )}
+                      </Tabs.Trigger>
+                    );
+                  })}
+                </Tabs.List>
+              </Tabs.Root>
 
-          {/* MARK: summary bar */}
-          <Card variant="surface" size="1">
-
-            <div className="flex flex-row items-center justify-around gap-6">
-
-              <Flex direction="row" align="center" gap="1">
-                <Text color="red">-</Text>
-                <Text color="red">{summary.expense.toFixed(2)}</Text>
-              </Flex>
-
-              <Flex direction="row" align="center" gap="1">
-                <Text color="green">+</Text>
-                <Text color="green">{summary.income.toFixed(2)}</Text>
-              </Flex>
-
-              <Flex direction="row" align="center" gap="1">
-                <Text>=</Text>
-                <Text color={summary.balance >= 0 ? "green" : "red"}>{summary.balance.toFixed(2)}</Text>
-              </Flex>
-
-            </div>
-
-          </Card>
-
-          {/* MARK: filters */}
-          {/* <Card variant="surface" size="3">
-            <Flex direction="column" gap="4">
-
-              <Flex align="center" justify="between" wrap="wrap" gap="3">
-                <Flex align="center" gap="2">
-                  <MixerHorizontalIcon />
-                  <Heading size="4">Filters</Heading>
-                </Flex>
-              </Flex>
-
-              <TransactionFilters 
-                filters={filters} 
-                onFilterChange={setFilters} 
-                categories={categories} 
-                wallets={wallets} 
-              />
-
-            </Flex>
-          </Card> */}
-          {/* Remove the filters below, keep only the one in header */}
-          {/* {showFilters && (
-            <TransactionFilters 
-              filters={filters} 
-              onFilterChange={setFilters} 
-              categories={categories} 
-              wallets={wallets} 
-            />
-          )} */}
+              {/* MARK: summary bar */}
+              <Card variant="surface" size="1">
+                <div className="flex flex-row items-center justify-around gap-6">
+                  <Flex direction="row" align="center" gap="1">
+                    <Text color="red">-</Text>
+                    <Text color="red">{summary.expense.toFixed(2)}</Text>
+                  </Flex>
+                  <Flex direction="row" align="center" gap="1">
+                    <Text color="green">+</Text>
+                    <Text color="green">{summary.income.toFixed(2)}</Text>
+                  </Flex>
+                  <Flex direction="row" align="center" gap="1">
+                    <Text>=</Text>
+                    <Text color={summary.balance >= 0 ? "green" : "red"}>{summary.balance.toFixed(2)}</Text>
+                  </Flex>
+                </div>
+              </Card>
+            </>
+          )}
 
           {/* MARK: list */}
-          {/* <Card variant="surface" size="3"> */}
-            <Flex direction="column" gap="4">
-
-              {/* <Flex direction="row" gap="4">
-                <Heading size="4">Transaction list</Heading>
-
-                <Badge color="mint" variant="soft">
-                  {filteredTransactions.length} records
-                </Badge>
-              </Flex> */}
-
-              <TransactionList
-                transactions={filteredTransactions}
-                onEdit={handleEdit}
-                onDelete={() => {}}
-                isLoading={isLoading}
-              />
-            </Flex>
-          {/* </Card> */}
+          <Flex direction="column" gap="4">
+            <TransactionList
+              transactions={filteredTransactions}
+              onEdit={handleEdit}
+              onDelete={() => {}}
+              isLoading={isLoading}
+            />
+          </Flex>
 
           {/* MARK: delete dialog */}
           <Dialog.Root open={!!transactionToDelete} onOpenChange={(open) => !open && setTransactionToDelete(null)}>

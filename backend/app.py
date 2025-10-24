@@ -24,6 +24,7 @@ from flask_jwt_extended import (
 )
 
 from datetime import datetime, timedelta
+import random
 
 def parse_local_datetime(dt_str):
     """Парсити дату у форматі YYYY-MM-DDTHH:MM:SS як локальний час"""
@@ -534,7 +535,97 @@ def get_statistics():
     })
 
 
+def create_test_user_with_data():
+    """Create test user with extra wallets, categories, and random transactions"""
+    username = "test"
+    password = "test"
+    email = "test@example.com"
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        user = User(username=username, email=email, password=password)
+        db.session.add(user)
+        db.session.commit()
+        create_default_categories_for_user(user.id)
+        create_default_wallets_for_user(user.id)
 
+        # Extra wallets
+        extra_wallets = [
+            {'name': 'Crypto', 'icon': '🪙', 'description': 'Crypto wallet', 'initial_balance': 1000, 'currency': 'USD'},
+            {'name': 'Savings', 'icon': '🏦', 'description': 'Savings account', 'initial_balance': 5000, 'currency': 'UAH'},
+        ]
+        for w in extra_wallets:
+            wallet = Wallet(
+                name=w['name'],
+                icon=w['icon'],
+                description=w['description'],
+                initial_balance=w['initial_balance'],
+                currency=w['currency'],
+                user_id=user.id
+            )
+            db.session.add(wallet)
+        db.session.commit()
+
+        # Extra categories
+        extra_categories = [
+            {'name': 'Travel', 'icon': '✈️', 'type': 'expense', 'description': 'Travel expenses'},
+            {'name': 'Charity', 'icon': '🙏', 'type': 'expense', 'description': 'Charity donations'},
+            {'name': 'Bonus', 'icon': '🎉', 'type': 'income', 'description': 'Bonuses'},
+        ]
+        for c in extra_categories:
+            category = Category(
+                name=c['name'],
+                icon=c['icon'],
+                type=c['type'],
+                description=c['description'],
+                user_id=user.id
+            )
+            db.session.add(category)
+        db.session.commit()
+
+        # Get all wallets and categories for test user
+        wallets = Wallet.query.filter_by(user_id=user.id).all()
+        categories = Category.query.filter_by(user_id=user.id).all()
+        wallet_ids = [w.id for w in wallets]
+        category_ids = [c.id for c in categories]
+
+        # Random transactions
+        titles = [
+            'Lunch', 'Taxi', 'Salary', 'Gift', 'Groceries', 'Rent', 'Gym', 'Book', 'Concert', 'Investment',
+            'Coffee', 'Utilities', 'Internet', 'Phone', 'Insurance', 'Shopping', 'Medicine', 'Cinema', 'Flight', 'Hotel',
+            'Subscription', 'Parking', 'Car Repair', 'Pet Food', 'Birthday', 'Bonus', 'Freelance', 'Transfer', 'Withdrawal', 'Deposit'
+        ]
+        descriptions = [
+            'Paid for', 'Received', 'Spent on', 'Bought', 'Transferred', 'Top-up', 'Withdrawal', 'Donation', 'Bonus', 'Refund',
+            'Monthly bill', 'Annual fee', 'Discounted', 'Online order', 'Cashback', 'Installment', 'Membership', 'Emergency', 'Travel expense', 'Gifted',
+            'Reimbursement', 'Advance', 'Partial payment', 'Full payment', 'Interest', 'Commission', 'Service charge', 'Maintenance', 'Lost', 'Found'
+        ]
+        types = ['expense', 'income']
+
+        for _ in range(1500):
+            t_type = random.choice(types)
+            amount = round(random.uniform(10, 5000), 2)
+            title = random.choice(titles)
+            description = random.choice(descriptions)
+            category_id = random.choice(category_ids)
+            wallet_id = random.choice(wallet_ids)
+            # Random date in last 90 days
+            days_ago = random.randint(0, 700)
+            dt = datetime.now() - timedelta(days=days_ago, hours=random.randint(0, 23), minutes=random.randint(0, 59))
+            transaction = Transaction(
+                amount=amount,
+                date=dt,
+                title=title,
+                description=description,
+                type=t_type,
+                category_id=category_id,
+                wallet_id=wallet_id,
+                user_id=user.id
+            )
+            db.session.add(transaction)
+        db.session.commit()
+        print("Test user with data created.")
+    else:
+        print("Test user already exists.")
 
 
 # Run server
@@ -543,5 +634,6 @@ if __name__ == '__main__':
 
     with app.app_context():
         db.create_all()
-        
+        create_test_user_with_data()
+
     app.run(debug=True, port=5000)
