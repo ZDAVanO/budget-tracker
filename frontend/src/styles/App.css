@@ -1,0 +1,8 @@
+.add-transaction-btn {
+  bottom: 90px !important;
+}
+@media (min-width: 768px) {
+  .add-transaction-btn {
+    bottom: 32px !important;
+  }
+}

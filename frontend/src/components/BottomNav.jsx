@@ -21,7 +21,7 @@ export default function BottomNav() {
         <Link
           key={item.to}
           to={item.to}
-          className={`flex-1 flex flex-col items-center py-4 text-xs ${
+          className={`flex-1 flex flex-col items-center py-3 text-sm ${
             isActive(item.to) ? 'text-mint-600 font-bold' : 'text-gray-400'
           }`}
         >

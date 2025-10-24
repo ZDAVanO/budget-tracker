@@ -113,10 +113,10 @@ function AppContent() {
     <>
       <Header isLoggedIn={isLoggedIn} user={user} onLogout={logout} />
 
-      <div className="md:flex">
+      <div className="flex">
         {isLoggedIn && !hideNavs && <SidebarNav />}
 
-        <main className="grow">
+        <main className="grow min-w-0">
           <Routes>
             <Route
               path="/"

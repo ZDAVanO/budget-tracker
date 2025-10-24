@@ -16,7 +16,7 @@ const groupByDay = (transactions) => {
 };
 
 function TransactionList({ transactions, onEdit, isLoading }) {
-  const emptyMessage = '📭 No transactions yet';
+  const emptyMessage = 'No transactions yet';
 
   // const formatDate = (dateString) => {
   //   const date = new Date(dateString);

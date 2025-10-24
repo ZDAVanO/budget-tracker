@@ -18,6 +18,7 @@ import {
   Text,
   TextArea,
   TextField,
+  Tooltip,
 } from '@radix-ui/themes';
 import { Cross2Icon, MixerHorizontalIcon, PlusCircledIcon } from '@radix-ui/react-icons';
 import api from '../services/api';
@@ -67,6 +68,7 @@ function Transactions() {
     wallet_id: '',
   });
   const [error, setError] = useState('');
+  // const [showFilters, setShowFilters] = useState(false);
 
   // Додаємо стан для вибраного місяця
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -414,237 +416,47 @@ function Transactions() {
 
           {/* MARK: header */}
           <Flex align="center" justify="between" wrap="wrap" gap="3">
+            
             <Flex direction="column" gap="1">
               <Heading size="7">
                 Transactions
               </Heading>
               <Text color="gray">Manage all your transactions in one place.</Text>
             </Flex>
+
             <Flex align="center" gap="3">
-
-              {/* MARK: transaction form */}
-              <Button onClick={handleCreateClick}>
-                <PlusCircledIcon /> Add transaction
-              </Button>
-              <Dialog.Root open={isFormOpen} onOpenChange={handleFormOpenChange}>
-                {/* <Dialog.Trigger asChild>
-                  <Button onClick={handleCreateClick} tabIndex={-1}>
-                    <PlusCircledIcon /> Add transaction
-                  </Button>
-                </Dialog.Trigger> */}
-                <Dialog.Content maxWidth="520px">
-                  <Flex direction="column" gap="4">
-                    <Flex align="center" justify="between">
-
-                      <Dialog.Title asChild>
-                        <Text size="5">
-                          {editingTransaction ? 'Edit transaction' : 'New transaction'}
-                        </Text>
-                      </Dialog.Title>
-
-                      <Dialog.Close asChild>
-                        <IconButton
-                          variant="ghost"
-                          color="gray"
-                          aria-label="Close transaction form"
-                        >
-                          <Cross2Icon />
-                        </IconButton>
-                      </Dialog.Close>
-
-                    </Flex>
-
-                    
-                    <form onSubmit={handleSubmit}>
-                      <Flex direction="column" gap="4">
-                        
-                        <SegmentedControl.Root value={formData.type} onValueChange={(value) => updateField('type', value)}>
-                          <SegmentedControl.Item value="expense">💸 Expense</SegmentedControl.Item>
-                          <SegmentedControl.Item value="income">💰 Income</SegmentedControl.Item>
-                        </SegmentedControl.Root>
-
-                        <Grid columns={{ initial: '1', md: '2' }} gap="4">
-                          <Flex direction="column" gap="2">
-                            <Text as="label" htmlFor="amount">
-                              Amount
-                            </Text>
-                            <TextField.Root
-                              id="amount"
-                              name="amount"
-                              type="number"
-                              required
-                              min="0.01"
-                              step="0.01"
-                              value={formData.amount}
-                              onChange={(event) => updateField('amount', event.target.value)}
-                              placeholder="0.00"
-                            />
-                          </Flex>
-
-                          <Flex direction="column" gap="2">
-                            <Text as="label" htmlFor="datetime">
-                              Date and Time
-                            </Text>
-                            <TextField.Root
-                              id="datetime"
-                              name="datetime"
-                              type="datetime-local"
-                              required
-                              value={formData.datetime}
-                              onChange={(event) => updateField('datetime', event.target.value)}
-                            />
-                          </Flex>
-                        </Grid>
-
-                        
-
-                        <Grid columns={{ initial: '1', md: '2' }} gap="4">
-                          <Flex direction="column" gap="2">
-                            {/* <Text>Category <span style={{color:'red'}}>*</span></Text> */}
-                            <Text>Category</Text>
-                            <Select.Root
-                              value={formData.category_id}
-                              onValueChange={(value) => updateField('category_id', value)}
-                              required
-                            >
-                              <Select.Trigger placeholder="Select category" />
-                              <Select.Content>
-                                {/* Expense categories */}
-                                <Select.Group>
-                                  <Select.Label>Expense</Select.Label>
-                                  {categories
-                                    .filter((cat) => cat.type === 'expense')
-                                    .map((cat) => (
-                                      <Select.Item key={cat.id} value={cat.id?.toString()}>
-                                        {cat.icon} {cat.name}
-                                      </Select.Item>
-                                    ))}
-                                </Select.Group>
-                                {/* Income categories */}
-                                <Select.Separator />
-                                <Select.Group>
-                                  <Select.Label>Income</Select.Label>
-                                  {categories
-                                    .filter((cat) => cat.type === 'income')
-                                    .map((cat) => (
-                                      <Select.Item key={cat.id} value={cat.id?.toString()}>
-                                        {cat.icon} {cat.name}
-                                      </Select.Item>
-                                    ))}
-                                </Select.Group>
-                                {/* Both categories */}
-                                <Select.Separator />
-                                <Select.Group>
-                                  <Select.Label>Both</Select.Label>
-                                  {categories
-                                    .filter((cat) => cat.type === 'both')
-                                    .map((cat) => (
-                                      <Select.Item key={cat.id} value={cat.id?.toString()}>
-                                        {cat.icon} {cat.name}
-                                      </Select.Item>
-                                    ))}
-                                </Select.Group>
-                              </Select.Content>
-                            </Select.Root>
-                          </Flex>
-
-                          <Flex direction="column" gap="2">
-                            <Text>Wallet</Text>
-                            <Select.Root
-                              value={formData.wallet_id}
-                              onValueChange={(value) => updateField('wallet_id', value)}
-                            >
-                              <Select.Trigger placeholder="Select wallet" />
-                              <Select.Content>
-                                {wallets.map((wallet) => (
-                                  <Select.Item key={wallet.id} value={wallet.id?.toString()}>
-                                    {wallet.icon} {wallet.name}
-                                  </Select.Item>
-                                ))}
-                              </Select.Content>
-                            </Select.Root>
-                          </Flex>
-                        </Grid>
-
-
-                        <Flex direction="column" gap="2">
-                          <Text as="label" htmlFor="title">
-                            Title
-                          </Text>
-                          <TextField.Root
-                            id="title"
-                            name="title"
-                            value={formData.title}
-                            onChange={(event) => updateField('title', event.target.value)}
-                            placeholder={formData.type === 'expense' ? 'E.g.: Grocery shopping' : 'E.g.: Salary'}
-                          />
-                        </Flex>
-
-
-
-
-                        <Flex direction="column" gap="2">
-                          <Text as="label" htmlFor="description">
-                            Description
-                          </Text>
-                          <TextArea
-                            id="description"
-                            name="description"
-                            rows={3}
-                            value={formData.description}
-                            onChange={(event) => updateField('description', event.target.value)}
-                            placeholder="Additional information (optional)"
-                          />
-                        </Flex>
-
-                        {error && (
-                          <Callout.Root color="red" variant="surface">
-                            <Callout.Text>{error}</Callout.Text>
-                          </Callout.Root>
-                        )}
-
-                        <Flex justify="between" gap="3">
-                          <Flex gap="3">
-                            <Button type="submit">{editingTransaction ? 'Save changes' : 'Add transaction'}</Button>
-                            <Button type="button" variant="soft" color="gray" onClick={() => handleFormOpenChange(false)}>
-                              Cancel
-                            </Button>
-                          </Flex>
-                          
-                          {/* Show Delete button only when editing */}
-                          {editingTransaction && (
-                            <Button
-                              type="button"
-                              variant="soft"
-                              color="red"
-                              onClick={() => setTransactionToDelete(editingTransaction)}
-                            >
-                              Delete
-                            </Button>
-                          )}
-                        </Flex>
-                        
-                      </Flex>
-                    </form>
-                    
-                  </Flex>
-                </Dialog.Content>
-
-              </Dialog.Root>
-
+              <TransactionFilters 
+                filters={filters} 
+                onFilterChange={setFilters} 
+                categories={categories} 
+                wallets={wallets} 
+              />
             </Flex>
+
           </Flex>
 
-
+          
           {/* MARK: month selector */}
           <Tabs.Root
             value={tabValue}
             onValueChange={setTabValue}
             activationMode="manual"
+            style={{
+              width: '100%',
+              overflow: "hidden",
+            }}
           >
             <Tabs.List
               size="2"
               ref={tabsListRef}
+              style={{
+                display: "flex",
+                flexWrap: "nowrap",
+                overflowX: "auto",
+                overflowY: "hidden",
+                width: "100%",
+                // scrollbarWidth: "thin",
+              }}
             >
               {availableMonths.map((m) => {
                 const value = getMonthTabValue(m);
@@ -658,6 +470,7 @@ function Transactions() {
                     ref={el => { tabRefs.current[value] = el; }}
                     style={{
                       minWidth: 70,
+                      flex: "0 0 auto",
                     }}
                   >
                     <span style={isCurrentMonth ? { color: "var(--accent-11)", fontWeight: "bold" } : undefined}>
@@ -700,7 +513,7 @@ function Transactions() {
           </Card>
 
           {/* MARK: filters */}
-          <Card variant="surface" size="3">
+          {/* <Card variant="surface" size="3">
             <Flex direction="column" gap="4">
 
               <Flex align="center" justify="between" wrap="wrap" gap="3">
@@ -718,18 +531,28 @@ function Transactions() {
               />
 
             </Flex>
-          </Card>
+          </Card> */}
+          {/* Remove the filters below, keep only the one in header */}
+          {/* {showFilters && (
+            <TransactionFilters 
+              filters={filters} 
+              onFilterChange={setFilters} 
+              categories={categories} 
+              wallets={wallets} 
+            />
+          )} */}
 
           {/* MARK: list */}
-          <Card variant="surface" size="3">
+          {/* <Card variant="surface" size="3"> */}
             <Flex direction="column" gap="4">
-              <Flex direction="row" gap="4">
+
+              {/* <Flex direction="row" gap="4">
                 <Heading size="4">Transaction list</Heading>
 
                 <Badge color="mint" variant="soft">
                   {filteredTransactions.length} records
                 </Badge>
-              </Flex>
+              </Flex> */}
 
               <TransactionList
                 transactions={filteredTransactions}
@@ -738,7 +561,7 @@ function Transactions() {
                 isLoading={isLoading}
               />
             </Flex>
-          </Card>
+          {/* </Card> */}
 
           {/* MARK: delete dialog */}
           <Dialog.Root open={!!transactionToDelete} onOpenChange={(open) => !open && setTransactionToDelete(null)}>
@@ -765,6 +588,241 @@ function Transactions() {
 
         </Flex>
       </Container>
+
+      {/* Фіксована кнопка Add transaction у правому нижньому куті */}
+      {/* <div
+        style={{
+          position: 'fixed',
+          right: 32,
+          bottom: 32,
+          zIndex: 100,
+        }}
+      > */}
+      <Tooltip content="Add Transaction">
+        <Button
+          size="3"
+          radius="large"
+          className="add-transaction-btn"
+          style={{
+            boxShadow: '0 2px 16px rgba(0,0,0,0.12)',
+            position: 'fixed',
+            right: 32,
+            bottom: 32,
+            zIndex: 100,
+            width: 72,
+            height: 72,
+            fontSize: 30,
+          }}
+
+
+          onClick={handleCreateClick}
+        >
+          {/* <PlusCircledIcon /> Add transaction */}
+          +
+        </Button>
+      </Tooltip>
+
+        <Dialog.Root open={isFormOpen} onOpenChange={handleFormOpenChange}>
+          <Dialog.Content maxWidth="520px">
+            <Flex direction="column" gap="4">
+              <Flex align="center" justify="between">
+
+                <Dialog.Title asChild>
+                  <Text size="5">
+                    {editingTransaction ? 'Edit transaction' : 'New transaction'}
+                  </Text>
+                </Dialog.Title>
+
+                <Dialog.Close asChild>
+                  <IconButton
+                    variant="ghost"
+                    color="gray"
+                    aria-label="Close transaction form"
+                  >
+                    <Cross2Icon />
+                  </IconButton>
+                </Dialog.Close>
+
+              </Flex>
+
+              
+              <form onSubmit={handleSubmit}>
+                <Flex direction="column" gap="4">
+                  
+                  <SegmentedControl.Root value={formData.type} onValueChange={(value) => updateField('type', value)}>
+                    <SegmentedControl.Item value="expense">💸 Expense</SegmentedControl.Item>
+                    <SegmentedControl.Item value="income">💰 Income</SegmentedControl.Item>
+                  </SegmentedControl.Root>
+
+                  <Grid columns={{ initial: '1', md: '2' }} gap="4">
+                    <Flex direction="column" gap="2">
+                      <Text as="label" htmlFor="amount">
+                        Amount
+                      </Text>
+                      <TextField.Root
+                        id="amount"
+                        name="amount"
+                        type="number"
+                        required
+                        min="0.01"
+                        step="0.01"
+                        value={formData.amount}
+                        onChange={(event) => updateField('amount', event.target.value)}
+                        placeholder="0.00"
+                      />
+                    </Flex>
+
+                    <Flex direction="column" gap="2">
+                      <Text as="label" htmlFor="datetime">
+                        Date and Time
+                      </Text>
+                      <TextField.Root
+                        id="datetime"
+                        name="datetime"
+                        type="datetime-local"
+                        required
+                        value={formData.datetime}
+                        onChange={(event) => updateField('datetime', event.target.value)}
+                      />
+                    </Flex>
+                  </Grid>
+
+                  
+
+                  <Grid columns={{ initial: '1', md: '2' }} gap="4">
+                    <Flex direction="column" gap="2">
+                      {/* <Text>Category <span style={{color:'red'}}>*</span></Text> */}
+                      <Text>Category</Text>
+                      <Select.Root
+                        value={formData.category_id}
+                        onValueChange={(value) => updateField('category_id', value)}
+                        required
+                      >
+                        <Select.Trigger placeholder="Select category" />
+                        <Select.Content>
+                          {/* Expense categories */}
+                          <Select.Group>
+                            <Select.Label>Expense</Select.Label>
+                            {categories
+                              .filter((cat) => cat.type === 'expense')
+                              .map((cat) => (
+                                <Select.Item key={cat.id} value={cat.id?.toString()}>
+                                  {cat.icon} {cat.name}
+                                </Select.Item>
+                              ))}
+                          </Select.Group>
+                          {/* Income categories */}
+                          <Select.Separator />
+                          <Select.Group>
+                            <Select.Label>Income</Select.Label>
+                            {categories
+                              .filter((cat) => cat.type === 'income')
+                              .map((cat) => (
+                                <Select.Item key={cat.id} value={cat.id?.toString()}>
+                                  {cat.icon} {cat.name}
+                                </Select.Item>
+                              ))}
+                          </Select.Group>
+                          {/* Both categories */}
+                          <Select.Separator />
+                          <Select.Group>
+                            <Select.Label>Both</Select.Label>
+                            {categories
+                              .filter((cat) => cat.type === 'both')
+                              .map((cat) => (
+                                <Select.Item key={cat.id} value={cat.id?.toString()}>
+                                  {cat.icon} {cat.name}
+                                </Select.Item>
+                              ))}
+                          </Select.Group>
+                        </Select.Content>
+                      </Select.Root>
+                    </Flex>
+
+                    <Flex direction="column" gap="2">
+                      <Text>Wallet</Text>
+                      <Select.Root
+                        value={formData.wallet_id}
+                        onValueChange={(value) => updateField('wallet_id', value)}
+                      >
+                        <Select.Trigger placeholder="Select wallet" />
+                        <Select.Content>
+                          {wallets.map((wallet) => (
+                            <Select.Item key={wallet.id} value={wallet.id?.toString()}>
+                              {wallet.icon} {wallet.name}
+                            </Select.Item>
+                          ))}
+                        </Select.Content>
+                      </Select.Root>
+                    </Flex>
+                  </Grid>
+
+
+                  <Flex direction="column" gap="2">
+                    <Text as="label" htmlFor="title">
+                      Title
+                    </Text>
+                    <TextField.Root
+                      id="title"
+                      name="title"
+                      value={formData.title}
+                      onChange={(event) => updateField('title', event.target.value)}
+                      placeholder={formData.type === 'expense' ? 'E.g.: Grocery shopping' : 'E.g.: Salary'}
+                    />
+                  </Flex>
+
+
+
+
+                  <Flex direction="column" gap="2">
+                    <Text as="label" htmlFor="description">
+                      Description
+                    </Text>
+                    <TextArea
+                      id="description"
+                      name="description"
+                      rows={3}
+                      value={formData.description}
+                      onChange={(event) => updateField('description', event.target.value)}
+                      placeholder="Additional information (optional)"
+                    />
+                  </Flex>
+
+                  {error && (
+                    <Callout.Root color="red" variant="surface">
+                      <Callout.Text>{error}</Callout.Text>
+                    </Callout.Root>
+                  )}
+
+                  <Flex justify="between" gap="3">
+                    <Flex gap="3">
+                      <Button type="submit">{editingTransaction ? 'Save changes' : 'Add transaction'}</Button>
+                      <Button type="button" variant="soft" color="gray" onClick={() => handleFormOpenChange(false)}>
+                        Cancel
+                      </Button>
+                    </Flex>
+                    
+                    {/* Show Delete button only when editing */}
+                    {editingTransaction && (
+                      <Button
+                        type="button"
+                        variant="soft"
+                        color="red"
+                        onClick={() => setTransactionToDelete(editingTransaction)}
+                      >
+                        Delete
+                      </Button>
+                    )}
+                  </Flex>
+                  
+                </Flex>
+              </form>
+              
+            </Flex>
+          </Dialog.Content>
+
+        </Dialog.Root>
+      {/* </div> */}
     </Section>
   );
 }
