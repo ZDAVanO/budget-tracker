@@ -42,9 +42,11 @@ function getCurrentLocalDateTime() {
 function Transactions() {
 
   const [transactions, setTransactions] = useState([]);
+  const [allTransactions, setAllTransactions] = useState([]); // <--- Додаємо стан для всіх транзакцій
   const [categories, setCategories] = useState([]);
   const [wallets, setWallets] = useState([]);
-  const [filters] = useState({ 
+  // const [filters] = useState({ 
+  const [filters, setFilters] = useState({ 
     category_id: '', 
     wallet_id: '',
     type: '', // 'expense', 'income', або ''
@@ -92,6 +94,20 @@ function Transactions() {
   }, [filters]);
 
 
+  // MARK: loadAllTransactions
+  // Завантажуємо всі транзакції без фільтрів для місячної смуги
+  const loadAllTransactions = useCallback(async () => {
+    try {
+      const { response, data } = await api.transactions.getAll({});
+      if (response.ok) {
+        setAllTransactions(data);
+      }
+    } catch (error) {
+      console.error('❌ Error loading all transactions:', error);
+    }
+  }, []);
+
+
   // MARK: loadCategories
   const loadCategories = useCallback(async () => {
     try {
@@ -124,10 +140,11 @@ function Transactions() {
     await Promise.all([
       loadTransactions(),
       loadCategories(),
-      loadWallets()
+      loadWallets(),
+      loadAllTransactions(), // <--- Додаємо завантаження всіх транзакцій
     ]);
     setIsLoading(false);
-  }, [loadTransactions, loadCategories, loadWallets]);
+  }, [loadTransactions, loadCategories, loadWallets, loadAllTransactions]);
 
   
   // MARK: useEffect
@@ -309,11 +326,11 @@ function Transactions() {
 
   // Допоміжна функція для отримання діапазону місяців від найстарішої до найновішої транзакції (включно з майбутніми)
   const getAvailableMonths = () => {
-    if (!transactions.length) return [];
+    if (!allTransactions.length) return []; // <--- використовуємо allTransactions
     // Знаходимо найстарішу та найновішу дату серед транзакцій
     let minDate = new Date();
     let maxDate = new Date(0);
-    transactions.forEach(tx => {
+    allTransactions.forEach(tx => {
       const d = new Date(tx.date);
       if (d < minDate) minDate = d;
       if (d > maxDate) maxDate = d;
@@ -361,7 +378,7 @@ function Transactions() {
   // Для Tabs: значення для кожного місяця
   const getMonthTabValue = (m) => `${m.year}-${String(m.month).padStart(2, '0')}`;
   // Якщо selectedMonth не входить у availableMonths, вибираємо останній (найновіший)
-  const selectedTabValue = getMonthTabValue(selectedMonth);
+  // const selectedTabValue = getMonthTabValue(selectedMonth);
   const availableTabValues = availableMonths.map(getMonthTabValue);
 
 
@@ -619,7 +636,7 @@ function Transactions() {
           </Flex>
 
 
-          {/* MARK: month selector as Tabs */}
+          {/* MARK: month selector */}
           <Tabs.Root
             value={tabValue}
             onValueChange={setTabValue}
@@ -646,6 +663,7 @@ function Transactions() {
                     <span style={isCurrentMonth ? { color: "var(--accent-11)", fontWeight: "bold" } : undefined}>
                       {new Date(m.year, m.month - 1, 1).toLocaleString('en-US', { month: 'short' })}
                     </span>
+                    
                     {!isCurrentYear && (
                       <span style={{ fontSize: 10, marginLeft: 2 }}>
                         {String(m.year).slice(2)}
@@ -682,7 +700,7 @@ function Transactions() {
           </Card>
 
           {/* MARK: filters */}
-          {/* <Card variant="surface" size="3">
+          <Card variant="surface" size="3">
             <Flex direction="column" gap="4">
 
               <Flex align="center" justify="between" wrap="wrap" gap="3">
@@ -700,7 +718,7 @@ function Transactions() {
               />
 
             </Flex>
-          </Card> */}
+          </Card>
 
           {/* MARK: list */}
           <Card variant="surface" size="3">
