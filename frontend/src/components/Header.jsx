@@ -41,10 +41,12 @@ function Header({ isLoggedIn, user, onLogout }) {
                 to="/"
                 className="inline-flex items-center gap-2 text-inherit no-underline"
               >
-                <span className="text-2xl font-bold text-mint-600">
+                <span className="text-xl font-bold text-mint-600 sm:text-2xl">
                   <span role="img" aria-label="coin">💰</span>
                 </span>
-                <Heading className="" size="5">Budget Tracker</Heading>
+                <Heading className="" size={{ initial: "3", sm: "5" }}>
+                  Budget Tracker
+                </Heading>
               </Link>
 
               <ThemeToggleButton />

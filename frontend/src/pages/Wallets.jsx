@@ -53,6 +53,7 @@ function Wallets() {
       const { response, data } = await api.wallets.getAll();
       if (response.ok) {
         setWallets(data);
+        console.log('📂 Loaded wallets:', data);
       }
     } catch (loadError) {
       console.error('Error loading wallets:', loadError);
@@ -181,7 +182,7 @@ function Wallets() {
 
   // MARK: formatAmount
   const formatAmount = (amount, currency) =>
-    `${amount >= 0 ? '+' : ''}${amount.toFixed(2)} ${currency || 'UAH'}`;
+    `${amount >= 0 ? '' : ''}${amount.toFixed(2)} ${currency || 'UAH'}`;
 
 
   // MARK: render
@@ -383,12 +384,17 @@ function Wallets() {
 
                     <Flex align="center" justify="between">
                       <Flex align="center" gap="3">
-                        <Text size="5">{wallet.icon}</Text>
+
+                        <Text size="8">{wallet.icon}</Text>
+
                         <Flex direction="column" gap="1">
+
                           <Text weight="medium">{wallet.name}</Text>
+
                           <Badge color="gray" style={{ width: 'fit-content', paddingRight: 8 }}>
                             {wallet.currency}
                           </Badge>
+
                         </Flex>
                       </Flex>
 
@@ -407,9 +413,11 @@ function Wallets() {
                       <Text color="gray" size="2">
                         Current Balance
                       </Text>
+
                       <Heading size="5" color={wallet.balance >= 0 ? 'mint' : 'tomato'}>
                         {formatAmount(wallet.balance ?? 0, wallet.currency)}
                       </Heading>
+
                     </Flex>
 
                     {wallet.description && (

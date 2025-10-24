@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   Badge,
@@ -14,6 +14,7 @@ import {
   Section,
   SegmentedControl,
   Select,
+  Tabs,
   Text,
   TextArea,
   TextField,
@@ -43,7 +44,7 @@ function Transactions() {
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
   const [wallets, setWallets] = useState([]);
-  const [filters, setFilters] = useState({ 
+  const [filters] = useState({ 
     category_id: '', 
     wallet_id: '',
     type: '', // 'expense', 'income', або ''
@@ -65,6 +66,16 @@ function Transactions() {
   });
   const [error, setError] = useState('');
 
+  // Додаємо стан для вибраного місяця
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() + 1 }; // month: 1-12
+  });
+
+  // refs for auto-scroll Tabs
+  const tabsListRef = useRef(null);
+  const tabRefs = useRef({});
+
 
 
   // MARK: loadTransactions
@@ -73,6 +84,7 @@ function Transactions() {
       const { response, data } = await api.transactions.getAll(filters);
       if (response.ok) {
         setTransactions(data);
+        console.log('📄 Loaded transactions:', data);
       }
     } catch (error) {
       console.error('❌ Error loading transactions:', error);
@@ -273,12 +285,6 @@ function Transactions() {
   };
 
 
-  // MARK: handleDelete
-  const handleDelete = (transaction) => {
-    setTransactionToDelete(transaction);
-  };
-
-
   // MARK: confirmDelete
   const confirmDelete = async () => {
     if (!transactionToDelete) return;
@@ -287,6 +293,8 @@ function Transactions() {
 
       if (response.ok) {
         loadTransactions();
+        setIsFormOpen(false); // Закриваємо форму після видалення
+        setEditingTransaction(null); // Скидаємо редаговану транзакцію
       } else {
         alert('Error deleting transaction');
       }
@@ -299,11 +307,93 @@ function Transactions() {
   };
 
 
+  // Допоміжна функція для отримання діапазону місяців від найстарішої до найновішої транзакції (включно з майбутніми)
+  const getAvailableMonths = () => {
+    if (!transactions.length) return [];
+    // Знаходимо найстарішу та найновішу дату серед транзакцій
+    let minDate = new Date();
+    let maxDate = new Date(0);
+    transactions.forEach(tx => {
+      const d = new Date(tx.date);
+      if (d < minDate) minDate = d;
+      if (d > maxDate) maxDate = d;
+    });
+    // Початок: перше число найстарішого місяця
+    minDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+    // Кінець: перше число місяця після найновішої транзакції
+    maxDate = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
+
+    const months = [];
+    let cur = new Date(minDate);
+    while (cur <= maxDate) {
+      months.push({ year: cur.getFullYear(), month: cur.getMonth() + 1 });
+      cur.setMonth(cur.getMonth() + 1);
+    }
+    // Сортуємо від старих до нових (зліва - старі, справа - нові)
+    return months.sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
+  };
+
+  // Фільтруємо транзакції за вибраним місяцем
+  const filteredTransactions = transactions.filter(tx => {
+    const d = new Date(tx.date);
+    return d.getFullYear() === selectedMonth.year && (d.getMonth() + 1) === selectedMonth.month;
+  });
+
+  // MARK: summary for selected month
+  const summary = filteredTransactions.reduce(
+    (acc, tx) => {
+      if (tx.type === 'expense') acc.expense += tx.amount;
+      else if (tx.type === 'income') acc.income += tx.amount;
+      return acc;
+    },
+    { expense: 0, income: 0 }
+  );
+  summary.balance = summary.income - summary.expense;
+
+  // Для перемикання місяців
+  const availableMonths = getAvailableMonths();
+  const [tabValue, setTabValue] = useState(() => {
+    const m = availableMonths.find(m => m.year === selectedMonth.year && m.month === selectedMonth.month);
+    return m ? `${m.year}-${String(m.month).padStart(2, '0')}` : '';
+  });
+
+
+  // Для Tabs: значення для кожного місяця
+  const getMonthTabValue = (m) => `${m.year}-${String(m.month).padStart(2, '0')}`;
+  // Якщо selectedMonth не входить у availableMonths, вибираємо останній (найновіший)
+  const selectedTabValue = getMonthTabValue(selectedMonth);
+  const availableTabValues = availableMonths.map(getMonthTabValue);
+
+
+  // Синхронізуємо selectedMonth <-> tabValue
+  useEffect(() => {
+    // Якщо selectedMonth змінився зовні (наприклад, після додавання транзакції)
+    const newTabValue = getMonthTabValue(selectedMonth);
+    if (tabValue !== newTabValue) setTabValue(newTabValue);
+    // eslint-disable-next-line
+  }, [selectedMonth]);
+  useEffect(() => {
+    // Якщо tabValue змінився (через Tabs)
+    const idx = availableTabValues.indexOf(tabValue);
+    if (idx !== -1) {
+      setSelectedMonth(availableMonths[idx]);
+    }
+    // eslint-disable-next-line
+  }, [tabValue, availableTabValues.join(',')]);
+
+  // Auto-scroll Tabs.List to selected/current month tab
+  useEffect(() => {
+    if (!tabsListRef.current || !tabRefs.current[tabValue]) return;
+    // Scroll so that the selected/current tab is visible (centered if possible)
+    tabRefs.current[tabValue].scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
+  }, [availableTabValues.length]);
+
+
   // MARK: render
   return (
     <Section size="3" className="p-4">
       <Container size="3">
-        <Flex direction="column" gap="6">
+        <Flex direction="column" gap="4">
 
           {/* MARK: header */}
           <Flex align="center" justify="between" wrap="wrap" gap="3">
@@ -316,13 +406,15 @@ function Transactions() {
             <Flex align="center" gap="3">
 
               {/* MARK: transaction form */}
+              <Button onClick={handleCreateClick}>
+                <PlusCircledIcon /> Add transaction
+              </Button>
               <Dialog.Root open={isFormOpen} onOpenChange={handleFormOpenChange}>
-                <Dialog.Trigger asChild>
-                  <Button onClick={handleCreateClick}>
+                {/* <Dialog.Trigger asChild>
+                  <Button onClick={handleCreateClick} tabIndex={-1}>
                     <PlusCircledIcon /> Add transaction
                   </Button>
-                </Dialog.Trigger>
-
+                </Dialog.Trigger> */}
                 <Dialog.Content maxWidth="520px">
                   <Flex direction="column" gap="4">
                     <Flex align="center" justify="between">
@@ -387,18 +479,7 @@ function Transactions() {
                           </Flex>
                         </Grid>
 
-                        <Flex direction="column" gap="2">
-                          <Text as="label" htmlFor="title">
-                            Title
-                          </Text>
-                          <TextField.Root
-                            id="title"
-                            name="title"
-                            value={formData.title}
-                            onChange={(event) => updateField('title', event.target.value)}
-                            placeholder={formData.type === 'expense' ? 'E.g.: Grocery shopping' : 'E.g.: Salary'}
-                          />
-                        </Flex>
+                        
 
                         <Grid columns={{ initial: '1', md: '2' }} gap="4">
                           <Flex direction="column" gap="2">
@@ -468,6 +549,23 @@ function Transactions() {
                           </Flex>
                         </Grid>
 
+
+                        <Flex direction="column" gap="2">
+                          <Text as="label" htmlFor="title">
+                            Title
+                          </Text>
+                          <TextField.Root
+                            id="title"
+                            name="title"
+                            value={formData.title}
+                            onChange={(event) => updateField('title', event.target.value)}
+                            placeholder={formData.type === 'expense' ? 'E.g.: Grocery shopping' : 'E.g.: Salary'}
+                          />
+                        </Flex>
+
+
+
+
                         <Flex direction="column" gap="2">
                           <Text as="label" htmlFor="description">
                             Description
@@ -488,12 +586,27 @@ function Transactions() {
                           </Callout.Root>
                         )}
 
-                        <Flex justify="flex-end" gap="3">
-                          <Button type="submit">{editingTransaction ? 'Save changes' : 'Add transaction'}</Button>
-                          <Button type="button" variant="soft" color="gray" onClick={() => handleFormOpenChange(false)}>
-                            Cancel
-                          </Button>
+                        <Flex justify="between" gap="3">
+                          <Flex gap="3">
+                            <Button type="submit">{editingTransaction ? 'Save changes' : 'Add transaction'}</Button>
+                            <Button type="button" variant="soft" color="gray" onClick={() => handleFormOpenChange(false)}>
+                              Cancel
+                            </Button>
+                          </Flex>
+                          
+                          {/* Show Delete button only when editing */}
+                          {editingTransaction && (
+                            <Button
+                              type="button"
+                              variant="soft"
+                              color="red"
+                              onClick={() => setTransactionToDelete(editingTransaction)}
+                            >
+                              Delete
+                            </Button>
+                          )}
                         </Flex>
+                        
                       </Flex>
                     </form>
                     
@@ -506,8 +619,70 @@ function Transactions() {
           </Flex>
 
 
+          {/* MARK: month selector as Tabs */}
+          <Tabs.Root
+            value={tabValue}
+            onValueChange={setTabValue}
+            activationMode="manual"
+          >
+            <Tabs.List
+              size="2"
+              ref={tabsListRef}
+            >
+              {availableMonths.map((m) => {
+                const value = getMonthTabValue(m);
+                const now = new Date();
+                const isCurrentMonth = m.year === now.getFullYear() && m.month === (now.getMonth() + 1);
+                const isCurrentYear = m.year === now.getFullYear();
+                return (
+                  <Tabs.Trigger
+                    key={value}
+                    value={value}
+                    ref={el => { tabRefs.current[value] = el; }}
+                    style={{
+                      minWidth: 70,
+                    }}
+                  >
+                    <span style={isCurrentMonth ? { color: "var(--accent-11)", fontWeight: "bold" } : undefined}>
+                      {new Date(m.year, m.month - 1, 1).toLocaleString('en-US', { month: 'short' })}
+                    </span>
+                    {!isCurrentYear && (
+                      <span style={{ fontSize: 10, marginLeft: 2 }}>
+                        {String(m.year).slice(2)}
+                      </span>
+                    )}
+                  </Tabs.Trigger>
+                );
+              })}
+            </Tabs.List>
+          </Tabs.Root>
+
+          {/* MARK: summary bar */}
+          <Card variant="surface" size="1">
+
+            <div className="flex flex-row items-center justify-around gap-6">
+
+              <Flex direction="row" align="center" gap="1">
+                <Text color="red">-</Text>
+                <Text color="red">{summary.expense.toFixed(2)}</Text>
+              </Flex>
+
+              <Flex direction="row" align="center" gap="1">
+                <Text color="green">+</Text>
+                <Text color="green">{summary.income.toFixed(2)}</Text>
+              </Flex>
+
+              <Flex direction="row" align="center" gap="1">
+                <Text>=</Text>
+                <Text color={summary.balance >= 0 ? "green" : "red"}>{summary.balance.toFixed(2)}</Text>
+              </Flex>
+
+            </div>
+
+          </Card>
+
           {/* MARK: filters */}
-          <Card variant="surface" size="3">
+          {/* <Card variant="surface" size="3">
             <Flex direction="column" gap="4">
 
               <Flex align="center" justify="between" wrap="wrap" gap="3">
@@ -525,20 +700,25 @@ function Transactions() {
               />
 
             </Flex>
-          </Card>
+          </Card> */}
 
           {/* MARK: list */}
           <Card variant="surface" size="3">
             <Flex direction="column" gap="4">
               <Flex direction="row" gap="4">
-              <Heading size="4">Transaction list</Heading>
+                <Heading size="4">Transaction list</Heading>
 
-              <Badge color="mint" variant="soft">
-                {transactions.length} records
-              </Badge>
+                <Badge color="mint" variant="soft">
+                  {filteredTransactions.length} records
+                </Badge>
               </Flex>
 
-              <TransactionList transactions={transactions} onEdit={handleEdit} onDelete={handleDelete} isLoading={isLoading} />
+              <TransactionList
+                transactions={filteredTransactions}
+                onEdit={handleEdit}
+                onDelete={() => {}}
+                isLoading={isLoading}
+              />
             </Flex>
           </Card>
 

@@ -346,7 +346,7 @@ function Categories() {
                         <Flex direction="column" gap="3">
                           <Flex align="center" justify="between">
                             <Flex align="center" gap="3">
-                              <Text size="5">{category.icon}</Text>
+                              <Text size="6">{category.icon}</Text>
                               <Flex direction="column" gap="1">
                                 <Text weight="medium">{category.name}</Text>
                                 {typeBadge(category.type)}
