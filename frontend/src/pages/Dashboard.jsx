@@ -41,19 +41,19 @@ function Dashboard({ user }) {
 
 
   // MARK: Pie chart data for last 30 days
-  // Expenses by category for the last 30 days
-  const nowDate = new Date();
-  const last30Days = new Date(nowDate);
-  last30Days.setDate(nowDate.getDate() - 29);
 
-  // Expenses by category (last 30 days)
-  const last30DaysExpenses = allTransactions.filter(t => {
+  // Expenses by category for the current month (from 1st day)
+  const nowDate = new Date();
+  const firstDayOfMonth = new Date(nowDate.getFullYear(), nowDate.getMonth(), 1);
+
+  // Expenses by category (current month)
+  const currentMonthExpenses = allTransactions.filter(t => {
     if (t.type !== 'expense') return false;
     const date = new Date(t.date);
-    return date >= last30Days && date <= nowDate;
+    return date >= firstDayOfMonth && date <= nowDate;
   });
   const expenseByCategory = {};
-  last30DaysExpenses.forEach(t => {
+  currentMonthExpenses.forEach(t => {
     const catId = t.category?.id || t.category_id || 'uncat';
     if (!expenseByCategory[catId]) {
       expenseByCategory[catId] = {
@@ -68,14 +68,14 @@ function Dashboard({ user }) {
   const chartLabels = Object.values(expenseByCategory).map(cat => `${cat.icon ? cat.icon + ' ' : ''}${cat.name}`);
   const chartData = Object.values(expenseByCategory).map(cat => cat.amount);
 
-  // Incomes by category (last 30 days)
-  const last30DaysIncomes = allTransactions.filter(t => {
+  // Incomes by category (current month)
+  const currentMonthIncomes = allTransactions.filter(t => {
     if (t.type !== 'income') return false;
     const date = new Date(t.date);
-    return date >= last30Days && date <= nowDate;
+    return date >= firstDayOfMonth && date <= nowDate;
   });
   const incomeByCategory = {};
-  last30DaysIncomes.forEach(t => {
+  currentMonthIncomes.forEach(t => {
     const catId = t.category?.id || t.category_id || 'uncat';
     if (!incomeByCategory[catId]) {
       incomeByCategory[catId] = {
