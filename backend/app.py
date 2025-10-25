@@ -6,6 +6,7 @@ from flask import (
     flash,
     jsonify,
     request,
+    abort,
 )
 
 from flask_cors import CORS  # Allows React to access Flask
@@ -364,7 +365,10 @@ def create_category():
 def delete_category(category_id):
     """Видалити категорію"""
     user_id = int(get_jwt_identity())
-    category = Category.query.get_or_404(category_id)
+    # category = Category.query.get_or_404(category_id)
+    category = db.session.get(Category, category_id)
+    if not category:
+        abort(404)
     
     # Перевіряємо, що це категорія користувача
     if category.user_id != user_id:
@@ -385,7 +389,10 @@ def delete_category(category_id):
 def update_category(category_id):
     """Оновити категорію"""
     user_id = int(get_jwt_identity())
-    category = Category.query.get_or_404(category_id)
+    # category = Category.query.get_or_404(category_id)
+    category = db.session.get(Category, category_id)
+    if not category:
+        abort(404)
     
     # Перевіряємо, що це категорія користувача
     if category.user_id != user_id:
@@ -466,7 +473,10 @@ def create_wallet():
 def update_wallet(wallet_id):
     """Оновити гаманець"""
     user_id = int(get_jwt_identity())
-    wallet = Wallet.query.get_or_404(wallet_id)
+    # wallet = Wallet.query.get_or_404(wallet_id)
+    wallet = db.session.get(Wallet, wallet_id)
+    if not wallet:
+        abort(404)
     
     if wallet.user_id != user_id:
         return jsonify({"msg": "Unauthorized"}), 403
@@ -521,7 +531,10 @@ def update_wallet(wallet_id):
 def delete_wallet(wallet_id):
     """Видалити гаманець"""
     user_id = int(get_jwt_identity())
-    wallet = Wallet.query.get_or_404(wallet_id)
+    # wallet = Wallet.query.get_or_404(wallet_id)
+    wallet = db.session.get(Wallet, wallet_id)
+    if not wallet:
+        abort(404)
     
     if wallet.user_id != user_id:
         return jsonify({"msg": "Unauthorized"}), 403
@@ -609,7 +622,10 @@ def create_transaction():
 def update_transaction(transaction_id):
     """Оновити транзакцію"""
     user_id = int(get_jwt_identity())
-    transaction = Transaction.query.get_or_404(transaction_id)
+    # transaction = Transaction.query.get_or_404(transaction_id)
+    transaction = db.session.get(Transaction, transaction_id)
+    if not transaction:
+        abort(404)
 
     if transaction.user_id != user_id:
         return jsonify({"msg": "Unauthorized"}), 403
@@ -649,7 +665,10 @@ def update_transaction(transaction_id):
 def delete_transaction(transaction_id):
     """Видалити транзакцію"""
     user_id = int(get_jwt_identity())
-    transaction = Transaction.query.get_or_404(transaction_id)
+    # transaction = Transaction.query.get_or_404(transaction_id)
+    transaction = db.session.get(Transaction, transaction_id)
+    if not transaction:
+        abort(404)
     
     if transaction.user_id != user_id:
         return jsonify({"msg": "Unauthorized"}), 403
