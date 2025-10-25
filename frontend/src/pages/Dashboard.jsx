@@ -107,6 +107,7 @@ function Dashboard({ user }) {
       .sort((a, b) => a.date - b.date);
 
     const start = new Date(tx[0].date);
+    start.setHours(0, 0, 0, 0); // only date part
     const today = new Date();
     today.setHours(0, 0, 0, 0); // only date part
 
@@ -116,24 +117,29 @@ function Dashboard({ user }) {
     // Aggregate sums per day
     const sumsByDay = {};
     tx.forEach(t => {
-      const key = dayKey(t.date);
+      // Normalize date to 00:00:00 for correct grouping
+      const date = new Date(t.date);
+      date.setHours(0, 0, 0, 0);
+      const key = dayKey(date);
       const sign = t.type === 'expense' ? -1 : 1;
       const fromCur = t.wallet?.currency || 'UAH';
       const amt = convert(Number(t.amount) || 0, fromCur, baseCurrency);
       sumsByDay[key] = (sumsByDay[key] || 0) + sign * amt;
     });
 
-    // Build daily series from start to today
+    // Build daily series from start to today (avoid mutating date object)
     const labels = [];
     const data = [];
     let current = 0;
-    for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
+    for (let d = new Date(start); d.getTime() <= today.getTime();) {
       const key = dayKey(d);
       current += sumsByDay[key] || 0;
       // push a copy of date string for label
-      const label = new Date(d).toLocaleDateString('uk-UA');
+      const label = d.toLocaleDateString('uk-UA');
       labels.push(label);
       data.push(Number(current.toFixed(2)));
+      // increment date by 1 day (without mutating d)
+      d = new Date(d.getTime() + 24 * 60 * 60 * 1000);
     }
 
     return { labels, data };

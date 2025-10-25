@@ -183,7 +183,7 @@ function Categories() {
   
   // MARK: Protected categories
   // Назви категорій, які не можна редагувати чи видаляти
-  const protectedCategoryNames = ['Uncategorized'];
+  const protectedCategoryNames = ['Uncategorized', 'Adjust Balance'];
   const isProtectedCategory = (category) =>
     protectedCategoryNames.includes(category.name);
 

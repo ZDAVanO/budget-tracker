@@ -30,12 +30,13 @@ const CHART_COLORS = [
 
 // MARK: Spending (All Spending)
 function Spending() {
+  // MARK: state
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
   const [wallets, setWallets] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Filters (multi-select)
+  // MARK: filters
   const [selectedTypes, setSelectedTypes] = useState(['expense', 'income']);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState([]); // strings
   const [selectedWalletIds, setSelectedWalletIds] = useState([]); // strings
@@ -44,9 +45,8 @@ function Spending() {
 
   const { baseCurrency, convert, format } = useCurrency();
 
-  // Colors for charts (use shared const)
 
-  // Load data
+  // MARK: loadTransactions
   const loadTransactions = useCallback(async () => {
     try {
       const { response, data } = await api.transactions.getAll();
@@ -56,6 +56,8 @@ function Spending() {
     }
   }, []);
 
+
+    // MARK: loadCategories
   const loadCategories = useCallback(async () => {
     try {
       const { response, data } = await api.categories.getAll();
@@ -65,6 +67,8 @@ function Spending() {
     }
   }, []);
 
+
+    // MARK: loadWallets
   const loadWallets = useCallback(async () => {
     try {
       const { response, data } = await api.wallets.getAll();
@@ -74,6 +78,8 @@ function Spending() {
     }
   }, []);
 
+
+  // MARK: useEffect
   useEffect(() => {
     const run = async () => {
       setLoading(true);
@@ -86,7 +92,8 @@ function Spending() {
     run();
   }, [loadTransactions, loadCategories, loadWallets]);
 
-  // Filtering
+
+  // MARK: filtered
   const filtered = useMemo(() => {
     return (transactions || []).filter(t => {
       // Types
@@ -121,7 +128,8 @@ function Spending() {
     });
   }, [transactions, selectedTypes, selectedCategoryIds, selectedWalletIds, startDate, endDate]);
 
-  // Aggregations
+
+  // MARK: totals
   const totals = useMemo(() => {
     let expenses = 0;
     let incomes = 0;
@@ -148,7 +156,8 @@ function Spending() {
     };
   }, [filtered, convert, baseCurrency]);
 
-  // Pie data by category
+
+  // MARK: buildCategoryPie
   const buildCategoryPie = useCallback((type) => {
     const items = filtered.filter(t => t.type === type);
     const map = {};
@@ -170,7 +179,8 @@ function Spending() {
   const expensePie = buildCategoryPie('expense');
   const incomePie = buildCategoryPie('income');
 
-  // Net worth series (like Dashboard)
+  
+  // MARK: computeNetWorthSeries (net worth series)
   const computeNetWorthSeries = useCallback((txList) => {
     if (!txList || txList.length === 0) return { labels: [], data: [] };
     const tx = txList
@@ -202,7 +212,8 @@ function Spending() {
 
   const netWorthSeries = useMemo(() => computeNetWorthSeries(filtered), [filtered, computeNetWorthSeries]);
 
-  // Handlers for filters
+
+  // MARK: filter handlers
 //   const toggleType = (type) => {
 //     setSelectedTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]);
 //   };
@@ -220,26 +231,30 @@ function Spending() {
     setEndDate('');
   };
 
-  // Додаємо для SegmentedControl
+
+  // MARK: handleTypeSegmented
   const handleTypeSegmented = (value) => {
     if (value === 'all') setSelectedTypes(['expense', 'income']);
     else setSelectedTypes([value]);
   };
 
-  // Add filters object for date fields
+  
+  // MARK: filter values object
   const filters = {
     start_date: startDate,
     end_date: endDate,
     // ...other filters if needed...
   };
 
-  // Handler for updating filter values
+
+  // MARK: updateValue
   const updateValue = (field, value) => {
     if (field === 'start_date') setStartDate(value);
     if (field === 'end_date') setEndDate(value);
   };
 
-  // Для Popover: чи є активні фільтри
+
+  // MARK: hasActiveFilters
   const hasActiveFilters =
     selectedTypes.length !== 2 ||
     selectedCategoryIds.length > 0 ||
@@ -247,11 +262,12 @@ function Spending() {
     startDate ||
     endDate;
 
+  // MARK: render
   return (
     <Section size="3" className="p-4">
       <Container size="3">
         <Flex direction="column" gap="5">
-          {/* Header row with title and filters button */}
+          {/* MARK: header row with title and filters button */}
           <Flex align="center" justify="between" wrap="wrap" gap="3">
             <Heading size="7">All Spending</Heading>
             <Popover.Root>
@@ -350,7 +366,7 @@ function Spending() {
             </Popover.Root>
           </Flex>
 
-          {/* Summary cards */}
+          {/* MARK: summary cards */}
           <Grid columns={{ initial: '1', md: '3' }} gap="4">
             <Card variant="surface" size="3">
               <Flex direction="column" gap="1" align="center">
@@ -379,7 +395,7 @@ function Spending() {
             </Card>
           </Grid>
 
-          {/* Net Worth series */}
+          {/* MARK: net worth series */}
           <Card variant="surface" size="3">
             <Flex direction="column" gap="3">
               <Heading size="5" align="center">Net Worth Over Time</Heading>
@@ -393,7 +409,7 @@ function Spending() {
             </Flex>
           </Card>
 
-          {/* Charts */}
+          {/* MARK: charts */}
           <Grid columns={{ initial: '1', md: '2' }} gap="5">
             <Card variant="surface" size="3">
               <Flex direction="column" gap="3">
