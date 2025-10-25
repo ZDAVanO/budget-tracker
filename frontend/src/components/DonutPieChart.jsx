@@ -38,9 +38,10 @@ const DonutPieChart = ({ data, labels, colors, title }) => {
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: {
-            position: 'right',
+            position: 'bottom',
             labels: {
               usePointStyle: true,
               pointStyle: 'circle',
@@ -104,7 +105,14 @@ const DonutPieChart = ({ data, labels, colors, title }) => {
     };
   }, [data, labels, colors, title, effectiveAppearance]);
 
-  return <canvas ref={chartRef} style={{ width: '100%', maxHeight: 330 }} />;
+  return (
+    <div style={{ width: '100%', height: 400 }}>
+      <canvas
+        ref={chartRef}
+        style={{ width: '100%', height: '100%' }}
+      />
+    </div>
+  );
 };
 
 export default DonutPieChart;

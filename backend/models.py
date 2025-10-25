@@ -26,7 +26,6 @@ class Wallet(db.Model):
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(255))
     icon = db.Column(db.String(50), default='💳')
-    initial_balance = db.Column(db.Float, default=0.0)
     currency = db.Column(db.String(10), default='UAH')
     
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -37,7 +36,7 @@ class Wallet(db.Model):
         """Розрахунок поточного балансу гаманця"""
         total_incomes = sum(t.amount for t in self.transactions if t.type == 'income')
         total_expenses = sum(t.amount for t in self.transactions if t.type == 'expense')
-        return self.initial_balance + total_incomes - total_expenses
+        return total_incomes - total_expenses
     
     def to_dict(self):
         return {
@@ -45,7 +44,6 @@ class Wallet(db.Model):
             'name': self.name,
             'description': self.description,
             'icon': self.icon,
-            'initial_balance': self.initial_balance,
             'currency': self.currency,
             'user_id': self.user_id,
             'balance': self.get_balance()

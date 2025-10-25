@@ -163,19 +163,26 @@ function Transactions() {
 
   // Допоміжна функція для отримання діапазону місяців від найстарішої до найновішої транзакції (включно з майбутніми)
   const getAvailableMonths = () => {
-    if (!allTransactions.length) return []; // <--- використовуємо allTransactions
+    if (!allTransactions.length) {
+      // Якщо транзакцій немає, повертаємо лише поточний місяць
+      const now = new Date();
+      return [{ year: now.getFullYear(), month: now.getMonth() + 1 }];
+    }
     // Знаходимо найстарішу та найновішу дату серед транзакцій
     let minDate = new Date();
-    let maxDate = new Date(0);
+    let maxTxDate = new Date(0);
     allTransactions.forEach(tx => {
       const d = new Date(tx.date);
       if (d < minDate) minDate = d;
-      if (d > maxDate) maxDate = d;
+      if (d > maxTxDate) maxTxDate = d;
     });
     // Початок: перше число найстарішого місяця
     minDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
-    // Кінець: перше число місяця після найновішої транзакції
-    maxDate = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
+    // Кінець: перше число найбільшого з поточного місяця або останньої транзакції
+    const now = new Date();
+    const maxDate = (maxTxDate > now)
+      ? new Date(maxTxDate.getFullYear(), maxTxDate.getMonth(), 1)
+      : new Date(now.getFullYear(), now.getMonth(), 1);
 
     const months = [];
     let cur = new Date(minDate);

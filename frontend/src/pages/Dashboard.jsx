@@ -17,6 +17,7 @@ import {
 import { ArrowRightIcon, LightningBoltIcon } from '@radix-ui/react-icons';
 import api from '../services/api';
 import DonutPieChart from '../components/DonutPieChart';
+import NetWorthChart from '../components/NetWorthChart';
 
 // MARK: Dashboard
 function Dashboard({ user }) {
@@ -25,7 +26,7 @@ function Dashboard({ user }) {
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [allTransactions, setAllTransactions] = useState([]); // for calculation
   const [wallets, setWallets] = useState([]);
-  const [categories, setCategories] = useState([]);
+
   
   const [isLoading, setIsLoading] = useState(false);
 
@@ -43,7 +44,6 @@ function Dashboard({ user }) {
           loadStatistics(),
           loadRecentTransactions(),
           loadWallets(),
-          loadCategories()
         ]);
       } catch (err) {
         console.error('Error loading data:', err);
@@ -55,17 +55,7 @@ function Dashboard({ user }) {
     loadData();
   }, []);
 
-  // MARK: loadCategories
-  const loadCategories = async () => {
-    try {
-      const { response, data } = await api.categories.getAll('expense');
-      if (response.ok) {
-        setCategories(data || []);
-      }
-    } catch (err) {
-      console.error('Error loading categories:', err);
-    }
-  };
+
   // MARK: Pie chart data for last 30 days
   // Expenses by category for the last 30 days
   const nowDate = new Date();
@@ -119,6 +109,50 @@ function Dashboard({ user }) {
     '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#B4FF9F', '#FFB4B4', '#B4D4FF', '#FFD6A5',
     '#CDB4DB', '#F1C0E8', '#A3C4F3', '#B5EAD7', '#E2F0CB', '#FFB7B2', '#FFDAC1', '#B5EAD7', '#C7CEEA', '#E2F0CB'
   ];
+
+
+  // MARK: Net worth over time (daily cumulative)
+  const computeNetWorthSeries = (transactions) => {
+    if (!transactions || transactions.length === 0) return { labels: [], data: [] };
+
+    // Normalize and sort transactions by date asc
+    const tx = transactions
+      .map(t => ({ ...t, date: new Date(t.date) }))
+      .sort((a, b) => a.date - b.date);
+
+    const start = new Date(tx[0].date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // only date part
+
+    // Helper to get yyyy-mm-dd key
+    const dayKey = (d) => d.toISOString().slice(0, 10);
+
+    // Aggregate sums per day
+    const sumsByDay = {};
+    tx.forEach(t => {
+      const key = dayKey(t.date);
+      const sign = t.type === 'expense' ? -1 : 1;
+      const amt = Number(t.amount) || 0;
+      sumsByDay[key] = (sumsByDay[key] || 0) + sign * amt;
+    });
+
+    // Build daily series from start to today
+    const labels = [];
+    const data = [];
+    let current = 0;
+    for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
+      const key = dayKey(d);
+      current += sumsByDay[key] || 0;
+      // push a copy of date string for label
+      const label = new Date(d).toLocaleDateString('uk-UA');
+      labels.push(label);
+      data.push(Number(current.toFixed(2)));
+    }
+
+    return { labels, data };
+  };
+
+  const netWorthSeries = computeNetWorthSeries(allTransactions);
 
 
   // MARK: loadStatistics
@@ -351,45 +385,60 @@ function Dashboard({ user }) {
               </Flex>
 
             </Card>
+
+
+            {/* MARK: Donut Pie Chart for Expenses by Category (last 30 days) */}
+            <Card variant="surface" size="3">
+              <Flex direction="column" gap="3">
+                <Heading size="5" align="center">Expenses (last 30 days)</Heading>
+                {chartData.length > 0 ? (
+                  <DonutPieChart
+                    data={chartData}
+                    labels={chartLabels}
+                    colors={chartColors.slice(0, chartData.length)}
+                    title={null}
+                  />
+                ) : (
+                  <Text align="center" color="gray">No expenses in the last 30 days</Text>
+                )}
+              </Flex>
+            </Card>
+
+            {/* MARK: Donut Pie Chart for Incomes by Category (last 30 days) */}
+            <Card variant="surface" size="3">
+              <Flex direction="column" gap="3">
+                <Heading size="5" align="center">Income (last 30 days)</Heading>
+                {incomeChartData.length > 0 ? (
+                  <DonutPieChart
+                    data={incomeChartData}
+                    labels={incomeChartLabels}
+                    colors={chartColors.slice(0, incomeChartData.length)}
+                    title={null}
+                  />
+                ) : (
+                  <Text align="center" color="gray">No income in the last 30 days</Text>
+                )}
+              </Flex>
+            </Card>
+
           </Grid>
 
-
-          {/* MARK: Donut Pie Chart for Expenses by Category (last 30 days) */}
-          <Card variant="surface" size="4">
-            <Flex direction="column" gap="5">
-              <Heading size="5" align="center">Expenses (last 30 days)</Heading>
-              {chartData.length > 0 ? (
-                <DonutPieChart
-                  data={chartData}
-                  labels={chartLabels}
-                  colors={chartColors.slice(0, chartData.length)}
+          {/* MARK: Net Worth Over Time (full-width) */}
+          <Card variant="surface" size="3" style={{ marginTop: 20 }}>
+            <Flex direction="column" gap="3">
+              <Heading size="5" align="center">Net Worth Over Time</Heading>
+              {netWorthSeries.data.length > 0 ? (
+                <NetWorthChart
+                  labels={netWorthSeries.labels}
+                  data={netWorthSeries.data}
+                  color="#6C5CE7"
                   title={null}
                 />
               ) : (
-                <Text align="center" color="gray">No expenses in the last 30 days</Text>
+                <Text align="center" color="gray">No transactions to build net worth chart</Text>
               )}
             </Flex>
           </Card>
-
-          {/* MARK: Donut Pie Chart for Incomes by Category (last 30 days) */}
-          <Card variant="surface" size="4">
-            <Flex direction="column" gap="5">
-              <Heading size="5" align="center">Income (last 30 days)</Heading>
-              {incomeChartData.length > 0 ? (
-                <DonutPieChart
-                  data={incomeChartData}
-                  labels={incomeChartLabels}
-                  colors={chartColors.slice(0, incomeChartData.length)}
-                  title={null}
-                />
-              ) : (
-                <Text align="center" color="gray">No income in the last 30 days</Text>
-              )}
-            </Flex>
-          </Card>
-
-
-
 
 
         </Flex>

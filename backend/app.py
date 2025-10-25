@@ -124,13 +124,29 @@ def create_default_wallets_for_user(user_id):
             name=wallet_data['name'],
             icon=wallet_data['icon'],
             description=wallet_data['description'],
-            initial_balance=wallet_data['initial_balance'],
             currency=wallet_data['currency'],
             user_id=user_id
         )
         db.session.add(wallet)
     
     db.session.commit()
+
+
+def _get_or_create_adjustment_category(user_id):
+    """Return the 'Adjust Balance' category for the user, creating it if necessary."""
+    cat = Category.query.filter_by(user_id=user_id, name='Adjust Balance').first()
+    if cat:
+        return cat
+    cat = Category(
+        name='Adjust Balance',
+        icon='⚖️',
+        type='both',
+        description='Balance adjustments (initial/manual)',
+        user_id=user_id
+    )
+    db.session.add(cat)
+    db.session.commit()
+    return cat
 
 
 @app.route('/api/register', methods=['POST'])
@@ -315,19 +331,41 @@ def create_wallet():
     """Створити новий гаманець"""
     user_id = int(get_jwt_identity())
     data = request.get_json()
-    
+    # Create wallet record (balance is derived from transactions only)
     wallet = Wallet(
         name=data.get('name'),
         description=data.get('description'),
         icon=data.get('icon', '💳'),
-        initial_balance=float(data.get('initial_balance', 0)),
         currency=data.get('currency', 'UAH'),
         user_id=user_id
     )
-    
+
     db.session.add(wallet)
     db.session.commit()
-    
+
+    # If an initial_balance was provided, create an adjustment transaction
+    try:
+        initial_balance = float(data.get('initial_balance', 0) or 0)
+    except Exception:
+        initial_balance = 0
+
+    if initial_balance != 0:
+        # Ensure adjustment category exists for this user
+        cat = _get_or_create_adjustment_category(user_id)
+        t_type = 'income' if initial_balance >= 0 else 'expense'
+        transaction = Transaction(
+            amount=abs(initial_balance),
+            date=datetime.now(),
+            title='Adjust Balance',
+            description='Initial balance adjustment',
+            type=t_type,
+            category_id=cat.id,
+            wallet_id=wallet.id,
+            user_id=user_id
+        )
+        db.session.add(transaction)
+        db.session.commit()
+
     return jsonify(wallet.to_dict()), 201
 
 
@@ -349,8 +387,34 @@ def update_wallet(wallet_id):
         wallet.description = data['description']
     if 'icon' in data:
         wallet.icon = data['icon']
-    if 'initial_balance' in data:
-        wallet.initial_balance = float(data['initial_balance'])
+    # If client sent an adjustment (or legacy initial_balance), create an adjustment transaction
+    adjustment_amount = None
+    if 'adjustment' in data:
+        try:
+            adjustment_amount = float(data.get('adjustment', 0) or 0)
+        except Exception:
+            adjustment_amount = 0
+    elif 'initial_balance' in data:
+        # legacy field used by frontend when editing; treat as an adjustment
+        try:
+            adjustment_amount = float(data.get('initial_balance', 0) or 0)
+        except Exception:
+            adjustment_amount = 0
+    
+    if adjustment_amount and adjustment_amount != 0:
+        cat = _get_or_create_adjustment_category(user_id)
+        t_type = 'income' if adjustment_amount >= 0 else 'expense'
+        transaction = Transaction(
+            amount=abs(adjustment_amount),
+            date=datetime.now(),
+            title='Adjust Balance',
+            description='Manual balance adjustment',
+            type=t_type,
+            category_id=cat.id,
+            wallet_id=wallet.id,
+            user_id=user_id
+        )
+        db.session.add(transaction)
     if 'currency' in data:
         wallet.currency = data['currency']
     
@@ -558,12 +622,32 @@ def create_test_user_with_data():
                 name=w['name'],
                 icon=w['icon'],
                 description=w['description'],
-                initial_balance=w['initial_balance'],
                 currency=w['currency'],
                 user_id=user.id
             )
             db.session.add(wallet)
-        db.session.commit()
+            db.session.commit()
+
+            # If an initial balance was specified for test data, create adjustment transaction
+            try:
+                init_bal = float(w.get('initial_balance', 0) or 0)
+            except Exception:
+                init_bal = 0
+            if init_bal != 0:
+                cat = _get_or_create_adjustment_category(user.id)
+                t_type = 'income' if init_bal >= 0 else 'expense'
+                transaction = Transaction(
+                    amount=abs(init_bal),
+                    date=datetime.now(),
+                    title='Adjust Balance',
+                    description='Initial balance (test data)',
+                    type=t_type,
+                    category_id=cat.id,
+                    wallet_id=wallet.id,
+                    user_id=user.id
+                )
+                db.session.add(transaction)
+                db.session.commit()
 
         # Extra categories
         extra_categories = [

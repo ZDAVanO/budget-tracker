@@ -271,10 +271,17 @@ const api = {
 
     update: async (walletId, walletData) => {
       console.log('✏️ Updating wallet:', walletId, walletData);
+      // If frontend still sends initial_balance for edits, map it to adjustment
+      const payload = { ...walletData };
+      if (payload.initial_balance !== undefined) {
+        payload.adjustment = payload.initial_balance;
+        delete payload.initial_balance;
+      }
+
       const { response, data } = await fetchWithLogging(`/wallets/${walletId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(walletData)
+        body: JSON.stringify(payload)
       });
       console.log('✏️ Wallet update result:', response.ok ? 'Success' : 'Error', data);
       return { response, data };

@@ -75,15 +75,26 @@ function Wallets() {
     setError('');
 
     try {
-      const payload = {
-        ...formData,
-        initial_balance: parseFloat(formData.initial_balance || '0'),
-      };
-
-      console.log('💾 Submitting wallet:', payload);
-
+      // Build payload differently for create vs edit.
       let result;
       if (editingWallet) {
+        // When editing we show the wallet's current balance in the input.
+        // The backend expects an adjustment transaction, so compute the delta:
+        const newBalance = parseFloat(formData.initial_balance || '0');
+        const currentBalance = parseFloat(editingWallet.balance || 0);
+        const adjustment = Number((newBalance - currentBalance).toFixed(2));
+
+        const payload = {
+          name: formData.name,
+          description: formData.description,
+          icon: formData.icon,
+          currency: formData.currency,
+        };
+
+        // Only include adjustment when it's non-zero
+        if (adjustment !== 0) payload.adjustment = adjustment;
+
+        console.log('💾 Submitting wallet update:', { walletId: editingWallet.id, payload });
         result = await api.wallets.update(editingWallet.id, payload);
         console.log('📝 Update result:', result);
         if (!result.response.ok) {
@@ -91,6 +102,12 @@ function Wallets() {
           return;
         }
       } else {
+        const payload = {
+          ...formData,
+          initial_balance: parseFloat(formData.initial_balance || '0'),
+        };
+
+        console.log('💾 Submitting wallet create:', payload);
         result = await api.wallets.create(payload);
         console.log('➕ Create result:', result);
         if (!result.response.ok) {
@@ -118,7 +135,8 @@ function Wallets() {
       name: wallet.name,
       description: wallet.description || '',
       icon: wallet.icon || '💳',
-      initial_balance: wallet.initial_balance?.toString() || '0',
+      // Show current wallet balance so user can set a new target balance.
+      initial_balance: (wallet.balance ?? 0).toFixed(2).toString(),
       currency: wallet.currency || 'UAH',
     });
     setIsFormOpen(true);
@@ -265,8 +283,8 @@ function Wallets() {
                       <Grid columns={{ initial: '1', md: '2' }} gap="4">
                         <Flex direction="column" gap="2">
                           <Text as="label" htmlFor="initial_balance">
-                            Initial Balance
-                          </Text>
+                              {editingWallet ? 'Adjust Balance' : 'Initial Balance'}
+                            </Text>
                           <TextField.Root
                             id="initial_balance"
                             name="initial_balance"
@@ -274,7 +292,7 @@ function Wallets() {
                             step="0.01"
                             value={formData.initial_balance}
                             onChange={(event) => updateField('initial_balance', event.target.value)}
-                            placeholder="0.00"
+                              placeholder={editingWallet ? 'Amount to adjust' : '0.00'}
                           />
                         </Flex>
 
