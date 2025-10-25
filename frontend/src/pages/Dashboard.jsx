@@ -37,11 +37,6 @@ function Dashboard({ user }) {
   console.log('🎨 Dashboard render, user:', user);
 
 
-  // MARK: useEffect - load data (moved below after loaders are defined)
-
-
-  // MARK: Pie chart data for last 30 days
-
   // Expenses by category for the current month (from 1st day)
   const nowDate = new Date();
   const firstDayOfMonth = new Date(nowDate.getFullYear(), nowDate.getMonth(), 1);
@@ -398,10 +393,10 @@ function Dashboard({ user }) {
             </Card>
 
 
-            {/* MARK: Donut Pie Chart for Expenses by Category (last 30 days) */}
+            {/* MARK: Donut Pie Chart for Expenses by Category */}
             <Card variant="surface" size="3">
               <Flex direction="column" gap="3">
-                <Heading size="5" align="center">Expenses (last 30 days)</Heading>
+                <Heading size="5" align="center">Expenses (this month)</Heading>
                 {chartData.length > 0 ? (
                   <DonutPieChart
                     data={chartData}
@@ -410,15 +405,15 @@ function Dashboard({ user }) {
                     title={null}
                   />
                 ) : (
-                  <Text align="center" color="gray">No expenses in the last 30 days</Text>
+                  <Text align="center" color="gray">No expenses in this month</Text>
                 )}
               </Flex>
             </Card>
 
-            {/* MARK: Donut Pie Chart for Incomes by Category (last 30 days) */}
+            {/* MARK: Donut Pie Chart for Incomes by Category */}
             <Card variant="surface" size="3">
               <Flex direction="column" gap="3">
-                <Heading size="5" align="center">Income (last 30 days)</Heading>
+                <Heading size="5" align="center">Income (this month)</Heading>
                 {incomeChartData.length > 0 ? (
                   <DonutPieChart
                     data={incomeChartData}
@@ -427,7 +422,7 @@ function Dashboard({ user }) {
                     title={null}
                   />
                 ) : (
-                  <Text align="center" color="gray">No income in the last 30 days</Text>
+                  <Text align="center" color="gray">No income in this month</Text>
                 )}
               </Flex>
             </Card>
@@ -435,7 +430,7 @@ function Dashboard({ user }) {
           </Grid>
 
           {/* MARK: Net Worth Over Time (full-width) */}
-          <Card variant="surface" size="3" style={{ marginTop: 20 }}>
+          <Card variant="surface" size="3">
             <Flex direction="column" gap="3">
               <Heading size="5" align="center">Net Worth Over Time</Heading>
               {netWorthSeries.data.length > 0 ? (

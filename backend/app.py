@@ -185,6 +185,8 @@ def create_default_categories_for_user(user_id):
     default_categories = [
         # Uncategorized (must be first, protected)
         {'name': 'Uncategorized', 'icon': '📂', 'type': 'both', 'description': 'Default category for uncategorized transactions', 'uncategorized': True},
+        # Adjustment category (must always exist)
+        {'name': 'Adjust Balance', 'icon': '⚖️', 'type': 'both', 'description': 'Balance adjustments (initial/manual)', 'uncategorized': True},
         # Витрати
         {'name': 'Food', 'icon': '🍔', 'type': 'expense', 'description': 'Groceries, restaurants, cafes'},
         {'name': 'Transport', 'icon': '🚗', 'type': 'expense', 'description': 'Transport, fuel, taxi'},
@@ -204,16 +206,17 @@ def create_default_categories_for_user(user_id):
     ]
     
     for cat_data in default_categories:
-        category = Category(
-            name=cat_data['name'],
-            icon=cat_data['icon'],
-            type=cat_data['type'],
-            description=cat_data['description'],
-            user_id=user_id
-        )
-        db.session.add(category)
-        # Store uncategorized category id for later use if needed
-    
+        # Avoid duplicate category names for user
+        exists = Category.query.filter_by(user_id=user_id, name=cat_data['name']).first()
+        if not exists:
+            category = Category(
+                name=cat_data['name'],
+                icon=cat_data['icon'],
+                type=cat_data['type'],
+                description=cat_data['description'],
+                user_id=user_id
+            )
+            db.session.add(category)
     db.session.commit()
 
 
@@ -235,23 +238,6 @@ def create_default_wallets_for_user(user_id):
         db.session.add(wallet)
     
     db.session.commit()
-
-
-def _get_or_create_adjustment_category(user_id):
-    """Return the 'Adjust Balance' category for the user, creating it if necessary."""
-    cat = Category.query.filter_by(user_id=user_id, name='Adjust Balance').first()
-    if cat:
-        return cat
-    cat = Category(
-        name='Adjust Balance',
-        icon='⚖️',
-        type='both',
-        description='Balance adjustments (initial/manual)',
-        user_id=user_id
-    )
-    db.session.add(cat)
-    db.session.commit()
-    return cat
 
 
 @app.route('/api/register', methods=['POST'])
@@ -456,8 +442,8 @@ def create_wallet():
         initial_balance = 0
 
     if initial_balance != 0:
-        # Ensure adjustment category exists for this user
-        cat = _get_or_create_adjustment_category(user_id)
+        # Adjustment category is guaranteed to exist after registration
+        cat = Category.query.filter_by(user_id=user_id, name='Adjust Balance').first()
         t_type = 'income' if initial_balance >= 0 else 'expense'
         transaction = Transaction(
             amount=abs(initial_balance),
@@ -465,7 +451,7 @@ def create_wallet():
             title='Adjust Balance',
             description='Initial balance adjustment',
             type=t_type,
-            category_id=cat.id,
+            category_id=cat.id if cat else None,
             wallet_id=wallet.id,
             user_id=user_id
         )
@@ -508,7 +494,8 @@ def update_wallet(wallet_id):
             adjustment_amount = 0
     
     if adjustment_amount and adjustment_amount != 0:
-        cat = _get_or_create_adjustment_category(user_id)
+        # Adjustment category is guaranteed to exist after registration
+        cat = Category.query.filter_by(user_id=user_id, name='Adjust Balance').first()
         t_type = 'income' if adjustment_amount >= 0 else 'expense'
         transaction = Transaction(
             amount=abs(adjustment_amount),
@@ -516,7 +503,7 @@ def update_wallet(wallet_id):
             title='Adjust Balance',
             description='Manual balance adjustment',
             type=t_type,
-            category_id=cat.id,
+            category_id=cat.id if cat else None,
             wallet_id=wallet.id,
             user_id=user_id
         )
@@ -719,6 +706,7 @@ def get_statistics():
     })
 
 
+# MARK: Test User
 def create_test_user_with_data():
     """Create test user with extra wallets, categories, and random transactions"""
     username = "test"
@@ -756,7 +744,7 @@ def create_test_user_with_data():
             except Exception:
                 init_bal = 0
             if init_bal != 0:
-                cat = _get_or_create_adjustment_category(user.id)
+                cat = Category.query.filter_by(user_id=user.id, name='Adjust Balance').first()
                 t_type = 'income' if init_bal >= 0 else 'expense'
                 transaction = Transaction(
                     amount=abs(init_bal),

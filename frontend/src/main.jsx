@@ -12,17 +12,10 @@ import { CurrencyProvider } from './contexts/CurrencyContext.jsx';
 
 createRoot(document.getElementById('root')).render(
   // <StrictMode>
-    
-  // </StrictMode>,
-
-  // <Theme radius="large" scaling="95%" appearance="dark">
-  //   <App />
-  //   <ThemePanel />
-  // </Theme>
-
-  <ThemeModeProvider>
-    <CurrencyProvider>
-      <App />
-    </CurrencyProvider>
-  </ThemeModeProvider>
+    <ThemeModeProvider>
+      <CurrencyProvider>
+        <App />
+      </CurrencyProvider>
+    </ThemeModeProvider>
+  // </StrictMode>
 )
