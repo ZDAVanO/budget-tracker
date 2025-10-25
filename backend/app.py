@@ -25,6 +25,8 @@ from flask_jwt_extended import (
 
 from datetime import datetime, timedelta
 import random
+import time
+import requests
 
 def parse_local_datetime(dt_str):
     """Парсити дату у форматі YYYY-MM-DDTHH:MM:SS як локальний час"""
@@ -51,6 +53,107 @@ app.config['JWT_ACCESS_COOKIE_PATH'] = '/'
 app.config['JWT_REFRESH_COOKIE_PATH'] = '/api/refresh'
 app.config['JWT_COOKIE_CSRF_PROTECT'] = False  # True для production!
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=15)
+
+# MARK: Currency config (live rates via Fawaz Ahmed Currency API)
+"""We expose rates as units of currency per 1 USD (USD pivot).
+Convert using: in_usd = amount / rate[from]; out = in_usd * rate[to].
+"""
+SUPPORTED_CURRENCIES = ['USD', 'UAH', 'EUR']
+EXCHANGE_RATES = {
+    'USD': 1.0,
+    'UAH': 42.0,
+    'EUR': 40.0/43.0,
+}
+_RATES_SCHEMA = 'UNITS_PER_USD'
+_RATES_LAST_UPDATED = 0.0
+_RATES_TTL_SECONDS = 6 * 60 * 60  # 6 hours
+
+def _fetch_live_rates_units_per_usd() -> dict:
+    """Fetch live rates (USD base) and return mapping in UNITS_PER_USD schema."""
+    primary = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json'
+    fallback = 'https://latest.currency-api.pages.dev/v1/currencies/usd.json'
+
+    def _get(url: str):
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        return resp.json()
+
+    data = None
+    try:
+        data = _get(primary)
+    except Exception:
+        data = _get(fallback)
+
+    # Expected shape: { 'date': 'YYYY-MM-DD', 'usd': { 'uah': <num>, 'eur': <num>, ... } }
+    usd_map = data.get('usd', {}) if isinstance(data, dict) else {}
+    if not usd_map:
+        raise RuntimeError('Unexpected live rates response shape')
+
+    # Build uppercase keys for only supported currencies
+    rates = {'USD': 1.0}
+    if 'uah' in usd_map:
+        rates['UAH'] = float(usd_map['uah'])
+    if 'eur' in usd_map:
+        rates['EUR'] = float(usd_map['eur'])
+    # Ensure all supported present (keep previous fallback if missing)
+    for cur in SUPPORTED_CURRENCIES:
+        if cur not in rates and cur in EXCHANGE_RATES:
+            rates[cur] = EXCHANGE_RATES[cur]
+    return rates
+
+def _ensure_rates_uptodate(force: bool = False) -> tuple[dict, str, float]:
+    global EXCHANGE_RATES, _RATES_LAST_UPDATED
+    now = time.time()
+    source = 'cache'
+    if force or (now - _RATES_LAST_UPDATED) > _RATES_TTL_SECONDS:
+        try:
+            live = _fetch_live_rates_units_per_usd()
+            EXCHANGE_RATES = live
+            _RATES_LAST_UPDATED = now
+            source = 'live'
+        except Exception:
+            source = 'stale'
+    return EXCHANGE_RATES, source, _RATES_LAST_UPDATED
+
+
+def convert_amount(amount: float, from_currency: str, to_currency: str) -> float:
+    """Convert amount between supported currencies using EXCHANGE_RATES.
+
+    Rates are defined as "units per 1 USD". Conversion uses USD as pivot.
+    Formula: amount_in_usd = amount / R[from]; converted = amount_in_usd * R[to]
+    """
+    if amount is None:
+        return 0.0
+    from_currency = (from_currency or 'USD').upper()
+    to_currency = (to_currency or 'USD').upper()
+    if from_currency == to_currency:
+        return float(amount)
+    if from_currency not in EXCHANGE_RATES or to_currency not in EXCHANGE_RATES:
+        # Fallback: return amount unchanged if unknown currency
+        return float(amount)
+    # Convert via USD pivot
+    amount_in_usd = float(amount) / EXCHANGE_RATES[from_currency]
+    converted = amount_in_usd * EXCHANGE_RATES[to_currency]
+    return float(converted)
+
+
+@app.route('/api/rates', methods=['GET'])
+def get_rates():
+    """Return supported currencies and exchange rates (with live fetch + fallback).
+
+    Query params:
+      refresh=true  -> force refresh live rates
+    """
+    refresh = request.args.get('refresh', 'false').lower() in ('1', 'true', 'yes')
+    rates, source, ts = _ensure_rates_uptodate(force=refresh)
+    return jsonify({
+        'base': 'USD',
+        'schema': _RATES_SCHEMA,
+        'source': source,
+        'last_updated': ts,
+        'rates': rates,
+        'supported': SUPPORTED_CURRENCIES,
+    })
 app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=7)
 
 
@@ -115,8 +218,8 @@ def create_default_categories_for_user(user_id):
 def create_default_wallets_for_user(user_id):
     """Створення стандартних гаманців для нового користувача"""
     default_wallets = [
-        {'name': 'Cash', 'icon': '💵', 'description': 'Pocket money', 'initial_balance': 0.0, 'currency': 'UAH'},
-        {'name': 'Bank card', 'icon': '💳', 'description': 'Main card', 'initial_balance': 0.0, 'currency': 'UAH'},
+        {'name': 'Cash', 'icon': '💵', 'description': 'Pocket money', 'initial_balance': 0.0, 'currency': 'USD'},
+        {'name': 'Bank card', 'icon': '💳', 'description': 'Main card', 'initial_balance': 0.0, 'currency': 'USD'},
     ]
     
     for wallet_data in default_wallets:
@@ -571,31 +674,45 @@ def delete_transaction(transaction_id):
 @app.route('/api/statistics', methods=['GET'])
 @jwt_required(locations=['cookies'])
 def get_statistics():
-    """Отримати статистику"""
+    """Отримати статистику.
+
+    Optionally accepts base_currency query param (UAH|USD|EUR) to convert sums.
+    """
     user_id = int(get_jwt_identity())
-    
+
     # Параметри фільтрації
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
-    
+    base_currency = (request.args.get('base_currency') or 'USD').upper()
+
     # Запит для всіх транзакцій
     query = Transaction.query.filter_by(user_id=user_id)
-    
+
     if start_date:
         query = query.filter(Transaction.date >= datetime.fromisoformat(start_date))
     if end_date:
         query = query.filter(Transaction.date <= datetime.fromisoformat(end_date))
-    
+
     transactions = query.all()
-    
-    total_expenses = sum(t.amount for t in transactions if t.type == 'expense')
-    total_incomes = sum(t.amount for t in transactions if t.type == 'income')
+
+    total_expenses = 0.0
+    total_incomes = 0.0
+    for t in transactions:
+        # Determine currency of the transaction via its wallet
+        tx_currency = t.wallet.currency if t.wallet and t.wallet.currency else 'UAH'
+        converted = convert_amount(t.amount, tx_currency, base_currency)
+        if t.type == 'expense':
+            total_expenses += converted
+        elif t.type == 'income':
+            total_incomes += converted
+
     balance = total_incomes - total_expenses
-    
+
     return jsonify({
-        'total_expenses': total_expenses,
-        'total_incomes': total_incomes,
-        'balance': balance
+        'total_expenses': round(total_expenses, 2),
+        'total_incomes': round(total_incomes, 2),
+        'balance': round(balance, 2),
+        'base_currency': base_currency,
     })
 
 

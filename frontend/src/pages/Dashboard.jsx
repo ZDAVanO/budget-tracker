@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Badge,
@@ -18,6 +18,7 @@ import { ArrowRightIcon, LightningBoltIcon } from '@radix-ui/react-icons';
 import api from '../services/api';
 import DonutPieChart from '../components/DonutPieChart';
 import NetWorthChart from '../components/NetWorthChart';
+import { useCurrency } from '../contexts/CurrencyContext.jsx';
 
 // MARK: Dashboard
 function Dashboard({ user }) {
@@ -30,30 +31,13 @@ function Dashboard({ user }) {
   
   const [isLoading, setIsLoading] = useState(false);
 
+  const { baseCurrency, convert, format } = useCurrency();
+
 
   console.log('🎨 Dashboard render, user:', user);
 
 
-  // MARK: useEffect - load data
-  useEffect(() => {
-
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        await Promise.all([
-          loadStatistics(),
-          loadRecentTransactions(),
-          loadWallets(),
-        ]);
-      } catch (err) {
-        console.error('Error loading data:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadData();
-  }, []);
+  // MARK: useEffect - load data (moved below after loaders are defined)
 
 
   // MARK: Pie chart data for last 30 days
@@ -78,7 +62,8 @@ function Dashboard({ user }) {
         amount: 0,
       };
     }
-    expenseByCategory[catId].amount += t.amount;
+    const fromCur = t.wallet?.currency || 'UAH';
+    expenseByCategory[catId].amount += convert(t.amount, fromCur, baseCurrency);
   });
   const chartLabels = Object.values(expenseByCategory).map(cat => `${cat.icon ? cat.icon + ' ' : ''}${cat.name}`);
   const chartData = Object.values(expenseByCategory).map(cat => cat.amount);
@@ -99,7 +84,8 @@ function Dashboard({ user }) {
         amount: 0,
       };
     }
-    incomeByCategory[catId].amount += t.amount;
+    const fromCur = t.wallet?.currency || 'UAH';
+    incomeByCategory[catId].amount += convert(t.amount, fromCur, baseCurrency);
   });
   const incomeChartLabels = Object.values(incomeByCategory).map(cat => `${cat.icon ? cat.icon + ' ' : ''}${cat.name}`);
   const incomeChartData = Object.values(incomeByCategory).map(cat => cat.amount);
@@ -132,7 +118,8 @@ function Dashboard({ user }) {
     tx.forEach(t => {
       const key = dayKey(t.date);
       const sign = t.type === 'expense' ? -1 : 1;
-      const amt = Number(t.amount) || 0;
+      const fromCur = t.wallet?.currency || 'UAH';
+      const amt = convert(Number(t.amount) || 0, fromCur, baseCurrency);
       sumsByDay[key] = (sumsByDay[key] || 0) + sign * amt;
     });
 
@@ -156,20 +143,20 @@ function Dashboard({ user }) {
 
 
   // MARK: loadStatistics
-  const loadStatistics = async () => {
+  const loadStatistics = useCallback(async () => {
     try {
-      const { response, data } = await api.statistics.get();
+      const { response, data } = await api.statistics.get({ base_currency: baseCurrency });
       if (response.ok) {
         setStatistics(data);
       }
     } catch (err) {
       console.error('Error loading statistics:', err);
     }
-  };
+  }, [baseCurrency]);
 
 
   // MARK: loadRecentTransactions
-  const loadRecentTransactions = async () => {
+  const loadRecentTransactions = useCallback(async () => {
     try {
       const { response, data } = await api.transactions.getAll();
       if (response.ok) {
@@ -179,11 +166,11 @@ function Dashboard({ user }) {
     } catch (err) {
       console.error('Error loading transactions:', err);
     }
-  };
+  }, []);
 
 
   // MARK: loadWallets
-  const loadWallets = async () => {
+  const loadWallets = useCallback(async () => {
     try {
       const { response, data } = await api.wallets.getAll();
       if (response.ok) {
@@ -192,15 +179,33 @@ function Dashboard({ user }) {
     } catch (err) {
       console.error('Error loading wallets:', err);
     }
-  };
+  }, []);
+
+
+  // MARK: useEffect - load data (after loaders are defined)
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        await Promise.all([
+          loadStatistics(),
+          loadRecentTransactions(),
+          loadWallets(),
+        ]);
+      } catch (err) {
+        console.error('Error loading data:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, [loadStatistics, loadRecentTransactions, loadWallets]);
 
 
   // MARK: formatAmount
-  const formatAmount = (amount) =>
-    new Intl.NumberFormat('uk-UA', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
+  const formatAmount = (amount, currencyCode = baseCurrency) =>
+    format(amount, currencyCode);
 
 
   // MARK: get current month/year
@@ -222,11 +227,11 @@ function Dashboard({ user }) {
   // Calculating the sum of incomes/expenses for the month
   const monthlyExpenses = monthlyTransactions
     .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + convert(t.amount, t.wallet?.currency || 'UAH', baseCurrency), 0);
 
   const monthlyIncomes = monthlyTransactions
     .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + convert(t.amount, t.wallet?.currency || 'UAH', baseCurrency), 0);
 
 
   // MARK: render
@@ -250,7 +255,7 @@ function Dashboard({ user }) {
             <Flex direction="column" gap="2">
               <Heading size="6" align="center">Net Worth</Heading>
               <Heading size="7" align="center" color={statistics.balance >= 0 ? 'jade' : 'tomato'}>
-                {statistics.balance >= 0 ? '+' : ''}{statistics.balance.toFixed(2)} UAH
+                {formatAmount(statistics.balance, baseCurrency)}
               </Heading>
               <Text align="center" color="gray" size="2">{allTransactions.length} transactions</Text>
             </Flex>
@@ -262,7 +267,7 @@ function Dashboard({ user }) {
             <Card variant="surface" size="3">
               <Flex direction="column" gap="2">
                 <Heading size="6" align="center">Expenses</Heading>
-                <Heading size="6" align="center" color="tomato">{monthlyExpenses.toFixed(2)} UAH</Heading>
+                <Heading size="6" align="center" color="tomato">{formatAmount(monthlyExpenses, baseCurrency)}</Heading>
                 <Text color="gray" align="center" size="2">{expenseCount} transactions</Text>
               </Flex>
             </Card>
@@ -271,7 +276,7 @@ function Dashboard({ user }) {
             <Card variant="surface" size="3">
               <Flex direction="column" gap="2">
                 <Heading size="6" align="center">Income</Heading>
-                <Heading size="6" align="center" color="mint">{monthlyIncomes.toFixed(2)} UAH</Heading>
+                <Heading size="6" align="center" color="mint">{formatAmount(monthlyIncomes, baseCurrency)}</Heading>
                 <Text color="gray" align="center" size="2">{incomeCount} transactions</Text>
               </Flex>
             </Card>
@@ -322,7 +327,7 @@ function Dashboard({ user }) {
                           <Table.Cell align="end">
                             <Text weight="bold" color={transaction.type === 'expense' ? 'tomato' : 'jade'}>
                               {transaction.type === 'expense' ? '-' : '+'}
-                              {formatAmount(transaction.amount)} ₴
+                              {formatAmount(convert(transaction.amount, transaction.wallet?.currency || 'UAH', baseCurrency), baseCurrency)}
                             </Text>
                           </Table.Cell>
                         </Table.Row>
@@ -374,7 +379,7 @@ function Dashboard({ user }) {
                               </Text>
                             </Flex>
                           </Flex>
-                          <Text weight="bold">{formatAmount(wallet.balance || 0)} UAH</Text>
+                          <Text weight="bold">{formatAmount(wallet.balance || 0, wallet.currency)}</Text>
                         </Flex>
 
                       </Card>
@@ -433,6 +438,7 @@ function Dashboard({ user }) {
                   data={netWorthSeries.data}
                   color="#6C5CE7"
                   title={null}
+                  currency={baseCurrency}
                 />
               ) : (
                 <Text align="center" color="gray">No transactions to build net worth chart</Text>

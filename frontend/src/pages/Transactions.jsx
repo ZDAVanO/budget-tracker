@@ -25,6 +25,7 @@ import api from '../services/api';
 import TransactionFilters from '../components/TransactionFilters';
 import TransactionList from '../components/TransactionList';
 import TransactionForm from '../components/TransactionForm';
+import { useCurrency } from '../contexts/CurrencyContext.jsx';
 
 
 // MARK: Transactions
@@ -57,6 +58,8 @@ function Transactions() {
   // refs for auto-scroll Tabs
   const tabsListRef = useRef(null);
   const tabRefs = useRef({});
+
+  const { baseCurrency, convert, format } = useCurrency();
 
 
   // MARK: loadAllTransactions
@@ -218,8 +221,10 @@ function Transactions() {
   // summary для вибраного місяця або для пошуку
   const summary = filteredTransactions.reduce(
     (acc, tx) => {
-      if (tx.type === 'expense') acc.expense += tx.amount;
-      else if (tx.type === 'income') acc.income += tx.amount;
+      const fromCur = tx.wallet?.currency || 'UAH';
+      const value = convert(tx.amount, fromCur, baseCurrency);
+      if (tx.type === 'expense') acc.expense += value;
+      else if (tx.type === 'income') acc.income += value;
       return acc;
     },
     { expense: 0, income: 0 }
@@ -379,15 +384,15 @@ function Transactions() {
                   <div className="flex flex-row items-center justify-around gap-6">
                     <Flex direction="row" align="center" gap="1">
                       <Text color="red">-</Text>
-                      <Text color="red">{summary.expense.toFixed(2)}</Text>
+                      <Text color="red">{format(summary.expense, baseCurrency)}</Text>
                     </Flex>
                     <Flex direction="row" align="center" gap="1">
                       <Text color="green">+</Text>
-                      <Text color="green">{summary.income.toFixed(2)}</Text>
+                      <Text color="green">{format(summary.income, baseCurrency)}</Text>
                     </Flex>
                     <Flex direction="row" align="center" gap="1">
                       <Text>=</Text>
-                      <Text color={summary.balance >= 0 ? "green" : "red"}>{summary.balance.toFixed(2)}</Text>
+                      <Text color={summary.balance >= 0 ? "green" : "red"}>{format(summary.balance, baseCurrency)}</Text>
                     </Flex>
                   </div>
                 </Card>
@@ -408,7 +413,7 @@ function Transactions() {
               <Text size="5" className="show-on-mobile">
                 Total cash flow:&nbsp;
                 <span>
-                  {summary.balance.toFixed(2)}
+                  {format(summary.balance, baseCurrency)}
                 </span>
               </Text>
               {/* Badge з кількістю транзакцій */}

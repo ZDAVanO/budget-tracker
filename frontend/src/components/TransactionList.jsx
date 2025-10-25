@@ -206,7 +206,7 @@ function TransactionList({ transactions, onEdit, isLoading }) {
                             flexShrink: 0,
                           }}
                         >
-                          {isExpense ? '-' : '+'}{formatAmount(transaction.amount)} ₴
+                          {isExpense ? '-' : '+'}{formatAmount(transaction.amount)} {transaction.wallet?.currency || 'USD'}
                         </Text>
                       </Flex>
                     </Flex>

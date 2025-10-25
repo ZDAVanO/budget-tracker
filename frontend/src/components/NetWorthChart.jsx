@@ -13,7 +13,7 @@ import {
 
 Chart.register(LineController, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend);
 
-const NetWorthChart = ({ labels = [], data = [], color = '#36A2EB', title = null }) => {
+const NetWorthChart = ({ labels = [], data = [], color = '#36A2EB', title = null, currency = 'USD' }) => {
   const { effectiveAppearance } = useThemeMode();
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
@@ -41,6 +41,11 @@ const NetWorthChart = ({ labels = [], data = [], color = '#36A2EB', title = null
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        
         plugins: {
           legend: { display: false },
           title: {
@@ -48,10 +53,12 @@ const NetWorthChart = ({ labels = [], data = [], color = '#36A2EB', title = null
             text: title,
           },
           tooltip: {
+            mode: 'index',
+            intersect: false,
             callbacks: {
               label: function (context) {
                 const value = context.parsed.y;
-                return `${value.toFixed(2)} UAH`;
+                return `${value.toFixed(2)} ${currency}`;
               },
             },
           },
@@ -82,7 +89,7 @@ const NetWorthChart = ({ labels = [], data = [], color = '#36A2EB', title = null
     return () => {
       if (chartInstance.current) chartInstance.current.destroy();
     };
-  }, [labels, data, color, title, effectiveAppearance]);
+  }, [labels, data, color, title, currency, effectiveAppearance]);
 
   return (
     <div style={{ width: '100%', height: 320 }}>

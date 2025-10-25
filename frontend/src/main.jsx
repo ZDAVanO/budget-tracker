@@ -8,6 +8,7 @@ import App from './App.jsx'
 
 // import { Theme, ThemePanel } from "@radix-ui/themes";
 import { ThemeModeProvider } from './contexts/ThemeContext.jsx';
+import { CurrencyProvider } from './contexts/CurrencyContext.jsx';
 
 createRoot(document.getElementById('root')).render(
   // <StrictMode>
@@ -20,6 +21,8 @@ createRoot(document.getElementById('root')).render(
   // </Theme>
 
   <ThemeModeProvider>
-    <App />
+    <CurrencyProvider>
+      <App />
+    </CurrencyProvider>
   </ThemeModeProvider>
 )

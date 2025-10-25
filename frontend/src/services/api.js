@@ -237,12 +237,25 @@ const api = {
       const params = new URLSearchParams();
       if (filters.start_date) params.append('start_date', filters.start_date);
       if (filters.end_date) params.append('end_date', filters.end_date);
+      if (filters.base_currency) params.append('base_currency', filters.base_currency);
       
       const endpoint = params.toString() ? `/statistics?${params}` : '/statistics';
       const { response, data } = await fetchWithLogging(endpoint, {
         method: 'GET'
       });
       console.log('📊 Statistics fetched:', data);
+      return { response, data };
+    }
+  },
+
+  // MARK: Rates
+  rates: {
+    get: async () => {
+      console.log('💱 Fetching rates');
+      const { response, data } = await fetchWithLogging('/rates', {
+        method: 'GET'
+      }, false);
+      console.log('💱 Rates fetched:', data);
       return { response, data };
     }
   },
