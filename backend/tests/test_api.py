@@ -1,4 +1,6 @@
 
+
+# MARK: test_ping_and_echo
 def test_ping_and_echo(client):
     # ping
     rv = client.get('/api/ping')
@@ -13,6 +15,7 @@ def test_ping_and_echo(client):
     assert data and data.get('status') == 'received'
 
 
+ # MARK: test_register_user
 def test_register_user(client):
     payload = {
         'username': 'apitestuser',
@@ -25,6 +28,7 @@ def test_register_user(client):
     assert data and 'msg' in data
 
 
+ # MARK: test_login_user
 def test_login_user(client):
     # Register first (if not exists)
     client.post('/api/register', json={
@@ -42,11 +46,14 @@ def test_login_user(client):
     assert data and 'msg' in data
 
 
+ # MARK: test_protected_categories_requires_auth
 def test_protected_categories_requires_auth(client):
     # Без JWT
     rv = client.get('/api/categories')
     assert rv.status_code in (401, 422)
 
+
+ # MARK: test_protected_categories_with_auth
 def test_protected_categories_with_auth(client):
     # Register and login
     client.post('/api/register', json={
@@ -70,6 +77,7 @@ def test_protected_categories_with_auth(client):
     assert isinstance(data, list)
 
 
+ # MARK: test_category_crud
 def test_category_crud(client):
     # Register and login
     client.post('/api/register', json={
@@ -108,6 +116,7 @@ def test_category_crud(client):
     assert rv.status_code == 200
 
 
+ # MARK: test_wallet_crud
 def test_wallet_crud(client):
     # Register and login
     client.post('/api/register', json={
@@ -146,6 +155,7 @@ def test_wallet_crud(client):
     assert rv.status_code == 200
 
 
+ # MARK: test_transaction_crud
 def test_transaction_crud(client):
     # Register and login
     client.post('/api/register', json={
@@ -196,6 +206,7 @@ def test_transaction_crud(client):
     assert rv.status_code == 200
 
 
+ # MARK: test_refresh_token_and_logout
 def test_refresh_token_and_logout(client):
     client.post('/api/register', json={
         'username': 'apitestrefresh',
@@ -220,6 +231,7 @@ def test_refresh_token_and_logout(client):
     assert rv3.status_code == 200
 
 
+ # MARK: test_statistics_and_rates
 def test_statistics_and_rates(client):
     client.post('/api/register', json={
         'username': 'apiteststats',

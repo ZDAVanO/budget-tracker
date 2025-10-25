@@ -12,90 +12,95 @@ import {
 
 import { MixerHorizontalIcon } from '@radix-ui/react-icons';
 
-function TransactionFilters({ filters, onFilterChange, categories, wallets = [] }) {
-  const updateValue = (name, value) => {
-    onFilterChange({ ...filters, [name]: value });
-  };
 
+import { Checkbox } from '@radix-ui/themes';
+
+function TransactionFilters({
+  filters,
+  onFilterChange,
+  categories = [],
+  wallets = [],
+}) {
+  // Multi-select for categories and wallets
+  const selectedTypes = filters.type && Array.isArray(filters.type)
+    ? filters.type
+    : filters.type
+      ? [filters.type]
+      : ['expense', 'income'];
+  const selectedCategoryIds = filters.category_id && Array.isArray(filters.category_id)
+    ? filters.category_id
+    : filters.category_id
+      ? [filters.category_id]
+      : [];
+  const selectedWalletIds = filters.wallet_id && Array.isArray(filters.wallet_id)
+    ? filters.wallet_id
+    : filters.wallet_id
+      ? [filters.wallet_id]
+      : [];
+
+  const updateType = (value) => {
+    if (value === 'all') onFilterChange({ ...filters, type: ['expense', 'income'] });
+    else onFilterChange({ ...filters, type: [value] });
+  };
+  const toggleCategory = (id) => {
+    const ids = selectedCategoryIds.includes(id)
+      ? selectedCategoryIds.filter((c) => c !== id)
+      : [...selectedCategoryIds, id];
+    onFilterChange({ ...filters, category_id: ids });
+  };
+  const toggleWallet = (id) => {
+    const ids = selectedWalletIds.includes(id)
+      ? selectedWalletIds.filter((w) => w !== id)
+      : [...selectedWalletIds, id];
+    onFilterChange({ ...filters, wallet_id: ids });
+  };
+  const updateValue = (field, value) => {
+    onFilterChange({ ...filters, [field]: value });
+  };
   const handleReset = () => {
     onFilterChange({
-      category_id: '',
-      wallet_id: '',
-      type: '',
+      type: ['expense', 'income'],
+      category_id: [],
+      wallet_id: [],
       start_date: '',
       end_date: '',
     });
   };
-
   const hasActiveFilters =
-    filters.category_id || filters.wallet_id || filters.type || filters.start_date || filters.end_date;
+    selectedTypes.length !== 2 ||
+    selectedCategoryIds.length > 0 ||
+    selectedWalletIds.length > 0 ||
+    filters.start_date ||
+    filters.end_date;
 
   return (
     <Popover.Root>
       <Popover.Trigger>
-        <Button variant={hasActiveFilters ? "solid" : "soft"}>
+        <Button variant={hasActiveFilters ? 'solid' : 'soft'}>
           <MixerHorizontalIcon /> Filters
         </Button>
       </Popover.Trigger>
-      <Popover.Content side="bottom" align="start" style={{ minWidth: 320, maxWidth: 400 }}>
-        
+      <Popover.Content side="bottom" align="start" style={{ minWidth: 340, maxWidth: 480 }}>
         <Flex direction="column" gap="4">
           <Flex direction="column" gap="2">
             <Text size="2" color="gray">
               Type
             </Text>
             <SegmentedControl.Root
-              value={filters.type || 'all'}
-              onValueChange={(value) => updateValue('type', value === 'all' ? '' : value)}
+              value={
+                selectedTypes.length === 2
+                  ? 'all'
+                  : selectedTypes[0] || 'all'
+              }
+              onValueChange={updateType}
             >
               <SegmentedControl.Item value="all">All</SegmentedControl.Item>
               <SegmentedControl.Item value="income">💰 Income</SegmentedControl.Item>
               <SegmentedControl.Item value="expense">💸 Expense</SegmentedControl.Item>
             </SegmentedControl.Root>
           </Flex>
-          <Grid columns={{ initial: '1', sm: '2', md: '2' }} gap="4">
-
+          <Flex direction="row" gap="4">
             <Flex direction="column" gap="2">
-              <Text size="2" color="gray">
-                Category
-              </Text>
-              <Select.Root
-                value={filters.category_id?.toString() || 'all'}
-                onValueChange={(value) => updateValue('category_id', value === 'all' ? '' : value)}
-              >
-                <Select.Trigger placeholder="All categories" />
-                <Select.Content>
-                  <Select.Item value="all">All categories</Select.Item>
-                  {categories.map((cat) => (
-                    <Select.Item key={cat.id} value={cat.id?.toString()}>
-                      {cat.icon} {cat.name}
-                    </Select.Item>
-                  ))}
-                </Select.Content>
-              </Select.Root>
-            </Flex>
-
-            <Flex direction="column" gap="2">
-              <Text size="2" color="gray">
-                Wallet
-              </Text>
-              <Select.Root
-                value={filters.wallet_id?.toString() || 'all'}
-                onValueChange={(value) => updateValue('wallet_id', value === 'all' ? '' : value)}
-              >
-                <Select.Trigger placeholder="All wallets" />
-                <Select.Content>
-                  <Select.Item value="all">All wallets</Select.Item>
-                  {wallets.map((wallet) => (
-                    <Select.Item key={wallet.id} value={wallet.id?.toString()}>
-                      {wallet.icon} {wallet.name}
-                    </Select.Item>
-                  ))}
-                </Select.Content>
-              </Select.Root>
-            </Flex>
-
-            {/* <Flex direction="column" gap="2">
               <Text size="2" color="gray">
                 From date
               </Text>
@@ -105,7 +110,6 @@ function TransactionFilters({ filters, onFilterChange, categories, wallets = [] 
                 onChange={(event) => updateValue('start_date', event.target.value)}
               />
             </Flex>
-
             <Flex direction="column" gap="2">
               <Text size="2" color="gray">
                 To date
@@ -115,12 +119,45 @@ function TransactionFilters({ filters, onFilterChange, categories, wallets = [] 
                 value={filters.end_date}
                 onChange={(event) => updateValue('end_date', event.target.value)}
               />
-            </Flex> */}
+            </Flex>
+          </Flex>
+          <Grid columns={{ initial: '1', md: '2' }} gap="4">
+            <Flex direction="column" gap="2">
+              <Text weight="bold">Categories</Text>
+              <div className="mt-2 max-h-50 overflow-auto pr-2">
+                <Flex direction="column" gap="2">
+                  {categories.map(cat => {
+                    const id = String(cat.id);
+                    return (
+                      <label key={id} className="flex items-center gap-2">
+                        <Checkbox checked={selectedCategoryIds.includes(id)} onCheckedChange={() => toggleCategory(id)} />
+                        <Text>{cat.icon ? `${cat.icon} ` : ''}{cat.name}</Text>
+                      </label>
+                    );
+                  })}
+                </Flex>
+              </div>
+            </Flex>
+            <Flex direction="column" gap="2">
+              <Text weight="bold">Wallets</Text>
+              <div className="mt-2 max-h-50 overflow-auto pr-2">
+                <Flex direction="column" gap="2">
+                  {wallets.map(w => {
+                    const id = String(w.id);
+                    return (
+                      <label key={id} className="flex items-center gap-2">
+                        <Checkbox checked={selectedWalletIds.includes(id)} onCheckedChange={() => toggleWallet(id)} />
+                        <Text>{w.icon ? `${w.icon} ` : ''}{w.name} <span className="text-gray-500">({w.currency})</span></Text>
+                      </label>
+                    );
+                  })}
+                </Flex>
+              </div>
+            </Flex>
           </Grid>
-
           {hasActiveFilters && (
             <Flex justify="flex-end">
-              <Button variant="soft" color="gray" onClick={handleReset}>
+              <Button variant="soft" color="gray" size="2" onClick={handleReset}>
                 Reset filters
               </Button>
             </Flex>

@@ -4,6 +4,7 @@ from models import User, Wallet, Transaction, Category, db
 from app import create_default_categories_for_user, create_default_wallets_for_user
 
 
+# MARK: test_wallet_balance_and_to_dict
 def test_wallet_balance_and_to_dict(app):
     with app.app_context():
         # create user
@@ -37,6 +38,7 @@ def test_wallet_balance_and_to_dict(app):
         assert d['name'] == 'Test Wallet'
 
 
+# MARK: test_create_default_categories_and_wallets
 def test_create_default_categories_and_wallets(app):
     with app.app_context():
         u = User(username='user2', email='user2@example.com', password='pass')
@@ -53,6 +55,7 @@ def test_create_default_categories_and_wallets(app):
         assert len(wallets) >= 1
 
 
+# MARK: test_user_repr_and_relationships
 def test_user_repr_and_relationships(app):
     with app.app_context():
         u = User(username='u_full', email='u_full@example.com', password='pw')
@@ -79,6 +82,7 @@ def test_user_repr_and_relationships(app):
         assert any(tx.id == t.id for tx in u.transactions)
 
 
+# MARK: test_transaction_to_dict_and_nested
 def test_transaction_to_dict_and_nested(app):
     with app.app_context():
         u = User(username='u_tdict', email='u_tdict@example.com', password='pw')
@@ -115,6 +119,7 @@ def test_transaction_to_dict_and_nested(app):
         assert d['wallet']['id'] == w.id
 
 
+# MARK: test_wallet_balance_and_empty_wallet
 def test_wallet_balance_and_empty_wallet(app):
     with app.app_context():
         u = User(username='u_empty', email='u_empty@example.com', password='pw')
@@ -131,6 +136,7 @@ def test_wallet_balance_and_empty_wallet(app):
         assert d['balance'] == 0
 
 
+# MARK: test_cascade_delete_user_removes_children
 def test_cascade_delete_user_removes_children(app):
     with app.app_context():
         u = User(username='u_cascade', email='u_cascade@example.com', password='pw')

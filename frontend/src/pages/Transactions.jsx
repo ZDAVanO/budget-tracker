@@ -35,12 +35,12 @@ function Transactions() {
   const [categories, setCategories] = useState([]);
   const [wallets, setWallets] = useState([]);
   // const [filters] = useState({ 
-  const [filters, setFilters] = useState({ 
-    category_id: '', 
-    wallet_id: '',
-    type: '', // 'expense', 'income', або ''
-    start_date: '', 
-    end_date: '' 
+  const [filters, setFilters] = useState({
+    type: ['expense', 'income'],
+    category_id: [],
+    wallet_id: [],
+    start_date: '',
+    end_date: '',
   });
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -209,13 +209,18 @@ function Transactions() {
       })
     : allTransactions.filter(tx => {
         const d = new Date(tx.date);
-        return d.getFullYear() === selectedMonth.year && (d.getMonth() + 1) === selectedMonth.month
-          // додаткові фільтри, якщо потрібно
-          && (!filters.category_id || tx.category_id === Number(filters.category_id))
-          && (!filters.wallet_id || tx.wallet_id === Number(filters.wallet_id))
-          && (!filters.type || tx.type === filters.type)
-          && (!filters.start_date || new Date(tx.date) >= new Date(filters.start_date))
-          && (!filters.end_date || new Date(tx.date) <= new Date(filters.end_date));
+        // Month filter
+        if (!(d.getFullYear() === selectedMonth.year && (d.getMonth() + 1) === selectedMonth.month)) return false;
+        // Type filter (multi)
+        if (filters.type && filters.type.length && !filters.type.includes(tx.type)) return false;
+        // Category filter (multi)
+        if (filters.category_id && filters.category_id.length && !filters.category_id.includes(String(tx.category_id))) return false;
+        // Wallet filter (multi)
+        if (filters.wallet_id && filters.wallet_id.length && !filters.wallet_id.includes(String(tx.wallet_id))) return false;
+        // Date range
+        if (filters.start_date && new Date(tx.date) < new Date(filters.start_date)) return false;
+        if (filters.end_date && new Date(tx.date) > new Date(filters.end_date)) return false;
+        return true;
       });
 
   // summary для вибраного місяця або для пошуку

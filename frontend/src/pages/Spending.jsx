@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Badge,
-  Button,
   Card,
   Container,
   Flex,
@@ -10,17 +9,12 @@ import {
   Section,
   Spinner,
   Text,
-  Separator,
-  Checkbox,
-  TextField,
-  Popover,
-  SegmentedControl,
 } from '@radix-ui/themes';
-import { MixerHorizontalIcon } from '@radix-ui/react-icons';
 import DonutPieChart from '../components/DonutPieChart';
 import NetWorthChart from '../components/NetWorthChart';
 import api from '../services/api';
 import { useCurrency } from '../contexts/CurrencyContext.jsx';
+import TransactionFilters from '../components/TransactionFilters';
 
 // Shared colors for charts
 const CHART_COLORS = [
@@ -36,12 +30,14 @@ function Spending() {
   const [wallets, setWallets] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // MARK: filters
-  const [selectedTypes, setSelectedTypes] = useState(['expense', 'income']);
-  const [selectedCategoryIds, setSelectedCategoryIds] = useState([]); // strings
-  const [selectedWalletIds, setSelectedWalletIds] = useState([]); // strings
-  const [startDate, setStartDate] = useState(''); // yyyy-mm-dd
-  const [endDate, setEndDate] = useState('');
+  // MARK: filters (use single filters object for TransactionFilters)
+  const [filters, setFilters] = useState({
+    type: ['expense', 'income'],
+    category_id: [],
+    wallet_id: [],
+    start_date: '',
+    end_date: '',
+  });
 
   const { baseCurrency, convert, format } = useCurrency();
 
@@ -97,36 +93,36 @@ function Spending() {
   const filtered = useMemo(() => {
     return (transactions || []).filter(t => {
       // Types
-      if (selectedTypes.length && !selectedTypes.includes(t.type)) return false;
+      if (filters.type && filters.type.length && !filters.type.includes(t.type)) return false;
 
       // Categories (handle nested or id fields)
-      if (selectedCategoryIds.length) {
+      if (filters.category_id && filters.category_id.length) {
         const catId = String(t.category?.id ?? t.category_id ?? '');
-        if (!selectedCategoryIds.includes(catId)) return false;
+        if (!filters.category_id.includes(catId)) return false;
       }
 
       // Wallets
-      if (selectedWalletIds.length) {
+      if (filters.wallet_id && filters.wallet_id.length) {
         const walId = String(t.wallet?.id ?? t.wallet_id ?? '');
-        if (!selectedWalletIds.includes(walId)) return false;
+        if (!filters.wallet_id.includes(walId)) return false;
       }
 
       // Dates (t.date expected ISO or YYYY-MM-DD)
-      if (startDate) {
+      if (filters.start_date) {
         const d = new Date(t.date);
-        const s = new Date(startDate);
+        const s = new Date(filters.start_date);
         s.setHours(0,0,0,0);
         if (d < s) return false;
       }
-      if (endDate) {
+      if (filters.end_date) {
         const d = new Date(t.date);
-        const e = new Date(endDate);
+        const e = new Date(filters.end_date);
         e.setHours(23,59,59,999);
         if (d > e) return false;
       }
       return true;
     });
-  }, [transactions, selectedTypes, selectedCategoryIds, selectedWalletIds, startDate, endDate]);
+  }, [transactions, filters]);
 
 
   // MARK: totals
@@ -213,54 +209,7 @@ function Spending() {
   const netWorthSeries = useMemo(() => computeNetWorthSeries(filtered), [filtered, computeNetWorthSeries]);
 
 
-  // MARK: filter handlers
-//   const toggleType = (type) => {
-//     setSelectedTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]);
-//   };
-  const toggleCategory = (id) => {
-    setSelectedCategoryIds(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]);
-  };
-  const toggleWallet = (id) => {
-    setSelectedWalletIds(prev => prev.includes(id) ? prev.filter(w => w !== id) : [...prev, id]);
-  };
-  const resetFilters = () => {
-    setSelectedTypes(['expense', 'income']);
-    setSelectedCategoryIds([]);
-    setSelectedWalletIds([]);
-    setStartDate('');
-    setEndDate('');
-  };
-
-
-  // MARK: handleTypeSegmented
-  const handleTypeSegmented = (value) => {
-    if (value === 'all') setSelectedTypes(['expense', 'income']);
-    else setSelectedTypes([value]);
-  };
-
-  
-  // MARK: filter values object
-  const filters = {
-    start_date: startDate,
-    end_date: endDate,
-    // ...other filters if needed...
-  };
-
-
-  // MARK: updateValue
-  const updateValue = (field, value) => {
-    if (field === 'start_date') setStartDate(value);
-    if (field === 'end_date') setEndDate(value);
-  };
-
-
-  // MARK: hasActiveFilters
-  const hasActiveFilters =
-    selectedTypes.length !== 2 ||
-    selectedCategoryIds.length > 0 ||
-    selectedWalletIds.length > 0 ||
-    startDate ||
-    endDate;
+  // ...
 
   // MARK: render
   return (
@@ -270,100 +219,12 @@ function Spending() {
           {/* MARK: header row with title and filters button */}
           <Flex align="center" justify="between" wrap="wrap" gap="3">
             <Heading size="7">All Spending</Heading>
-            <Popover.Root>
-              <Popover.Trigger>
-                <Button variant={hasActiveFilters ? "solid" : "soft"}>
-                  <MixerHorizontalIcon /> Filters
-                </Button>
-              </Popover.Trigger>
-              <Popover.Content side="bottom" align="end" style={{ minWidth: 340, maxWidth: 480 }}>
-                <Flex direction="column" gap="4">
-                  <Flex direction="column" gap="2">
-                    <Text size="2" color="gray">
-                      Type
-                    </Text>
-                    <SegmentedControl.Root
-                      value={
-                        selectedTypes.length === 2
-                          ? 'all'
-                          : selectedTypes[0] || 'all'
-                      }
-                      onValueChange={handleTypeSegmented}
-                    >
-                      <SegmentedControl.Item value="all">All</SegmentedControl.Item>
-                      <SegmentedControl.Item value="income">💰 Income</SegmentedControl.Item>
-                      <SegmentedControl.Item value="expense">💸 Expense</SegmentedControl.Item>
-                    </SegmentedControl.Root>
-                  </Flex>
-
-                  <Flex direction="row" gap="4">
-                    <Flex direction="column" gap="2">
-                      <Text size="2" color="gray">
-                        From date
-                      </Text>
-                      <TextField.Root
-                        type="date"
-                        value={filters.start_date}
-                        onChange={(event) => updateValue('start_date', event.target.value)}
-                      />
-                    </Flex>
-                    <Flex direction="column" gap="2">
-                      <Text size="2" color="gray">
-                        To date
-                      </Text>
-                      <TextField.Root
-                        type="date"
-                        value={filters.end_date}
-                        onChange={(event) => updateValue('end_date', event.target.value)}
-                      />
-                    </Flex>
-                  </Flex>
-
-                  <Grid columns={{ initial: '1', md: '2' }} gap="4">
-                    <Flex direction="column" gap="2">
-                      <Text weight="bold">Categories</Text>
-                      <div className="mt-2 max-h-50 overflow-auto pr-2">
-                        <Flex direction="column" gap="2">
-                          {categories.map(cat => {
-                            const id = String(cat.id);
-                            return (
-                              <label key={id} className="flex items-center gap-2">
-                                <Checkbox checked={selectedCategoryIds.includes(id)} onCheckedChange={() => toggleCategory(id)} />
-                                <Text>{cat.icon ? `${cat.icon} ` : ''}{cat.name}</Text>
-                              </label>
-                            );
-                          })}
-                        </Flex>
-                      </div>
-                    </Flex>
-
-                    <Flex direction="column" gap="2">
-                      <Text weight="bold">Wallets</Text>
-                      <div className="mt-2 max-h-50 overflow-auto pr-2">
-                        <Flex direction="column" gap="2">
-                          {wallets.map(w => {
-                            const id = String(w.id);
-                            return (
-                              <label key={id} className="flex items-center gap-2">
-                                <Checkbox checked={selectedWalletIds.includes(id)} onCheckedChange={() => toggleWallet(id)} />
-                                <Text>{w.icon ? `${w.icon} ` : ''}{w.name} <span className="text-gray-500">({w.currency})</span></Text>
-                              </label>
-                            );
-                          })}
-                        </Flex>
-                      </div>
-                    </Flex>
-                  </Grid>
-                  {hasActiveFilters && (
-                    <Flex justify="flex-end">
-                      <Button variant="soft" color="gray" size="2" onClick={resetFilters}>
-                        Reset filters
-                      </Button>
-                    </Flex>
-                  )}
-                </Flex>
-              </Popover.Content>
-            </Popover.Root>
+            <TransactionFilters
+              filters={filters}
+              onFilterChange={setFilters}
+              categories={categories}
+              wallets={wallets}
+            />
           </Flex>
 
           {/* MARK: summary cards */}
