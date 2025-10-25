@@ -36,7 +36,9 @@ def parse_local_datetime(dt_str):
         # fallback на ISO (з таймзоною)
         return datetime.fromisoformat(dt_str)
 
+
 from models import db, User, Transaction, Category, Wallet
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 
@@ -265,7 +267,8 @@ def register():
     if User.query.filter_by(username=username).first() or User.query.filter_by(email=email).first():
         return jsonify({"msg": "User already exists"}), 409
 
-    user = User(username=username, email=email, password=password)
+    hashed_password = generate_password_hash(password)
+    user = User(username=username, email=email, password=hashed_password)
     db.session.add(user)
     db.session.commit()
     
@@ -283,7 +286,7 @@ def register():
 def login():
     data = request.get_json()
     user = User.query.filter_by(username=data['username']).first()
-    if user and user.password == data['password']:
+    if user and check_password_hash(user.password, data['password']):
         access_token = create_access_token(identity=str(user.id))
         refresh_token = create_refresh_token(identity=str(user.id))
         resp = jsonify({"msg": "login successful"})
@@ -723,7 +726,9 @@ def create_test_user_with_data():
     email = "test@example.com"
     user = User.query.filter_by(username=username).first()
     if not user:
-        user = User(username=username, email=email, password=password)
+        from werkzeug.security import generate_password_hash
+        hashed_password = generate_password_hash(password)
+        user = User(username=username, email=email, password=hashed_password)
         db.session.add(user)
         db.session.commit()
         create_default_categories_for_user(user.id)
