@@ -29,14 +29,12 @@ function Settings() {
         <div className="mt-8">
           <Heading size="5" mb="3">Exchange rates</Heading>
           <Callout.Root color="gray">
-            <Callout.Text>
-              <Flex direction="column" gap="1">
-                <Text size="2">Base: {rates?.base || 'UAH'}</Text>
-                <Text size="2">UAH: {rates?.rates?.UAH ?? 1}</Text>
-                <Text size="2">USD: {rates?.rates?.USD ?? 40}</Text>
-                <Text size="2">EUR: {rates?.rates?.EUR ?? 43}</Text>
-              </Flex>
-            </Callout.Text>
+            <Flex direction="column" gap="1">
+              {/* <Text size="2">Base: {rates?.base || 'UAH'}</Text> */}
+              <Text size="2">USD: {rates?.rates?.USD ?? 1}</Text>
+              <Text size="2">EUR: {rates?.rates?.EUR ?? 0.86}</Text>
+              <Text size="2">UAH: {rates?.rates?.UAH ?? 41.86}</Text>
+            </Flex>
           </Callout.Root>
         </div>
       </Container>

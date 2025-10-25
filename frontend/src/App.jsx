@@ -32,6 +32,7 @@ import Categories from './pages/Categories';
 import Wallets from './pages/Wallets.jsx';
 import Settings from './pages/Settings.jsx';
 import NotFound from './pages/NotFound';
+import Spending from './pages/Spending.jsx';
 
 
 // MARK: RouteLoader
@@ -172,6 +173,15 @@ function AppContent() {
               element={
                 <ProtectedRoute>
                   <Wallets />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/spending"
+              element={
+                <ProtectedRoute>
+                  <Spending />
                 </ProtectedRoute>
               }
             />

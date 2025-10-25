@@ -9,8 +9,8 @@ const DEFAULT_RATES = {
   // rates represent how many units of currency per 1 USD (USD pivot)
   rates: {
     USD: 1.0,
-    UAH: 42.0,
-    EUR: 40.0 / 43.0, // ~0.93 EUR per USD based on sample
+    UAH: 42.05,
+    EUR: 0.8602, // ~0.93 EUR per USD based on sample
   },
   supported: ['USD', 'EUR', 'UAH',],
 };

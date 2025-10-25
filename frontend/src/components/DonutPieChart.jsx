@@ -46,7 +46,7 @@ const DonutPieChart = ({ data, labels, colors, title }) => {
               usePointStyle: true,
               pointStyle: 'circle',
               font: {
-                size: 14,
+                size: 12,
                 color: effectiveAppearance === 'dark' ? '#fff' : '#222',
               },
               generateLabels: function(chart) {

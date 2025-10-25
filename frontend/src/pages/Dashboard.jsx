@@ -324,7 +324,7 @@ function Dashboard({ user }) {
                         <Table.Row key={`${transaction.type}-${transaction.id}`}>
                           <Table.Cell>{transaction.category?.name || 'No category'}</Table.Cell>
                           <Table.Cell>{transaction.description || transaction.title}</Table.Cell>
-                          <Table.Cell align="end">
+                          <Table.Cell align="end" style={{ whiteSpace: 'nowrap' }}>
                             <Text weight="bold" color={transaction.type === 'expense' ? 'tomato' : 'jade'}>
                               {transaction.type === 'expense' ? '-' : '+'}
                               {formatAmount(convert(transaction.amount, transaction.wallet?.currency || 'UAH', baseCurrency), baseCurrency)}
