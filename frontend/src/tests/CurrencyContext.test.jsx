@@ -2,7 +2,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { CurrencyProvider, useCurrency } from '../../contexts/CurrencyContext.jsx';
+import { CurrencyProvider, useCurrency } from '../contexts/CurrencyContext.jsx';
 
 function CurrencyProbe() {
   const { baseCurrency, setBaseCurrency, convert, format, currencySymbol } = useCurrency();

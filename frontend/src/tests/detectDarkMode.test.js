@@ -1,5 +1,5 @@
 /* global describe, it, expect, afterAll */
-import detectDarkMode from '../../utils/detectDarkMode.js';
+import detectDarkMode from '../utils/detectDarkMode.js';
 
 const originalMatchMedia = window.matchMedia;
 

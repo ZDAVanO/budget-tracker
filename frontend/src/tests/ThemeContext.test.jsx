@@ -2,7 +2,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ThemeModeProvider, useThemeMode } from '../../contexts/ThemeContext.jsx';
+import { ThemeModeProvider, useThemeMode } from '../contexts/ThemeContext.jsx';
 
 function ThemeProbe() {
   const { appearance, effectiveAppearance, setAppearance } = useThemeMode();

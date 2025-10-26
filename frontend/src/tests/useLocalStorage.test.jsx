@@ -2,7 +2,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useLocalStorage } from '../../utils/useLocalStorage.js';
+import { useLocalStorage } from '../utils/useLocalStorage.js';
 
 function TestComponent() {
   const [value, setValue] = useLocalStorage('test-key', 'default');
