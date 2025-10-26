@@ -27,6 +27,15 @@ import TransactionList from '../components/TransactionList';
 import TransactionForm from '../components/TransactionForm';
 import { useCurrency } from '../contexts/CurrencyContext.jsx';
 
+// Debounce hook
+function useDebouncedValue(value, delay = 300) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const handler = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debounced;
+}
 
 // MARK: Transactions
 function Transactions() {
@@ -47,6 +56,7 @@ function Transactions() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
   // const [showFilters, setShowFilters] = useState(false);
 
   // Додаємо стан для вибраного місяця
@@ -198,9 +208,9 @@ function Transactions() {
   };
 
   // Фільтруємо транзакції за вибраним місяцем
-  const filteredTransactions = searchQuery.trim()
+  const filteredTransactions = debouncedSearchQuery.trim()
     ? allTransactions.filter(tx => {
-        const q = searchQuery.trim().toLowerCase();
+        const q = debouncedSearchQuery.trim().toLowerCase();
         return (
           tx.title?.toLowerCase().includes(q) ||
           tx.description?.toLowerCase().includes(q) ||
@@ -365,7 +375,7 @@ function Transactions() {
           </Flex>
 
           {/* Показуємо Tabs та summary тільки якщо пошук порожній */}
-            {!searchQuery.trim() && !isLoading && (
+            {!debouncedSearchQuery.trim() && !isLoading && (
               <>
                 {/* MARK: month selector */}
                 <Tabs.Root
@@ -441,9 +451,9 @@ function Transactions() {
 
           {/* MARK: list */}
           <Flex direction="column" gap="4">
-            {searchQuery.trim() && (
+            {debouncedSearchQuery.trim() && (
               <Text size="3" color="gray">
-                Found {filteredTransactions.length} transaction{filteredTransactions.length !== 1 ? 's' : ''} matching "{searchQuery.trim()}"
+                Found {filteredTransactions.length} transaction{filteredTransactions.length !== 1 ? 's' : ''} matching "{debouncedSearchQuery.trim()}"
               </Text>
             )}
             <TransactionList
