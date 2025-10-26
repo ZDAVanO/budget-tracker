@@ -80,7 +80,12 @@ function TransactionFilters({
           <MixerHorizontalIcon /> Filters
         </Button>
       </Popover.Trigger>
-      <Popover.Content side="bottom" align="start" style={{ minWidth: 340, maxWidth: 480 }}>
+      <Popover.Content 
+        style={{ 
+          maxHeight: '80vh', 
+          overflowY: 'auto',
+        }}
+      >
 
         <Flex direction="column" gap="4">
 

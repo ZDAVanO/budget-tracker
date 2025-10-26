@@ -254,7 +254,7 @@ function Spending() {
             </Card>
             <Card variant="surface" size="3">
               <Flex direction="column" gap="1" align="center">
-                <Heading size="5">Balance</Heading>
+                <Heading size="5">Total</Heading>
                 {loading ? <Spinner /> : (
                   <Heading color={totals.balance >= 0 ? 'jade' : 'tomato'} size="7">
                     {format(totals.balance, baseCurrency)}
@@ -268,7 +268,7 @@ function Spending() {
           {/* MARK: net worth series */}
           <Card variant="surface" size="3">
             <Flex direction="column" gap="3">
-              <Heading size="5" align="center">Net Worth</Heading>
+              {/* <Heading size="5" align="center">Net Worth</Heading> */}
               {loading ? (
                 <Flex align="center" justify="center" style={{ minHeight: 240 }}><Spinner /></Flex>
               ) : netWorthSeries.data.length ? (

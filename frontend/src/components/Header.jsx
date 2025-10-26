@@ -1,4 +1,5 @@
 import React from 'react';
+import moneyBagIcon from '../assets/money-bag-noto.svg';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Avatar,
@@ -39,10 +40,15 @@ function Header({ isLoggedIn, user, onLogout }) {
             <div className="flex items-center gap-4 flex-wrap">
               <Link
                 to="/"
-                className="inline-flex items-center gap-2 text-inherit no-underline"
+                className="inline-flex items-center gap-3 text-inherit no-underline"
               >
                 <span className="text-xl font-bold text-mint-600 sm:text-2xl">
-                  <span role="img" aria-label="coin">💰</span>
+                  <img
+                    src={moneyBagIcon}
+                    alt="Money Bag"
+                    className="inline align-middle w-8 h-8  md:w-10 md:h-10"
+                    style={{ verticalAlign: 'middle' }}
+                  />
                 </span>
                 <Heading className="" size={{ initial: "3", sm: "5" }}>
                   Budget Tracker

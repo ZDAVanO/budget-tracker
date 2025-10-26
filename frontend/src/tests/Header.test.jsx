@@ -35,7 +35,7 @@ describe('Header Component', () => {
     it('повинен рендерити логотип та назву', () => {
       renderWithRouter(<Header isLoggedIn={false} />);
       expect(screen.getByText('Budget Tracker')).toBeInTheDocument();
-      expect(screen.getByLabelText('coin')).toBeInTheDocument();
+      expect(screen.getByAltText('Money Bag')).toBeInTheDocument();
     });
 
     it('повинен показувати кнопки Login та Register', () => {
