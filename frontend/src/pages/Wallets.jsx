@@ -218,13 +218,13 @@ function Wallets() {
               <Text color="gray">Create wallets for different purposes and currencies.</Text>
             </Flex>
 
-            <Dialog.Root open={isFormOpen} onOpenChange={handleFormOpenChange}>
-              <Dialog.Trigger asChild>
-                <Button onClick={handleCreateClick}>
-                  <PlusCircledIcon /> Add Wallet
-                </Button>
-              </Dialog.Trigger>
+            {/* Move the Add Wallet button outside of Dialog.Trigger */}
+            <Button onClick={handleCreateClick}>
+              <PlusCircledIcon /> Add Wallet
+            </Button>
 
+            <Dialog.Root open={isFormOpen} onOpenChange={handleFormOpenChange}>
+              {/* Remove Dialog.Trigger */}
               <Dialog.Content maxWidth="540px">
                 {/* MARK: wallet form */}
                 <Flex direction="column" gap="4">

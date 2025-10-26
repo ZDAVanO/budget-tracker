@@ -81,11 +81,15 @@ function TransactionFilters({
         </Button>
       </Popover.Trigger>
       <Popover.Content side="bottom" align="start" style={{ minWidth: 340, maxWidth: 480 }}>
+
         <Flex direction="column" gap="4">
+
           <Flex direction="column" gap="2">
+
             <Text size="2" color="gray">
               Type
             </Text>
+
             <SegmentedControl.Root
               value={
                 selectedTypes.length === 2
@@ -98,7 +102,9 @@ function TransactionFilters({
               <SegmentedControl.Item value="income">💰 Income</SegmentedControl.Item>
               <SegmentedControl.Item value="expense">💸 Expense</SegmentedControl.Item>
             </SegmentedControl.Root>
+
           </Flex>
+
           <Flex direction="row" gap="4">
             <Flex direction="column" gap="2">
               <Text size="2" color="gray">
@@ -121,7 +127,9 @@ function TransactionFilters({
               />
             </Flex>
           </Flex>
+
           <Grid columns={{ initial: '1', md: '2' }} gap="4">
+            
             <Flex direction="column" gap="2">
               <Text weight="bold">Categories</Text>
               <div className="mt-2 max-h-50 overflow-auto pr-2">
@@ -138,6 +146,7 @@ function TransactionFilters({
                 </Flex>
               </div>
             </Flex>
+
             <Flex direction="column" gap="2">
               <Text weight="bold">Wallets</Text>
               <div className="mt-2 max-h-50 overflow-auto pr-2">
@@ -154,7 +163,9 @@ function TransactionFilters({
                 </Flex>
               </div>
             </Flex>
+
           </Grid>
+
           {hasActiveFilters && (
             <Flex justify="flex-end">
               <Button variant="soft" color="gray" size="2" onClick={handleReset}>
@@ -163,6 +174,7 @@ function TransactionFilters({
             </Flex>
           )}
         </Flex>
+        
       </Popover.Content>
     </Popover.Root>
   );

@@ -161,7 +161,8 @@ app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=7)
 
 
 # CORS(app)  # Allows all domains (for development)
-CORS(app, supports_credentials=True, origins=["http://localhost:3000", "http://localhost:5173"])
+# CORS(app, supports_credentials=True, origins=["http://localhost:3000", "http://localhost:5173"])
+CORS(app, supports_credentials=True)
 
 db.init_app(app)
 jwt = JWTManager(app)
@@ -177,7 +178,8 @@ jwt = JWTManager(app)
 
 
 
-
+# Protected category names (cannot be deleted)
+PROTECTED_CATEGORY_NAMES = {'Uncategorized', 'Adjust Balance'}
 
 
 
@@ -374,10 +376,12 @@ def delete_category(category_id):
     if category.user_id != user_id:
         return jsonify({"msg": "Unauthorized"}), 403
 
-    # Заборонити видалення категорії 'Uncategorized'
-    if category.name == 'Uncategorized':
-        return jsonify({"msg": "Cannot delete 'Uncategorized' category"}), 400
-
+    # Заборонити видалення захищених категорій
+    if category.name in PROTECTED_CATEGORY_NAMES:
+        return jsonify({"msg": "Cannot delete category"}), 400
+    
+    # Видалити всі транзакції цієї категорії
+    Transaction.query.filter_by(category_id=category.id).delete()
     db.session.delete(category)
     db.session.commit()
     
@@ -849,4 +853,4 @@ if __name__ == '__main__':
         db.create_all()
         create_test_user_with_data()
 
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5000, host='0.0.0.0')

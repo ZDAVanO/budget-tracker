@@ -16,6 +16,7 @@ import {
   TextArea,
   TextField,
   Spinner,
+  Popover,
 } from '@radix-ui/themes';
 import { Pencil2Icon, TrashIcon, PlusCircledIcon, Cross2Icon } from '@radix-ui/react-icons';
 import api from '../services/api';
@@ -203,12 +204,13 @@ function Categories() {
               <Text color="gray">Classify expenses and income for accurate analysis.</Text>
             </Flex>
 
+            {/* Move the Add category button outside of Dialog.Trigger */}
+            <Button onClick={handleCreateClick}>
+              <PlusCircledIcon /> Add category
+            </Button>
+
             <Dialog.Root open={isFormOpen} onOpenChange={handleFormOpenChange}>
-              <Dialog.Trigger asChild>
-                <Button onClick={handleCreateClick}>
-                  <PlusCircledIcon /> Add category
-                </Button>
-              </Dialog.Trigger>
+              {/* Remove Dialog.Trigger */}
               <Dialog.Content maxWidth="540px">
                 <Flex direction="column" gap="4">
                   <Flex align="center" justify="between">
@@ -309,12 +311,17 @@ function Categories() {
             <Dialog.Content maxWidth="400px">
               <Flex direction="column" gap="4">
                 <Dialog.Title asChild>
-                  <Heading size="5">Delete category?</Heading>
+                  <Heading size="5">Are you sure?</Heading>
                 </Dialog.Title>
                 <Text>
                   Are you sure you want to delete the category{' '}
                   <b>{categoryToDelete?.name}</b>? This action cannot be undone.
                 </Text>
+                <Callout.Root color="red" variant="surface">
+                  <Callout.Text>
+                    <b>Warning:</b> All transactions assigned to this category will also be <b>permanently deleted</b>!
+                  </Callout.Text>
+                </Callout.Root>
                 <Flex gap="3" justify="end">
                   <Button variant="soft" color="gray" onClick={() => setCategoryToDelete(null)}>
                     Cancel
@@ -362,16 +369,35 @@ function Categories() {
                               >
                                 <Pencil2Icon />
                               </IconButton>
-                              <IconButton
-                                size="2"
-                                variant="soft"
-                                color="red"
-                                onClick={() => handleDelete(category)}
-                                disabled={isProtectedCategory(category)}
-                                title={isProtectedCategory(category) ? 'This category cannot be deleted' : undefined}
-                              >
-                                <TrashIcon />
-                              </IconButton>
+
+                              <Popover.Root>
+                                <Popover.Trigger asChild>
+                                  <IconButton
+                                    size="2"
+                                    variant="soft"
+                                    color="red"
+                                    // onClick={() => handleDelete(category)}
+                                    disabled={isProtectedCategory(category)}
+                                    title={isProtectedCategory(category) ? 'This category cannot be deleted' : undefined}
+                                  >
+                                    <TrashIcon />
+                                  </IconButton>
+                                </Popover.Trigger>
+                                <Popover.Content align="end" sideOffset={4} style={{ maxWidth: 260 }}>
+                                  <Flex direction="column" gap="3">
+                                    <Text size="2" color="red" weight="bold">
+                                      Delete category?
+                                    </Text>
+                                    <Text size="2">
+                                      All transactions in <b>{category.name}</b> will be <b>permanently deleted</b>!
+                                    </Text>
+                                    <Flex gap="2" justify="end">
+                                      <Button color="red" size="1" onClick={() => handleDelete(category)}>Delete</Button>
+                                    </Flex>
+                                  </Flex>
+                                </Popover.Content>
+                              </Popover.Root>
+
                             </Flex>
                           </Flex>
                           {category.description && (

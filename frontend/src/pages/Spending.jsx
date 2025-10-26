@@ -209,8 +209,6 @@ function Spending() {
   const netWorthSeries = useMemo(() => computeNetWorthSeries(filtered), [filtered, computeNetWorthSeries]);
 
 
-  // ...
-
   // MARK: render
   return (
     <Section size="3" className="p-4">
@@ -259,7 +257,7 @@ function Spending() {
           {/* MARK: net worth series */}
           <Card variant="surface" size="3">
             <Flex direction="column" gap="3">
-              <Heading size="5" align="center">Net Worth Over Time</Heading>
+              <Heading size="5" align="center">Net Worth</Heading>
               {loading ? (
                 <Flex align="center" justify="center" style={{ minHeight: 240 }}><Spinner /></Flex>
               ) : netWorthSeries.data.length ? (

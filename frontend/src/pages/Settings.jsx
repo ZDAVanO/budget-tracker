@@ -7,9 +7,10 @@ function Settings() {
 
   return (
     <Section size="3" className="p-4">
+
       <Container size="3">
         <Heading size="7" mb="4">Settings</Heading>
-        <Text color="gray">Here you can manage your profile and app preferences.</Text>
+        {/* <Text color="gray">Here you can manage your profile and app preferences.</Text> */}
 
         <div className="mt-6">
           <Heading size="5" mb="3">Display currency</Heading>
@@ -30,14 +31,17 @@ function Settings() {
           <Heading size="5" mb="3">Exchange rates</Heading>
           <Callout.Root color="gray">
             <Flex direction="column" gap="1">
-              {/* <Text size="2">Base: {rates?.base || 'UAH'}</Text> */}
-              <Text size="2">USD: {rates?.rates?.USD ?? 1}</Text>
-              <Text size="2">EUR: {rates?.rates?.EUR ?? 0.86}</Text>
-              <Text size="2">UAH: {rates?.rates?.UAH ?? 41.86}</Text>
+              {supported.map((cur) => (
+                <Text size="2" key={cur}>
+                  {cur}: {rates?.rates?.[cur] ?? '-'}
+                </Text>
+              ))}
             </Flex>
           </Callout.Root>
         </div>
+        
       </Container>
+
     </Section>
   );
 }

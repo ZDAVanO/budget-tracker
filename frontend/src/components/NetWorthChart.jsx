@@ -33,7 +33,7 @@ const NetWorthChart = ({ labels = [], data = [], color = '#36A2EB', title = null
             backgroundColor: color,
             fill: true,
             tension: 0.25,
-            pointRadius: 2,
+            pointRadius: 0,
             pointHoverRadius: 4,
           },
         ],
