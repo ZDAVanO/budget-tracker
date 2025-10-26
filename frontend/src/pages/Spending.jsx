@@ -183,12 +183,22 @@ function Spending() {
       .map(t => ({ ...t, date: new Date(t.date) }))
       .sort((a, b) => a.date - b.date);
     const start = new Date(tx[0].date);
-    const end = new Date(tx[tx.length - 1].date);
+    start.setHours(0, 0, 0, 0);
+
+    // Find the latest transaction date and today, use the max of both
+    const lastTxDate = new Date(tx[tx.length - 1].date);
+    lastTxDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const lastDate = lastTxDate > today ? lastTxDate : today;
+
     // day key helper
     const dayKey = (d) => d.toISOString().slice(0, 10);
     const sumsByDay = {};
     tx.forEach(t => {
-      const key = dayKey(t.date);
+      const date = new Date(t.date);
+      date.setHours(0, 0, 0, 0);
+      const key = dayKey(date);
       const sign = t.type === 'expense' ? -1 : 1;
       const fromCur = t.wallet?.currency || 'USD';
       const amt = convert(Number(t.amount) || 0, fromCur, baseCurrency);
@@ -197,11 +207,12 @@ function Spending() {
     const labels = [];
     const data = [];
     let current = 0;
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    for (let d = new Date(start); d.getTime() <= lastDate.getTime();) {
       const key = dayKey(d);
       current += sumsByDay[key] || 0;
       labels.push(new Date(d).toLocaleDateString('uk-UA'));
       data.push(Number(current.toFixed(2)));
+      d = new Date(d.getTime() + 24 * 60 * 60 * 1000);
     }
     return { labels, data };
   }, [convert, baseCurrency]);

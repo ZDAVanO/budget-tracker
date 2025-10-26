@@ -103,8 +103,13 @@ function Dashboard({ user }) {
 
     const start = new Date(tx[0].date);
     start.setHours(0, 0, 0, 0); // only date part
+
+    // Find the latest transaction date and today, use the max of both
+    const lastTxDate = new Date(tx[tx.length - 1].date);
+    lastTxDate.setHours(0, 0, 0, 0);
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // only date part
+    today.setHours(0, 0, 0, 0);
+    const lastDate = lastTxDate > today ? lastTxDate : today;
 
     // Helper to get yyyy-mm-dd key
     const dayKey = (d) => d.toISOString().slice(0, 10);
@@ -122,11 +127,11 @@ function Dashboard({ user }) {
       sumsByDay[key] = (sumsByDay[key] || 0) + sign * amt;
     });
 
-    // Build daily series from start to today (avoid mutating date object)
+    // Build daily series from start to lastDate (which is max of lastTxDate and today)
     const labels = [];
     const data = [];
     let current = 0;
-    for (let d = new Date(start); d.getTime() <= today.getTime();) {
+    for (let d = new Date(start); d.getTime() <= lastDate.getTime();) {
       const key = dayKey(d);
       current += sumsByDay[key] || 0;
       // push a copy of date string for label

@@ -268,12 +268,47 @@ function Transactions() {
   }, [tabValue, availableTabValues.join(',')]);
 
   // Auto-scroll Tabs.List to selected/current month tab
+  // Retry a few times with small delays because the tab refs may not be attached
+  // immediately after async data loads and the DOM renders.
   useEffect(() => {
-    if (!tabsListRef.current || !tabRefs.current[tabValue]) return;
-    // Scroll so that the selected/current tab is visible (centered if possible)
-    tabRefs.current[tabValue].scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
-    // eslint-disable-next-line
-  }, [availableTabValues.length]);
+    let cancelled = false;
+    const maxAttempts = 10;
+    const delayMs = 40;
+
+    function tryScroll(attempt = 0) {
+      console.log('tryScroll attempt:', attempt); 
+      if (cancelled) return;
+      const container = tabsListRef.current;
+      const tab = tabRefs.current[tabValue];
+      if (container && tab) {
+        const offsetLeft = tab.offsetLeft - container.offsetLeft;
+        const scrollTo = offsetLeft - (container.clientWidth / 2) + (tab.clientWidth / 2);
+        container.scrollTo({ left: scrollTo, behavior: 'smooth' });
+        return;
+      }
+      if (attempt < maxAttempts) {
+        setTimeout(() => tryScroll(attempt + 1), delayMs);
+      }
+    }
+
+    tryScroll(0);
+    return () => { cancelled = true; };
+  }, [tabValue, availableTabValues.length,]);
+
+  // Re-center tab on window resize
+  useEffect(() => {
+    function handleResize() {
+      if (!tabsListRef.current || !tabRefs.current[tabValue]) return;
+      const container = tabsListRef.current;
+      const tab = tabRefs.current[tabValue];
+      const offsetLeft = tab.offsetLeft - container.offsetLeft;
+      const scrollTo = offsetLeft - (container.clientWidth / 2) + (tab.clientWidth / 2);
+      container.scrollTo({ left: scrollTo, behavior: 'auto' });
+    }
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+
+  }, [tabValue, availableTabValues.length]);
 
 
   // MARK: render
@@ -406,6 +441,11 @@ function Transactions() {
 
           {/* MARK: list */}
           <Flex direction="column" gap="4">
+            {searchQuery.trim() && (
+              <Text size="3" color="gray">
+                Found {filteredTransactions.length} transaction{filteredTransactions.length !== 1 ? 's' : ''} matching "{searchQuery.trim()}"
+              </Text>
+            )}
             <TransactionList
               transactions={filteredTransactions}
               onEdit={handleEdit}

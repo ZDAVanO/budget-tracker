@@ -132,7 +132,7 @@ function TransactionFilters({
             
             <Flex direction="column" gap="2">
               <Text weight="bold">Categories</Text>
-              <div className="mt-2 max-h-50 overflow-auto pr-2">
+              <div className="mt-2 pr-2">
                 <Flex direction="column" gap="2">
                   {categories.map(cat => {
                     const id = String(cat.id);
@@ -149,7 +149,7 @@ function TransactionFilters({
 
             <Flex direction="column" gap="2">
               <Text weight="bold">Wallets</Text>
-              <div className="mt-2 max-h-50 overflow-auto pr-2">
+              <div className="mt-2 pr-2">
                 <Flex direction="column" gap="2">
                   {wallets.map(w => {
                     const id = String(w.id);
