@@ -198,7 +198,7 @@ function Categories() {
           <Flex align="center" justify="between" wrap="wrap" gap="3">
             
             <Flex direction="column" gap="1">
-              <Heading as="h1" size="7">
+              <Heading as="h2" size="7">
                 Categories
               </Heading>
               <Text color="gray">Classify expenses and income for accurate analysis.</Text>
@@ -215,9 +215,9 @@ function Categories() {
                 <Flex direction="column" gap="4">
                   <Flex align="center" justify="between">
                     <Dialog.Title asChild>
-                      <Heading size="5">
+                      <Text size="5" weight="bold">
                         {editingCategory ? 'Edit category' : 'New category'}
-                      </Heading>
+                      </Text>
                     </Dialog.Title>
                     <Dialog.Close asChild>
                       <IconButton
@@ -311,7 +311,7 @@ function Categories() {
             <Dialog.Content maxWidth="400px">
               <Flex direction="column" gap="4">
                 <Dialog.Title asChild>
-                  <Heading size="5">Are you sure?</Heading>
+                  <Text size="5" weight="bold">Are you sure?</Text>
                 </Dialog.Title>
                 <Text>
                   Are you sure you want to delete the category{' '}

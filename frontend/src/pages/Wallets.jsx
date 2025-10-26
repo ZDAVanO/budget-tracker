@@ -20,7 +20,7 @@ import {
 } from '@radix-ui/themes';
 import { PlusCircledIcon, Pencil2Icon, TrashIcon, Cross2Icon } from '@radix-ui/react-icons';
 import api from '../services/api';
-
+import { useCurrency } from '../contexts/CurrencyContext';
 
 // MARK: Wallets
 function Wallets() {
@@ -34,10 +34,11 @@ function Wallets() {
     description: '',
     icon: '💳',
     initial_balance: '0',
-    currency: 'UAH',
+    currency: 'USD',
   });
   const [error, setError] = useState('');
   const [walletToDelete, setWalletToDelete] = useState(null);
+  const { supported, format } = useCurrency();
 
 
   // MARK: effects
@@ -116,7 +117,7 @@ function Wallets() {
         }
       }
 
-      setFormData({ name: '', description: '', icon: '💳', initial_balance: '0', currency: 'UAH' });
+      setFormData({ name: '', description: '', icon: '💳', initial_balance: '0', currency: 'USD' });
       setIsFormOpen(false);
       setEditingWallet(null);
       loadWallets();
@@ -137,7 +138,7 @@ function Wallets() {
       icon: wallet.icon || '💳',
       // Show current wallet balance so user can set a new target balance.
       initial_balance: (wallet.balance ?? 0).toFixed(2).toString(),
-      currency: wallet.currency || 'UAH',
+      currency: wallet.currency || 'USD',
     });
     setIsFormOpen(true);
   };
@@ -172,7 +173,7 @@ function Wallets() {
   const handleCancelForm = () => {
     setIsFormOpen(false);
     setEditingWallet(null);
-    setFormData({ name: '', description: '', icon: '💳', initial_balance: '0', currency: 'UAH' });
+    setFormData({ name: '', description: '', icon: '💳', initial_balance: '0', currency: 'USD' });
     setError('');
   };
 
@@ -180,7 +181,7 @@ function Wallets() {
   // MARK: handleCreateClick
   const handleCreateClick = () => {
     setEditingWallet(null);
-    setFormData({ name: '', description: '', icon: '💳', initial_balance: '0', currency: 'UAH' });
+    setFormData({ name: '', description: '', icon: '💳', initial_balance: '0', currency: 'USD' });
     setError('');
     setIsFormOpen(true);
   };
@@ -191,7 +192,7 @@ function Wallets() {
     setIsFormOpen(open);
     if (!open) {
       setEditingWallet(null);
-      setFormData({ name: '', description: '', icon: '💳', initial_balance: '0', currency: 'UAH' });
+      setFormData({ name: '', description: '', icon: '💳', initial_balance: '0', currency: 'USD' });
       setError('');
     }
   };
@@ -200,7 +201,7 @@ function Wallets() {
 
   // MARK: formatAmount
   const formatAmount = (amount, currency) =>
-    `${amount >= 0 ? '' : ''}${amount.toFixed(2)} ${currency || 'UAH'}`;
+    `${amount >= 0 ? '' : ''}${amount.toFixed(2)} ${currency || 'USD'}`;
 
 
   // MARK: render
@@ -230,10 +231,10 @@ function Wallets() {
                 <Flex direction="column" gap="4">
 
                   <Flex align="center" justify="between">
-                    <Dialog.Title asChild>
-                      <Heading size="5">
+                    <Dialog.Title>
+                      <Text size="5" weight="bold">
                         {editingWallet ? 'Edit Wallet' : 'New Wallet'}
-                      </Heading>
+                      </Text>
                     </Dialog.Title>
                     <Dialog.Close asChild>
                       <IconButton
@@ -301,9 +302,11 @@ function Wallets() {
                           <Select.Root value={formData.currency} onValueChange={(value) => updateField('currency', value)}>
                             <Select.Trigger />
                             <Select.Content>
-                              <Select.Item value="UAH">UAH (₴)</Select.Item>
-                              <Select.Item value="USD">USD ($)</Select.Item>
-                              <Select.Item value="EUR">EUR (€)</Select.Item>
+                              {supported.map((cur) => (
+                                <Select.Item key={cur} value={cur}>
+                                  {format(0, cur).replace(/^0\.00\s*/, `${cur} (`).replace(/\s*$/, ')')}
+                                </Select.Item>
+                              ))}
                             </Select.Content>
                           </Select.Root>
                         </Flex>
@@ -365,8 +368,8 @@ function Wallets() {
           <Dialog.Root open={!!walletToDelete} onOpenChange={(open) => !open && setWalletToDelete(null)}>
             <Dialog.Content maxWidth="400px">
               <Flex direction="column" gap="4">
-                <Dialog.Title asChild>
-                  <Heading size="5">Delete wallet?</Heading>
+                <Dialog.Title>
+                  <Text size="5" weight="bold">Delete wallet?</Text>
                 </Dialog.Title>
                 <Text>
                   Are you sure you want to delete the wallet{' '}

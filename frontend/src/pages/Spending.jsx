@@ -132,7 +132,7 @@ function Spending() {
     let expenseCount = 0;
     let incomeCount = 0;
     for (const t of filtered) {
-      const fromCur = t.wallet?.currency || 'UAH';
+      const fromCur = t.wallet?.currency || 'USD';
       const amt = convert(Number(t.amount) || 0, fromCur, baseCurrency);
       if (t.type === 'expense') {
         expenses += amt;
@@ -161,7 +161,7 @@ function Spending() {
       const id = String(t.category?.id ?? t.category_id ?? 'uncat');
       const name = t.category?.name || 'No category';
       const icon = t.category?.icon || '';
-      const fromCur = t.wallet?.currency || 'UAH';
+      const fromCur = t.wallet?.currency || 'USD';
       const amt = convert(Number(t.amount) || 0, fromCur, baseCurrency);
       if (!map[id]) map[id] = { name, icon, amount: 0 };
       map[id].amount += amt;
@@ -190,7 +190,7 @@ function Spending() {
     tx.forEach(t => {
       const key = dayKey(t.date);
       const sign = t.type === 'expense' ? -1 : 1;
-      const fromCur = t.wallet?.currency || 'UAH';
+      const fromCur = t.wallet?.currency || 'USD';
       const amt = convert(Number(t.amount) || 0, fromCur, baseCurrency);
       sumsByDay[key] = (sumsByDay[key] || 0) + sign * amt;
     });

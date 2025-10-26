@@ -226,7 +226,7 @@ function Transactions() {
   // summary для вибраного місяця або для пошуку
   const summary = filteredTransactions.reduce(
     (acc, tx) => {
-      const fromCur = tx.wallet?.currency || 'UAH';
+      const fromCur = tx.wallet?.currency || 'USD';
       const value = convert(tx.amount, fromCur, baseCurrency);
       if (tx.type === 'expense') acc.expense += value;
       else if (tx.type === 'income') acc.income += value;

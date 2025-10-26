@@ -70,10 +70,10 @@ export function CurrencyProvider({ children }) {
   };
 
   const format = (amount, code) => {
-  const value = Number(amount || 0);
-  const sym = currencySymbol(code);
-  // Simple format: 2 decimals with symbol/code
-  return `${value.toFixed(2)} ${sym || (code || '').toUpperCase()}`.trim();
+    const value = Number(amount || 0);
+    const sym = currencySymbol(code);
+    // Simple format: 2 decimals with symbol/code
+    return `${value.toFixed(2)} ${sym || (code || '').toUpperCase()}`.trim();
   };
 
   const value = {
@@ -85,6 +85,7 @@ export function CurrencyProvider({ children }) {
     convert,
     format,
     supported: rates?.supported || DEFAULT_RATES.supported,
+    currencySymbol,
   };
 
   return (

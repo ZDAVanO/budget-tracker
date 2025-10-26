@@ -57,7 +57,7 @@ function Dashboard({ user }) {
         amount: 0,
       };
     }
-    const fromCur = t.wallet?.currency || 'UAH';
+    const fromCur = t.wallet?.currency || 'USD';
     expenseByCategory[catId].amount += convert(t.amount, fromCur, baseCurrency);
   });
   const chartLabels = Object.values(expenseByCategory).map(cat => `${cat.icon ? cat.icon + ' ' : ''}${cat.name}`);
@@ -79,7 +79,7 @@ function Dashboard({ user }) {
         amount: 0,
       };
     }
-    const fromCur = t.wallet?.currency || 'UAH';
+    const fromCur = t.wallet?.currency || 'USD';
     incomeByCategory[catId].amount += convert(t.amount, fromCur, baseCurrency);
   });
   const incomeChartLabels = Object.values(incomeByCategory).map(cat => `${cat.icon ? cat.icon + ' ' : ''}${cat.name}`);
@@ -117,7 +117,7 @@ function Dashboard({ user }) {
       date.setHours(0, 0, 0, 0);
       const key = dayKey(date);
       const sign = t.type === 'expense' ? -1 : 1;
-      const fromCur = t.wallet?.currency || 'UAH';
+      const fromCur = t.wallet?.currency || 'USD';
       const amt = convert(Number(t.amount) || 0, fromCur, baseCurrency);
       sumsByDay[key] = (sumsByDay[key] || 0) + sign * amt;
     });
@@ -228,11 +228,11 @@ function Dashboard({ user }) {
   // Calculating the sum of incomes/expenses for the month
   const monthlyExpenses = monthlyTransactions
     .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + convert(t.amount, t.wallet?.currency || 'UAH', baseCurrency), 0);
+    .reduce((sum, t) => sum + convert(t.amount, t.wallet?.currency || 'USD', baseCurrency), 0);
 
   const monthlyIncomes = monthlyTransactions
     .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + convert(t.amount, t.wallet?.currency || 'UAH', baseCurrency), 0);
+    .reduce((sum, t) => sum + convert(t.amount, t.wallet?.currency || 'USD', baseCurrency), 0);
 
 
   // MARK: render
@@ -328,7 +328,7 @@ function Dashboard({ user }) {
                           <Table.Cell align="end" style={{ whiteSpace: 'nowrap' }}>
                             <Text weight="bold" color={transaction.type === 'expense' ? 'tomato' : 'jade'}>
                               {transaction.type === 'expense' ? '-' : '+'}
-                              {formatAmount(convert(transaction.amount, transaction.wallet?.currency || 'UAH', baseCurrency), baseCurrency)}
+                              {formatAmount(convert(transaction.amount, transaction.wallet?.currency || 'USD', baseCurrency), baseCurrency)}
                             </Text>
                           </Table.Cell>
                         </Table.Row>
