@@ -211,11 +211,9 @@ function App() {
 
   return (
 
-      <BrowserRouter>
         <AuthProvider>
           <AppContent />
         </AuthProvider>
-      </BrowserRouter>
 
   );
 }

@@ -1,5 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
 
 import "@radix-ui/themes/styles.css";
 import './styles/index.css'
@@ -12,10 +13,13 @@ import { CurrencyProvider } from './contexts/CurrencyContext.jsx';
 
 createRoot(document.getElementById('root')).render(
   // <StrictMode>
-    <ThemeModeProvider>
+      <ThemeModeProvider>
       <CurrencyProvider>
+        <BrowserRouter>
         <App />
+        </BrowserRouter>
       </CurrencyProvider>
     </ThemeModeProvider>
+
   // </StrictMode>
 )
