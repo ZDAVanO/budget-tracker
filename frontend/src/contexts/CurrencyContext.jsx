@@ -4,15 +4,47 @@ import { useLocalStorage } from '../utils/useLocalStorage';
 
 const CurrencyContext = createContext(null);
 
+// Fallback rates for offline/first load (USD pivot)
 const DEFAULT_RATES = {
   base: 'USD',
-  // rates represent how many units of currency per 1 USD (USD pivot)
   rates: {
     USD: 1.0,
-    UAH: 42.05,
-    EUR: 0.8602, // ~0.93 EUR per USD based on sample
+    EUR: 0.93,
+    UAH: 42.0,
+    GBP: 0.79,
+    // ...add more if you want better fallback
   },
-  supported: ['USD', 'EUR', 'UAH',],
+  supported: ['USD', 'EUR', 'UAH', 'GBP'],
+};
+
+// Symbol map for many common currencies (for fallback and display)
+const CURRENCY_SYMBOLS = {
+  USD: '$',
+  EUR: '€',
+  UAH: '₴',
+  GBP: '£',
+  RUB: '₽',
+  PLN: 'zł',
+  CZK: 'Kč',
+  CHF: '₣',
+  JPY: '¥',
+  CNY: '¥',
+  HKD: 'HK$',
+  AUD: 'A$',
+  CAD: 'C$',
+  SEK: 'kr',
+  NOK: 'kr',
+  DKK: 'kr',
+  INR: '₹',
+  KZT: '₸',
+  TRY: '₺',
+  GEL: '₾',
+  HUF: 'Ft',
+  SGD: 'S$',
+  AED: 'د.إ',
+  BTC: '₿',
+  ETH: 'Ξ',
+  // ...add more as needed
 };
 
 const STORAGE_KEY_BASE = 'bt-base-currency';
@@ -61,12 +93,8 @@ export function CurrencyProvider({ children }) {
   }, [rates, baseCurrency]);
 
   const currencySymbol = (code) => {
-    switch ((code || '').toUpperCase()) {
-      case 'USD': return '$';
-      case 'EUR': return '€';
-      case 'UAH': return '₴';
-      default: return code?.toUpperCase() || '';
-    }
+    const up = (code || '').toUpperCase();
+    return CURRENCY_SYMBOLS[up] || up;
   };
 
   const format = (amount, code) => {

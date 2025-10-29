@@ -26,7 +26,7 @@ class Wallet(db.Model):
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(255))
     icon = db.Column(db.String(50), default='💳')
-    currency = db.Column(db.String(10), default='UAH')
+    currency = db.Column(db.String(10), default='USD')
     
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     

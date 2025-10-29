@@ -61,12 +61,14 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=15)
 """We expose rates as units of currency per 1 USD (USD pivot).
 Convert using: in_usd = amount / rate[from]; out = in_usd * rate[to].
 """
-SUPPORTED_CURRENCIES = ['USD', 'UAH', 'EUR']
+# Default fallback rates (will be replaced by live rates from API)
 EXCHANGE_RATES = {
     'USD': 1.0,
     'UAH': 42.0,
-    'EUR': 40.0/43.0,
+    'EUR': 0.93,
+    'GBP': 0.79,
 }
+SUPPORTED_CURRENCIES = list(EXCHANGE_RATES.keys())  # Will be updated from API
 _RATES_SCHEMA = 'UNITS_PER_USD'
 _RATES_LAST_UPDATED = 0.0
 _RATES_TTL_SECONDS = 6 * 60 * 60  # 6 hours
@@ -87,25 +89,23 @@ def _fetch_live_rates_units_per_usd() -> dict:
     except Exception:
         data = _get(fallback)
 
-    # Expected shape: { 'date': 'YYYY-MM-DD', 'usd': { 'uah': <num>, 'eur': <num>, ... } }
+    # Expected shape: { 'date': 'YYYY-MM-DD', 'usd': { ... } }
     usd_map = data.get('usd', {}) if isinstance(data, dict) else {}
     if not usd_map:
         raise RuntimeError('Unexpected live rates response shape')
 
-    # Build uppercase keys for only supported currencies
-    rates = {'USD': 1.0}
-    if 'uah' in usd_map:
-        rates['UAH'] = float(usd_map['uah'])
-    if 'eur' in usd_map:
-        rates['EUR'] = float(usd_map['eur'])
-    # Ensure all supported present (keep previous fallback if missing)
-    for cur in SUPPORTED_CURRENCIES:
-        if cur not in rates and cur in EXCHANGE_RATES:
-            rates[cur] = EXCHANGE_RATES[cur]
+    # Build uppercase keys for all currencies in API
+    rates = {k.upper(): float(v) for k, v in usd_map.items()}
+    rates['USD'] = 1.0  # Ensure USD present
+
+    # Update supported currencies globally
+    global SUPPORTED_CURRENCIES
+    SUPPORTED_CURRENCIES = sorted(rates.keys())
+
     return rates
 
 def _ensure_rates_uptodate(force: bool = False) -> tuple[dict, str, float]:
-    global EXCHANGE_RATES, _RATES_LAST_UPDATED
+    global EXCHANGE_RATES, _RATES_LAST_UPDATED, SUPPORTED_CURRENCIES
     now = time.time()
     source = 'cache'
     if force or (now - _RATES_LAST_UPDATED) > _RATES_TTL_SECONDS:
@@ -155,7 +155,7 @@ def get_rates():
         'source': source,
         'last_updated': ts,
         'rates': rates,
-        'supported': SUPPORTED_CURRENCIES,
+        'supported': sorted(rates.keys()),
     })
 app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=7)
 
@@ -439,7 +439,7 @@ def create_wallet():
         name=data.get('name'),
         description=data.get('description'),
         icon=data.get('icon', '💳'),
-        currency=data.get('currency', 'UAH'),
+        currency=data.get('currency', 'USD'),
         user_id=user_id
     )
 
@@ -712,7 +712,7 @@ def get_statistics():
     total_incomes = 0.0
     for t in transactions:
         # Determine currency of the transaction via its wallet
-        tx_currency = t.wallet.currency if t.wallet and t.wallet.currency else 'UAH'
+        tx_currency = t.wallet.currency if t.wallet and t.wallet.currency else 'USD'
         converted = convert_amount(t.amount, tx_currency, base_currency)
         if t.type == 'expense':
             total_expenses += converted
