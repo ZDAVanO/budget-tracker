@@ -17,12 +17,10 @@ def get_statistics():
     """
     user_id = int(get_jwt_identity())
 
-    # Параметри фільтрації
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     base_currency = (request.args.get('base_currency') or 'USD').upper()
 
-    # Запит для всіх транзакцій
     query = Transaction.query.filter_by(user_id=user_id)
 
     if start_date:

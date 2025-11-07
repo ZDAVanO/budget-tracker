@@ -43,7 +43,6 @@ def convert_amount(amount: float, from_currency: str, to_currency: str) -> float
     if from_currency == to_currency:
         return float(amount)
 
-    # Переконуємось, що курси актуальні (але без примусового оновлення)
     rates, _, _ = _ensure_rates_uptodate(force=False)
 
     if from_currency not in rates or to_currency not in rates:
@@ -88,11 +87,9 @@ def _fetch_live_rates_units_per_usd() -> dict:
     if not usd_map:
         raise RuntimeError('Unexpected live rates response shape')
 
-    # Build uppercase keys for all currencies in API
     rates = {k.upper(): float(v) for k, v in usd_map.items()}
     rates['USD'] = 1.0  # Ensure USD present
 
-    # Update supported currencies globally
     global SUPPORTED_CURRENCIES
     SUPPORTED_CURRENCIES = sorted(rates.keys())
 

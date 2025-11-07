@@ -4,7 +4,7 @@ from flask_jwt_extended import (
     get_jwt_identity, unset_jwt_cookies, set_access_cookies, 
     set_refresh_cookies
 )
-# Імпортуємо моделі ТА нові функції
+
 from models import (
     db, User, 
     create_default_categories_for_user, 
@@ -12,10 +12,8 @@ from models import (
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# 1. Визначаємо Blueprint з префіксом /api
 bp = Blueprint('auth', __name__, url_prefix='/api')
 
-# 2. Використовуємо @bp.route замість @app.route
 @bp.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
@@ -34,7 +32,6 @@ def register():
     db.session.add(user)
     db.session.commit()
     
-    # 3. Викликаємо функції, імпортовані з models.py
     create_default_categories_for_user(user.id)
     create_default_wallets_for_user(user.id)
     
@@ -44,7 +41,6 @@ def register():
 @bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
-    # 4. Краще використовувати .get() щоб уникнути KeyError
     username = data.get('username')
     password = data.get('password')
 
@@ -81,7 +77,6 @@ def refresh():
 @bp.route('/protected', methods=['GET'])
 @jwt_required(locations=['cookies'])
 def protected():
-    # 5. Отримуємо ID і перевіряємо
     user_id_str = get_jwt_identity()
     if not user_id_str:
         return jsonify({"msg": "Invalid token"}), 401
@@ -93,5 +88,3 @@ def protected():
         return jsonify({"msg": "User not found"}), 404
         
     return jsonify({"username": user.username})
-
-# ping та echo видалені звідси, оскільки вони не стосуються автентифікації

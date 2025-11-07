@@ -11,7 +11,6 @@ def parse_local_datetime(dt_str):
     try:
         return datetime.strptime(dt_str, "%Y-%m-%dT%H:%M:%S")
     except Exception:
-        # fallback на ISO (з таймзоною)
         return datetime.fromisoformat(dt_str)
 
 @bp.route('', methods=['GET'])
@@ -20,7 +19,6 @@ def get_transactions():
     """Отримати всі транзакції з фільтрацією"""
     user_id = int(get_jwt_identity())
     
-    # Параметри фільтрації
     category_id = request.args.get('category_id')
     wallet_id = request.args.get('wallet_id')
     transaction_type = request.args.get('type')  # 'expense', 'income', або None
@@ -29,7 +27,6 @@ def get_transactions():
     
     query = Transaction.query.filter_by(user_id=user_id)
     
-    # Фільтрація
     if category_id:
         query = query.filter_by(category_id=int(category_id))
     if wallet_id:
@@ -41,7 +38,6 @@ def get_transactions():
     if end_date:
         query = query.filter(Transaction.date <= datetime.fromisoformat(end_date))
     
-    # Сортування за датою (нові спочатку)
     transactions = query.order_by(Transaction.date.desc()).all()
     
     return jsonify([t.to_dict() for t in transactions])

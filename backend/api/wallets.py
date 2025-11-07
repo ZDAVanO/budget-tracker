@@ -8,7 +8,6 @@ bp = Blueprint('wallets', __name__, url_prefix='/api/wallets')
 @bp.route('', methods=['GET'])
 @jwt_required(locations=['cookies'])
 def get_wallets():
-    """Отримати всі гаманці користувача"""
     user_id = int(get_jwt_identity())
     wallets = Wallet.query.filter_by(user_id=user_id).all()
     return jsonify([wallet.to_dict() for wallet in wallets])
@@ -17,7 +16,6 @@ def get_wallets():
 @bp.route('', methods=['POST'])
 @jwt_required(locations=['cookies'])
 def create_wallet():
-    """Створити новий гаманець"""
     user_id = int(get_jwt_identity())
     data = request.get_json()
     # Create wallet record (balance is derived from transactions only)
@@ -129,7 +127,6 @@ def delete_wallet(wallet_id):
     if wallet.user_id != user_id:
         return jsonify({"msg": "Unauthorized"}), 403
     
-    # Перевіряємо, чи є транзакції прив'язані до цього гаманця
     has_transactions = Transaction.query.filter_by(wallet_id=wallet_id).count() > 0
     
     if has_transactions:

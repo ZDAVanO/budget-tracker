@@ -55,15 +55,12 @@ def delete_category(category_id):
     if not category:
         abort(404)
     
-    # Перевіряємо, що це категорія користувача
     if category.user_id != user_id:
         return jsonify({"msg": "Unauthorized"}), 403
 
-    # Заборонити видалення захищених категорій
     if category.name in PROTECTED_CATEGORY_NAMES:
         return jsonify({"msg": "Cannot delete category"}), 400
     
-    # Видалити всі транзакції цієї категорії
     Transaction.query.filter_by(category_id=category.id).delete()
     db.session.delete(category)
     db.session.commit()
@@ -81,7 +78,6 @@ def update_category(category_id):
     if not category:
         abort(404)
     
-    # Перевіряємо, що це категорія користувача
     if category.user_id != user_id:
         return jsonify({"msg": "Unauthorized"}), 403
     
