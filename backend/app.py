@@ -4,6 +4,9 @@ from flask import (
     request,
 )
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from flask_cors import CORS  # Allows React to access Flask
 
 # from flask_login import (
@@ -16,6 +19,8 @@ from flask_cors import CORS  # Allows React to access Flask
 from flask_jwt_extended import (
     JWTManager
 )
+
+from config import Config
 
 from datetime import datetime, timedelta
 import random
@@ -34,19 +39,7 @@ from api.rates import bp as rates_bp
 
 app = Flask(__name__)
 
-app.config['SECRET_KEY'] = 'your_secret_key_here'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# JWT config
-app.config['JWT_SECRET_KEY'] = 'your_jwt_secret_key_here'
-app.config['JWT_TOKEN_LOCATION'] = ['cookies']
-app.config['JWT_ACCESS_COOKIE_PATH'] = '/'
-app.config['JWT_REFRESH_COOKIE_PATH'] = '/api/refresh'
-app.config['JWT_COOKIE_CSRF_PROTECT'] = False  # True для production!
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=15)
-
-app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=7)
+app.config.from_object(Config)
 
 # CORS(app)  # Allows all domains (for development)
 # CORS(app, supports_credentials=True, origins=["http://localhost:3000", "http://localhost:5173"])
