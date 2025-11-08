@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 # from flask_login import UserMixin
+from sqlalchemy.orm import selectinload
 
 db = SQLAlchemy()
 
@@ -30,10 +31,11 @@ class Wallet(db.Model):
     
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     
-    transactions = db.relationship('Transaction', backref='wallet', lazy=True)
+    transactions = db.relationship('Transaction', backref='wallet', lazy='selectin')
     
     def get_balance(self):
         """Розрахунок поточного балансу гаманця"""
+        # Для тесту: викликати цей метод і подивитися у консоль, скільки запитів SQL виконано
         total_incomes = sum(t.amount for t in self.transactions if t.type == 'income')
         total_expenses = sum(t.amount for t in self.transactions if t.type == 'expense')
         return total_incomes - total_expenses
@@ -161,7 +163,7 @@ def create_default_wallets_for_user(user_id):
         )
         db.session.add(wallet)
     
-    db.session.commit()   
+    db.session.commit()
 
 
 

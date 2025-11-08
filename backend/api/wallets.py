@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, abort, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, Wallet, Category, Transaction
 from datetime import datetime
+from sqlalchemy.orm import selectinload
 
 bp = Blueprint('wallets', __name__, url_prefix='/api/wallets')
 
@@ -9,7 +10,8 @@ bp = Blueprint('wallets', __name__, url_prefix='/api/wallets')
 @jwt_required(locations=['cookies'])
 def get_wallets():
     user_id = int(get_jwt_identity())
-    wallets = Wallet.query.filter_by(user_id=user_id).all()
+    # wallets = Wallet.query.filter_by(user_id=user_id).all()
+    wallets = Wallet.query.options(selectinload(Wallet.transactions)).filter_by(user_id=user_id).all()
     return jsonify([wallet.to_dict() for wallet in wallets])
 
 
