@@ -35,7 +35,6 @@ class Wallet(db.Model):
     
     def get_balance(self):
         """Розрахунок поточного балансу гаманця"""
-        # Для тесту: викликати цей метод і подивитися у консоль, скільки запитів SQL виконано
         total_incomes = sum(t.amount for t in self.transactions if t.type == 'income')
         total_expenses = sum(t.amount for t in self.transactions if t.type == 'expense')
         return total_incomes - total_expenses
