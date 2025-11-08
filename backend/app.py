@@ -1,9 +1,3 @@
-import logging
-
-logging.basicConfig()
-logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
-
-
 from flask import (
     Flask,
     jsonify,
@@ -203,6 +197,11 @@ def create_test_user_with_data():
 
 # Run server
 if __name__ == '__main__':
+    # Enable SQLAlchemy logging only for local run
+    import logging
+    logging.basicConfig()
+    logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+
     print("Starting Flask server...")
 
     with app.app_context():
