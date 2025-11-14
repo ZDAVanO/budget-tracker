@@ -3,14 +3,10 @@ import {
   Badge,
   Button,
   Card,
-  Container,
-  Flex,
-  Grid,
   Heading,
-  Section,
   Text,
 } from '@radix-ui/themes';
-import { RocketIcon, LightningBoltIcon, BarChartIcon, CheckCircledIcon } from '@radix-ui/react-icons';
+import { RocketIcon, LightningBoltIcon, BarChartIcon } from '@radix-ui/react-icons';
 
 
 // MARK: features array
@@ -32,6 +28,22 @@ const features = [
   },
 ];
 
+// FeatureCard component
+function FeatureCard({ feature }) {
+  return (
+    <Card size="4" variant="surface">
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          {feature.icon}
+          <Heading as="h3" size="4">
+            {feature.title}
+          </Heading>
+        </div>
+        <Text color="gray">{feature.description}</Text>
+      </div>
+    </Card>
+  );
+}
 
 // MARK: Home
 function Home() {
@@ -85,20 +97,7 @@ function Home() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
               {features.map((feature) => (
-                <Card key={feature.title} size="4" variant="surface">
-                  <div className="flex flex-col gap-3">
-
-                    <div className="flex items-center gap-2">
-                      {feature.icon}
-                      <Heading as="h3" size="4">
-                        {feature.title}
-                      </Heading>
-                    </div>
-
-                    <Text color="gray">{feature.description}</Text>
-
-                  </div>
-                </Card>
+                <FeatureCard key={feature.title} feature={feature} />
               ))}
 
             </div>

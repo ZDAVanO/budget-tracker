@@ -11,14 +11,14 @@ import {
 import { PersonIcon, CheckCircledIcon } from '@radix-ui/react-icons';
 import api from '../services/api';
 
+const INITIAL_FORM = { username: '', email: '', password: '', confirmPassword: '' };
+
 // MARK: Register
 function Register() {
-
-  const [formData, setFormData] = useState({ username: '', email: '', password: '', confirmPassword: '' });
+  const [formData, setFormData] = useState(INITIAL_FORM);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
   const navigate = useNavigate();
 
   console.log('🎨 Register page render');
@@ -38,29 +38,29 @@ function Register() {
     setError('');
     setSuccess('');
 
-    console.log('📝 Register: Спроба реєстрації, username:', formData.username, 'email:', formData.email);
+    const { username, email, password, confirmPassword } = formData;
 
-    if (formData.password !== formData.confirmPassword) {
+    if (password !== confirmPassword) {
       console.warn('⚠️ Register: Паролі не співпадають');
       setError('Passwords do not match');
       return;
     }
 
     // MARK: password.length
-    // if (formData.password.length < 6) {
-    //   console.warn('⚠️ Register: Пароль занадто короткий');
-    //   setError('Password must be at least 6 characters');
-    //   return;
-    // }
+    if (formData.password.length < 6) {
+      console.warn('⚠️ Register: Пароль занадто короткий');
+      setError('Password must be at least 6 characters');
+      return;
+    }
 
     setIsLoading(true);
     try {
-      const { response, data } = await api.auth.register(formData.username, formData.email, formData.password);
+      const { response, data } = await api.auth.register(username, email, password);
 
       if (response.ok) {
         console.log('✅ Register: Реєстрація успішна');
         setSuccess('Registration successful! Redirecting to login page...');
-        setFormData({ username: '', email: '', password: '', confirmPassword: '' });
+        setFormData(INITIAL_FORM);
 
         setTimeout(() => {
           console.log('🔐 Register: Перенаправлення на Login');

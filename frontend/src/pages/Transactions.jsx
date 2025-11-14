@@ -279,7 +279,7 @@ function Transactions() {
     const delayMs = 40;
 
     function tryScroll(attempt = 0) {
-      console.log('tryScroll attempt:', attempt); 
+      // console.log('tryScroll attempt:', attempt); 
       if (cancelled) return;
       const container = tabsListRef.current;
       const tab = tabRefs.current[tabValue];
