@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 # from flask_login import UserMixin
 
 db = SQLAlchemy()
@@ -56,6 +57,7 @@ class Transaction(db.Model):
 
     amount = db.Column(db.Float, nullable=False)
     date = db.Column(db.DateTime, nullable=False)
+    modified_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     title = db.Column(db.String(100))
     description = db.Column(db.String(255))
@@ -70,6 +72,7 @@ class Transaction(db.Model):
             'id': self.id,
             'amount': self.amount,
             'date': self.date.isoformat() if self.date else None,
+            "modified_at": self.modified_at.isoformat() if self.modified_at else None,
             'title': self.title,
             'description': self.description,
             'type': self.type,
