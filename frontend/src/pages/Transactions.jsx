@@ -1,5 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Badge,
   Button,
@@ -20,7 +19,7 @@ import {
   TextField,
   Tooltip,
 } from '@radix-ui/themes';
-import { Cross2Icon, MixerHorizontalIcon, PlusCircledIcon } from '@radix-ui/react-icons';
+import { Cross2Icon } from '@radix-ui/react-icons';
 import api from '../services/api';
 import TransactionFilters from '../components/TransactionFilters';
 import TransactionList from '../components/TransactionList';
@@ -59,7 +58,7 @@ function Transactions() {
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
   // const [showFilters, setShowFilters] = useState(false);
 
-  // Додаємо стан для вибраного місяця
+  // State for selected month
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() + 1 }; // month: 1-12
@@ -73,7 +72,6 @@ function Transactions() {
 
 
   // MARK: loadAllTransactions
-  // Завантажуємо всі транзакції без фільтрів для місячної смуги
   const loadAllTransactions = useCallback(async () => {
     try {
       const { response, data } = await api.transactions.getAll({});
@@ -173,8 +171,7 @@ function Transactions() {
     }
   };
 
-
-  // Допоміжна функція для отримання діапазону місяців від найстарішої до найновішої транзакції (включно з майбутніми)
+  // Helper: get available months from transactions (from oldest to newest, including future)
   const getAvailableMonths = () => {
     if (!allTransactions.length) {
       // Якщо транзакцій немає, повертаємо лише поточний місяць
@@ -207,7 +204,7 @@ function Transactions() {
     return months.sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
   };
 
-  // Фільтруємо транзакції за вибраним місяцем
+  // Filter transactions by selected month and filters
   const filteredTransactions = debouncedSearchQuery.trim()
     ? allTransactions.filter(tx => {
         const q = debouncedSearchQuery.trim().toLowerCase();
@@ -233,7 +230,7 @@ function Transactions() {
         return true;
       });
 
-  // summary для вибраного місяця або для пошуку
+  // Summary for selected month or search results
   const summary = filteredTransactions.reduce(
     (acc, tx) => {
       const fromCur = tx.wallet?.currency || 'USD';
@@ -246,7 +243,7 @@ function Transactions() {
   );
   summary.balance = summary.income - summary.expense;
 
-  // Для перемикання місяців
+  // For switching months
   const availableMonths = getAvailableMonths();
   const [tabValue, setTabValue] = useState(() => {
     const m = availableMonths.find(m => m.year === selectedMonth.year && m.month === selectedMonth.month);
@@ -254,14 +251,12 @@ function Transactions() {
   });
 
 
-  // Для Tabs: значення для кожного місяця
+  // Get tab value for each month
   const getMonthTabValue = (m) => `${m.year}-${String(m.month).padStart(2, '0')}`;
-  // Якщо selectedMonth не входить у availableMonths, вибираємо останній (найновіший)
-  // const selectedTabValue = getMonthTabValue(selectedMonth);
   const availableTabValues = availableMonths.map(getMonthTabValue);
 
 
-  // Синхронізуємо selectedMonth <-> tabValue
+  // Sync selectedMonth <-> tabValue
   useEffect(() => {
     // Якщо selectedMonth змінився зовні (наприклад, після додавання транзакції)
     const newTabValue = getMonthTabValue(selectedMonth);
@@ -278,8 +273,6 @@ function Transactions() {
   }, [tabValue, availableTabValues.join(',')]);
 
   // Auto-scroll Tabs.List to selected/current month tab
-  // Retry a few times with small delays because the tab refs may not be attached
-  // immediately after async data loads and the DOM renders.
   useEffect(() => {
     let cancelled = false;
     const maxAttempts = 10;
@@ -338,7 +331,7 @@ function Transactions() {
             </Flex>
 
             <Flex align="center" gap="3">
-              {/* Поле пошуку з кнопкою очистити справа */}
+              {/* Search field with clear button */}
               <TextField.Root
                 placeholder="Search"
                 value={searchQuery}
@@ -346,7 +339,7 @@ function Transactions() {
                 size="2"
                 style={{ minWidth: 220 }}
               >
-                {/* Кнопка очистити справа, показується якщо щось введено */}
+                {/* Clear button, shown if something is entered */}
                 {searchQuery && (
                   <TextField.Slot pr="3" side="right">
                     <Tooltip content="Clear">
@@ -374,7 +367,7 @@ function Transactions() {
 
           </Flex>
 
-          {/* Показуємо Tabs та summary тільки якщо пошук порожній */}
+          {/* Show Tabs and summary only if search is empty */}
             {!debouncedSearchQuery.trim() && !isLoading && (
               <>
                 {/* MARK: month selector */}
@@ -396,7 +389,6 @@ function Transactions() {
                       overflowX: "auto",
                       overflowY: "hidden",
                       width: "100%",
-                      // scrollbarWidth: "thin",
                     }}
                   >
                     {availableMonths.map((m) => {
@@ -471,7 +463,7 @@ function Transactions() {
                   {format(summary.balance, baseCurrency)}
                 </span>
               </Text>
-              {/* Badge з кількістю транзакцій */}
+              {/* Badge with transaction count */}
               <Badge color="gray" className="show-on-mobile">
                 {filteredTransactions.length} transactions
               </Badge>
@@ -502,7 +494,7 @@ function Transactions() {
             </Dialog.Content>
           </Dialog.Root>
 
-          {/* Фіксована кнопка Add transaction у правому нижньому куті */}
+          {/* Fixed Add transaction button in bottom right corner */}
           <Tooltip content="Add Transaction">
             <Button
               size="3"

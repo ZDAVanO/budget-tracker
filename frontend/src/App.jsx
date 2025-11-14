@@ -1,25 +1,15 @@
-import './styles/App.css'
-
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import './styles/App.css';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import useAuth from './contexts/useAuth';
 
 import {
-  Box,
-  Button,
-  Callout,
-  Container,
-  Flex,
   Heading,
-  Section,
   Spinner,
   Text,
 } from '@radix-ui/themes';
-import { ArrowLeftIcon } from '@radix-ui/react-icons';
 
 import Header from './components/Header.jsx';
-import Footer from './components/Footer.jsx';
-
 import BottomNav from './components/BottomNav.jsx';
 import SidebarNav from './components/SidebarNav.jsx';
 
@@ -34,10 +24,9 @@ import Settings from './pages/Settings.jsx';
 import NotFound from './pages/NotFound';
 import Spending from './pages/Spending.jsx';
 
-
 // MARK: RouteLoader
 const RouteLoader = ({ message }) => (
-  <section className="">
+  <section>
     <div className="max-w-lg mx-auto">
       <div className="flex flex-col items-center justify-center gap-3 min-h-screen">
         <Spinner size="3" />
@@ -48,9 +37,7 @@ const RouteLoader = ({ message }) => (
   </section>
 );
 
-
 // MARK: PublicRoute
-// Component for public routes (available only to unauthenticated users)
 function PublicRoute({ children }) {
   const { isLoggedIn, isLoading } = useAuth();
 
@@ -60,19 +47,15 @@ function PublicRoute({ children }) {
     console.log('⏳ PublicRoute: Loading...');
     return <RouteLoader message="Checking access" />;
   }
-
   if (isLoggedIn) {
     console.log('🔐 PublicRoute: Already authenticated, redirecting to /dashboard');
     return <Navigate to="/dashboard" replace />;
   }
-
   console.log('✅ PublicRoute: Access allowed');
   return children;
 }
 
-
 // MARK: ProtectedRoute
-// Component for protected routes
 function ProtectedRoute({ children }) {
   const { isLoggedIn, isLoading } = useAuth();
 
@@ -82,20 +65,15 @@ function ProtectedRoute({ children }) {
     console.log('⏳ ProtectedRoute: Loading...');
     return <RouteLoader message="Verifying authentication" />;
   }
-
   if (!isLoggedIn) {
     console.log('🚫 ProtectedRoute: Not authenticated, redirecting to /login');
     return <Navigate to="/login" replace />;
   }
-
   console.log('✅ ProtectedRoute: Access granted');
   return children;
 }
 
-
 // MARK: AppContent
-import { useLocation } from 'react-router-dom';
-
 function AppContent() {
   const { isLoggedIn, user, logout, login, isLoading } = useAuth();
   const location = useLocation();
@@ -107,23 +85,20 @@ function AppContent() {
     return <RouteLoader message="Loading application" />;
   }
 
-  // Hide BottomNav and SidebarNav on /, /login, and /register, and NotFound pages
+  // Hide BottomNav and SidebarNav on /, /login, /register, and NotFound pages
   const hideNavs = ["/", "/login", "/register", "/*"].includes(location.pathname);
 
   return (
     <>
       <Header isLoggedIn={isLoggedIn} user={user} onLogout={logout} />
-
       <div className="flex">
         {isLoggedIn && !hideNavs && <SidebarNav />}
-
         <main className="grow min-w-0">
           <Routes>
             <Route
               path="/"
               element={isLoggedIn ? <Navigate to="/dashboard" replace /> : <Home />}
             />
-
             <Route
               path="/login"
               element={
@@ -140,7 +115,6 @@ function AppContent() {
                 </PublicRoute>
               }
             />
-
             <Route
               path="/dashboard"
               element={
@@ -149,7 +123,6 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
-
             <Route
               path="/transactions"
               element={
@@ -158,7 +131,6 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
-
             <Route
               path="/categories"
               element={
@@ -167,7 +139,6 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
-
             <Route
               path="/wallets"
               element={
@@ -176,7 +147,6 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
-
             <Route
               path="/spending"
               element={
@@ -185,7 +155,6 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
-
             <Route
               path="/settings"
               element={
@@ -194,12 +163,10 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
-
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
       </div>
-
       {isLoggedIn && !hideNavs && <BottomNav />}
     </>
   );
@@ -208,13 +175,10 @@ function AppContent() {
 // MARK: App
 function App() {
   console.log('🎨 App component render');
-
   return (
-
-        <AuthProvider>
-          <AppContent />
-        </AuthProvider>
-
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

@@ -1,7 +1,4 @@
-import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { DashboardIcon, CardStackIcon } from '@radix-ui/react-icons';
-
 import navItems from './navItems';
 
 

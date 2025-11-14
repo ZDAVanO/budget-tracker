@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Container, Heading, Section, Text, Flex, Select, Callout, Button, Spinner } from '@radix-ui/themes';
 import { useCurrency } from '../contexts/CurrencyContext.jsx';
 import api from '../services/api.js';

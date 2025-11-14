@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import api from '../services/api';
 import { useLocalStorage } from '../utils/useLocalStorage';
 
@@ -12,7 +12,7 @@ const DEFAULT_RATES = {
     EUR: 0.93,
     UAH: 42.0,
     GBP: 0.79,
-    // ...add more if you want better fallback
+    
   },
   supported: ['USD', 'EUR', 'UAH', 'GBP'],
 };
@@ -44,7 +44,7 @@ const CURRENCY_SYMBOLS = {
   AED: 'د.إ',
   BTC: '₿',
   ETH: 'Ξ',
-  // ...add more as needed
+  
 };
 
 const STORAGE_KEY_BASE = 'bt-base-currency';
@@ -57,10 +57,9 @@ export function CurrencyProvider({ children }) {
 
   useEffect(() => {
     let mounted = true;
-    (async () => {
-      setLoading(true);
-      try {
-        const { response, data } = await api.rates.get();
+    setLoading(true);
+    api.rates.get()
+      .then(({ response, data }) => {
         if (mounted && response?.ok && data?.rates) {
           setRates({
             base: data.base || 'USD',
@@ -68,13 +67,14 @@ export function CurrencyProvider({ children }) {
             supported: data.supported || Object.keys(data.rates),
           });
         }
-      } catch (err) {
+      })
+      .catch((err) => {
         console.warn('Failed to fetch rates, falling back to defaults', err);
         if (mounted) setError(err);
-      } finally {
+      })
+      .finally(() => {
         if (mounted) setLoading(false);
-      }
-    })();
+      });
     return () => { mounted = false; };
   }, []);
 
@@ -92,19 +92,18 @@ export function CurrencyProvider({ children }) {
     };
   }, [rates, baseCurrency]);
 
-  const currencySymbol = (code) => {
+  const currencySymbol = useCallback((code) => {
     const up = (code || '').toUpperCase();
     return CURRENCY_SYMBOLS[up] || up;
-  };
+  }, []);
 
-  const format = (amount, code) => {
+  const format = useCallback((amount, code) => {
     const value = Number(amount || 0);
     const sym = currencySymbol(code);
-    // Simple format: 2 decimals with symbol/code
     return `${value.toFixed(2)} ${sym || (code || '').toUpperCase()}`.trim();
-  };
+  }, [currencySymbol]);
 
-  const value = {
+  const value = useMemo(() => ({
     baseCurrency,
     setBaseCurrency,
     rates,
@@ -114,7 +113,7 @@ export function CurrencyProvider({ children }) {
     format,
     supported: rates?.supported || DEFAULT_RATES.supported,
     currencySymbol,
-  };
+  }), [baseCurrency, setBaseCurrency, rates, loading, error, convert, format, currencySymbol]);
 
   return (
     <CurrencyContext.Provider value={value}>
