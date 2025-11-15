@@ -36,13 +36,163 @@ function useDebouncedValue(value, delay = 300) {
   return debounced;
 }
 
-// MARK: Transactions
-function Transactions() {
+// MARK: filterTransactions
+function filterTransactions(transactions, { filters, selectedMonth, searchQuery }) {
+  const debouncedQuery = searchQuery.trim().toLowerCase();
+  if (debouncedQuery) {
+    return transactions.filter(tx =>
+      tx.title?.toLowerCase().includes(debouncedQuery) ||
+      tx.description?.toLowerCase().includes(debouncedQuery) ||
+      tx.amount?.toString().includes(debouncedQuery)
+    );
+  }
+  return transactions.filter(tx => {
+    const d = new Date(tx.date);
+    // Month filter
+    if (!(d.getFullYear() === selectedMonth.year && (d.getMonth() + 1) === selectedMonth.month)) return false;
+    // Type filter (multi)
+    if (filters.type && filters.type.length && !filters.type.includes(tx.type)) return false;
+    // Category filter (multi)
+    if (filters.category_id && filters.category_id.length && !filters.category_id.includes(String(tx.category_id))) return false;
+    // Wallet filter (multi)
+    if (filters.wallet_id && filters.wallet_id.length && !filters.wallet_id.includes(String(tx.wallet_id))) return false;
+    // Date range
+    if (filters.start_date && new Date(tx.date) < new Date(filters.start_date)) return false;
+    if (filters.end_date && new Date(tx.date) > new Date(filters.end_date)) return false;
+    return true;
+  });
+}
 
+// MARK: calculateSummary
+function calculateSummary(transactions, convert, baseCurrency) {
+  return transactions.reduce(
+    (acc, tx) => {
+      const fromCur = tx.wallet?.currency || 'USD';
+      const value = convert(tx.amount, fromCur, baseCurrency);
+      if (tx.type === 'expense') acc.expense += value;
+      else if (tx.type === 'income') acc.income += value;
+      return acc;
+    },
+    { expense: 0, income: 0, balance: 0 }
+  );
+}
+
+// MARK: getAvailableMonths
+function getAvailableMonths(transactions) {
+  if (!transactions.length) {
+    const now = new Date();
+    return [{ year: now.getFullYear(), month: now.getMonth() + 1 }];
+  }
+  let minDate = new Date();
+  let maxTxDate = new Date(0);
+  transactions.forEach(tx => {
+    const d = new Date(tx.date);
+    if (d < minDate) minDate = d;
+    if (d > maxTxDate) maxTxDate = d;
+  });
+  minDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+  const now = new Date();
+  const maxDate = (maxTxDate > now)
+    ? new Date(maxTxDate.getFullYear(), maxTxDate.getMonth(), 1)
+    : new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const months = [];
+  let cur = new Date(minDate);
+  while (cur <= maxDate) {
+    months.push({ year: cur.getFullYear(), month: cur.getMonth() + 1 });
+    cur.setMonth(cur.getMonth() + 1);
+  }
+  return months.sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
+}
+
+// MARK: useTransactionsData
+function useTransactionsData() {
   const [allTransactions, setAllTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
   const [wallets, setWallets] = useState([]);
-  // const [filters] = useState({ 
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const loadAllTransactions = useCallback(async () => {
+    try {
+      const { response, data } = await api.transactions.getAll({});
+      if (response.ok) {
+        setAllTransactions(data);
+      } else {
+        setError('Error loading transactions');
+      }
+    } catch (error) {
+      setError('❌ Error loading transactions');
+      console.error(error);
+    }
+  }, []);
+
+  const loadCategories = useCallback(async () => {
+    try {
+      const { response, data } = await api.categories.getAll();
+      if (response.ok) {
+        setCategories(data);
+      } else {
+        setError('Error loading categories');
+      }
+    } catch (error) {
+      setError('❌ Error loading categories');
+      console.error(error);
+    }
+  }, []);
+
+  const loadWallets = useCallback(async () => {
+    try {
+      const { response, data } = await api.wallets.getAll();
+      if (response.ok) {
+        setWallets(data);
+      } else {
+        setError('Error loading wallets');
+      }
+    } catch (error) {
+      setError('❌ Error loading wallets');
+      console.error(error);
+    }
+  }, []);
+
+  const loadData = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    await Promise.all([
+      loadAllTransactions(),
+      loadCategories(),
+      loadWallets(),
+    ]);
+    setIsLoading(false);
+  }, [loadAllTransactions, loadCategories, loadWallets]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  return {
+    allTransactions,
+    categories,
+    wallets,
+    isLoading,
+    error,
+    reload: loadData,
+    reloadTransactions: loadAllTransactions,
+  };
+}
+
+// MARK: Transactions
+function Transactions() {
+
+  const {
+    allTransactions,
+    categories,
+    wallets,
+    isLoading,
+    error,
+    reloadTransactions,
+  } = useTransactionsData();
+
   const [filters, setFilters] = useState({
     type: ['expense', 'income'],
     category_id: [],
@@ -51,7 +201,6 @@ function Transactions() {
     end_date: '',
   });
   const [editingTransaction, setEditingTransaction] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -71,180 +220,20 @@ function Transactions() {
   const { baseCurrency, convert, format } = useCurrency();
 
 
-  // MARK: loadAllTransactions
-  const loadAllTransactions = useCallback(async () => {
-    try {
-      const { response, data } = await api.transactions.getAll({});
-      if (response.ok) {
-        setAllTransactions(data);
-      }
-    } catch (error) {
-      console.error('❌ Error loading all transactions:', error);
-    }
-  }, []);
-
-
-  // MARK: loadCategories
-  const loadCategories = useCallback(async () => {
-    try {
-      const { response, data } = await api.categories.getAll();
-      if (response.ok) {
-        setCategories(data);
-      }
-    } catch (error) {
-      console.error('❌ Error loading categories:', error);
-    }
-  }, []);
-
-
-  // MARK: loadWallets
-  const loadWallets = useCallback(async () => {
-    try {
-      const { response, data } = await api.wallets.getAll();
-      if (response.ok) {
-        setWallets(data);
-      }
-    } catch (error) {
-      console.error('❌ Error loading wallets:', error);
-    }
-  }, []);
-
-
-  // MARK: loadData
-  const loadData = useCallback(async () => {
-    setIsLoading(true);
-    await Promise.all([
-      loadAllTransactions(),
-      loadCategories(),
-      loadWallets(),
-    ]);
-    setIsLoading(false);
-  }, [loadAllTransactions, loadCategories, loadWallets]);
-
-  
-  // MARK: useEffect
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-
-  // MARK: handleFormOpenChange
-  const handleFormOpenChange = (open) => {
-    setIsFormOpen(open);
-    if (!open) setEditingTransaction(null);
-  };
-
-
-  // MARK: handleCreateClick
-  const handleCreateClick = () => {
-    setEditingTransaction(null);
-    setIsFormOpen(true);
-  };
-
-
-  // MARK: handleEdit
-  const handleEdit = (transaction) => {
-    setEditingTransaction(transaction);
-    setIsFormOpen(true);
-  };
-
-
-  // MARK: confirmDelete
-  const confirmDelete = async () => {
-    if (!transactionToDelete) return;
-    try {
-      const { response } = await api.transactions.delete(transactionToDelete.id);
-
-      if (response.ok) {
-        // loadTransactions();
-        loadAllTransactions(); // Оновлюємо всі транзакції
-        setIsFormOpen(false); // Закриваємо форму після видалення
-        setEditingTransaction(null); // Скидаємо редаговану транзакцію
-      } else {
-        alert('Error deleting transaction');
-      }
-    } catch (error) {
-      console.error('❌ Error deleting transaction:', error);
-      alert('Error deleting transaction');
-    } finally {
-      setTransactionToDelete(null);
-    }
-  };
-
-  // Helper: get available months from transactions (from oldest to newest, including future)
-  const getAvailableMonths = () => {
-    if (!allTransactions.length) {
-      // Якщо транзакцій немає, повертаємо лише поточний місяць
-      const now = new Date();
-      return [{ year: now.getFullYear(), month: now.getMonth() + 1 }];
-    }
-    // Знаходимо найстарішу та найновішу дату серед транзакцій
-    let minDate = new Date();
-    let maxTxDate = new Date(0);
-    allTransactions.forEach(tx => {
-      const d = new Date(tx.date);
-      if (d < minDate) minDate = d;
-      if (d > maxTxDate) maxTxDate = d;
-    });
-    // Початок: перше число найстарішого місяця
-    minDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
-    // Кінець: перше число найбільшого з поточного місяця або останньої транзакції
-    const now = new Date();
-    const maxDate = (maxTxDate > now)
-      ? new Date(maxTxDate.getFullYear(), maxTxDate.getMonth(), 1)
-      : new Date(now.getFullYear(), now.getMonth(), 1);
-
-    const months = [];
-    let cur = new Date(minDate);
-    while (cur <= maxDate) {
-      months.push({ year: cur.getFullYear(), month: cur.getMonth() + 1 });
-      cur.setMonth(cur.getMonth() + 1);
-    }
-    // Сортуємо від старих до нових (зліва - старі, справа - нові)
-    return months.sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
-  };
-
   // Filter transactions by selected month and filters
-  const filteredTransactions = debouncedSearchQuery.trim()
-    ? allTransactions.filter(tx => {
-        const q = debouncedSearchQuery.trim().toLowerCase();
-        return (
-          tx.title?.toLowerCase().includes(q) ||
-          tx.description?.toLowerCase().includes(q) ||
-          tx.amount?.toString().includes(q)
-        );
-      })
-    : allTransactions.filter(tx => {
-        const d = new Date(tx.date);
-        // Month filter
-        if (!(d.getFullYear() === selectedMonth.year && (d.getMonth() + 1) === selectedMonth.month)) return false;
-        // Type filter (multi)
-        if (filters.type && filters.type.length && !filters.type.includes(tx.type)) return false;
-        // Category filter (multi)
-        if (filters.category_id && filters.category_id.length && !filters.category_id.includes(String(tx.category_id))) return false;
-        // Wallet filter (multi)
-        if (filters.wallet_id && filters.wallet_id.length && !filters.wallet_id.includes(String(tx.wallet_id))) return false;
-        // Date range
-        if (filters.start_date && new Date(tx.date) < new Date(filters.start_date)) return false;
-        if (filters.end_date && new Date(tx.date) > new Date(filters.end_date)) return false;
-        return true;
-      });
+  const filteredTransactions = filterTransactions(allTransactions, {
+    filters,
+    selectedMonth,
+    searchQuery: debouncedSearchQuery,
+  });
 
-  // Summary for selected month or search results
-  const summary = filteredTransactions.reduce(
-    (acc, tx) => {
-      const fromCur = tx.wallet?.currency || 'USD';
-      const value = convert(tx.amount, fromCur, baseCurrency);
-      if (tx.type === 'expense') acc.expense += value;
-      else if (tx.type === 'income') acc.income += value;
-      return acc;
-    },
-    { expense: 0, income: 0 }
-  );
-  summary.balance = summary.income - summary.expense;
+  // Summary
+  const summaryObj = calculateSummary(filteredTransactions, convert, baseCurrency);
+  summaryObj.balance = summaryObj.income - summaryObj.expense;
+  const summary = summaryObj;
 
-  // For switching months
-  const availableMonths = getAvailableMonths();
+  // Available months
+  const availableMonths = getAvailableMonths(allTransactions);
   const [tabValue, setTabValue] = useState(() => {
     const m = availableMonths.find(m => m.year === selectedMonth.year && m.month === selectedMonth.month);
     return m ? `${m.year}-${String(m.month).padStart(2, '0')}` : '';
@@ -313,6 +302,61 @@ function Transactions() {
 
   }, [tabValue, availableTabValues.length]);
 
+
+  // MARK: handleFormOpenChange
+  const handleFormOpenChange = (open) => {
+    setIsFormOpen(open);
+    if (!open) setEditingTransaction(null);
+  };
+
+
+  // MARK: handleCreateClick
+  const handleCreateClick = () => {
+    setEditingTransaction(null);
+    setIsFormOpen(true);
+  };
+
+
+  // MARK: handleEdit
+  const handleEdit = (transaction) => {
+    setEditingTransaction(transaction);
+    setIsFormOpen(true);
+  };
+
+
+  // MARK: confirmDelete
+  const confirmDelete = async () => {
+    if (!transactionToDelete) return;
+    try {
+      const { response } = await api.transactions.delete(transactionToDelete.id);
+      if (response.ok) {
+        reloadTransactions(); // Reload list
+        setIsFormOpen(false);
+        setEditingTransaction(null);
+      } else {
+        alert('Error deleting transaction');
+      }
+    } catch (error) {
+      console.error('❌ Error deleting transaction:', error);
+      alert('Error deleting transaction');
+    } finally {
+      setTransactionToDelete(null);
+    }
+  };
+
+  if (error) {
+    return (
+      <Section size="3" className="p-4">
+        <Container size="3">
+          <Flex direction="column" gap="4">
+            <Callout.Root color="red" style={{ marginBottom: 16 }}>
+              <Callout.Text>{error}</Callout.Text>
+            </Callout.Root>
+          </Flex>
+        </Container>
+      </Section>
+    );
+  }
 
   // MARK: render
   return (
@@ -533,7 +577,7 @@ function Transactions() {
               if (result.response.ok) {
                 setIsFormOpen(false);
                 setEditingTransaction(null);
-                loadAllTransactions();
+                reloadTransactions();
                 return { success: true };
               }
               return { success: false, error: result.data?.msg || 'Error saving' };
