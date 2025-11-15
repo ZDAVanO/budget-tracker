@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, abort, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, Transaction
+from sqlalchemy.orm import selectinload
 
 bp = Blueprint('transactions', __name__, url_prefix='/api/transactions')
 
@@ -38,7 +39,10 @@ def get_transactions():
     if end_date:
         query = query.filter(Transaction.date <= datetime.fromisoformat(end_date))
     
-    transactions = query.order_by(
+    transactions = query.options(
+        selectinload(Transaction.category),
+        selectinload(Transaction.wallet)
+    ).order_by(
         Transaction.date.desc(),
         Transaction.modified_at.desc()
     ).all()

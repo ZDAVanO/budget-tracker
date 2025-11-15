@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import Transaction
+from sqlalchemy.orm import selectinload
 
 from datetime import datetime
 
@@ -28,7 +29,8 @@ def get_statistics():
     if end_date:
         query = query.filter(Transaction.date <= datetime.fromisoformat(end_date))
 
-    transactions = query.all()
+    # transactions = query.all()
+    transactions = query.options(selectinload(Transaction.wallet)).all()
 
     total_expenses = 0.0
     total_incomes = 0.0
