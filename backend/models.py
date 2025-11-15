@@ -1,6 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
 # from flask_login import UserMixin
-
 db = SQLAlchemy()
 
 
@@ -30,7 +29,7 @@ class Wallet(db.Model):
     
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     
-    transactions = db.relationship('Transaction', backref='wallet', lazy=True)
+    transactions = db.relationship('Transaction', backref='wallet', lazy='selectin')
     
     def get_balance(self):
         """Розрахунок поточного балансу гаманця"""
@@ -161,7 +160,7 @@ def create_default_wallets_for_user(user_id):
         )
         db.session.add(wallet)
     
-    db.session.commit()   
+    db.session.commit()
 
 
 
