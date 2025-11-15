@@ -1,4 +1,3 @@
-import React from 'react';
 import { IconButton, Tooltip, DropdownMenu } from '@radix-ui/themes';
 import { MoonIcon, SunIcon, GearIcon } from '@radix-ui/react-icons';
 import { useThemeMode } from '../contexts/ThemeContext';

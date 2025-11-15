@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link as RadixLink, Text, Separator } from '@radix-ui/themes';
 import { GitHubLogoIcon } from '@radix-ui/react-icons';
 

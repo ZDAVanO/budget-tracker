@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Badge,
   Button,
@@ -21,9 +21,25 @@ import {
 import { Pencil2Icon, TrashIcon, PlusCircledIcon, Cross2Icon } from '@radix-ui/react-icons';
 import api from '../services/api';
 
+// MARK: Protected categories
+const protectedCategoryNames = ['Uncategorized', 'Adjust Balance'];
+const isProtectedCategory = (category) =>
+  protectedCategoryNames.includes(category.name);
+
+// MARK: typeBadge
+const typeBadge = (type) => {
+  const style = { width: 'fit-content', paddingRight: 8 };
+  if (type === 'income') {
+    return <Badge color="mint" style={style}>Income</Badge>;
+  }
+  if (type === 'expense') {
+    return <Badge color="tomato" style={style}>Expense</Badge>;
+  }
+  return <Badge color="gray" style={style}>For all</Badge>;
+};
+
 // MARK: Categories
 function Categories() {
-
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -60,10 +76,15 @@ function Categories() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const resetForm = () => {
+    setFormData({ name: '', description: '', icon: '📌', type: 'both' });
+    setEditingCategory(null);
+    setError('');
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
-
     try {
       if (editingCategory) {
         const { response, data } = await api.categories.update(editingCategory.id, formData);
@@ -78,22 +99,21 @@ function Categories() {
           return;
         }
       }
-
-      setFormData({ name: '', description: '', icon: '📌', type: 'both' });
+      resetForm();
       setIsFormOpen(false);
-      setEditingCategory(null);
       loadCategories();
-
     } catch (saveError) {
       console.error('Error saving category:', saveError);
       setError('Error saving');
     }
   };
 
-
   // MARK: handleEdit
   const handleEdit = (category) => {
-    if (isProtectedCategory(category)) return; // Забороняємо редагування
+    if (isProtectedCategory(category)) {
+      alert('This category cannot be edited.');
+      return;
+    }
     setEditingCategory(category);
     setFormData({
       name: category.name,
@@ -104,13 +124,14 @@ function Categories() {
     setIsFormOpen(true);
   };
 
-
   // MARK: handleDelete
   const handleDelete = (category) => {
-    if (isProtectedCategory(category)) return; // Забороняємо видалення
+    if (isProtectedCategory(category)) {
+      alert('This category cannot be deleted.');
+      return;
+    }
     setCategoryToDelete(category);
   };
-
 
   // MARK: confirmDelete
   const confirmDelete = async () => {
@@ -129,65 +150,33 @@ function Categories() {
         alert(errorMsg);
         console.error('Delete error:', { status: response.status, data });
       }
-
     } catch (deleteError) {
       console.error('Error deleting category:', deleteError);
       alert('Error deleting category');
-
     } finally {
       setCategoryToDelete(null);
     }
   };
 
-
   // MARK: handleCancelForm
   const handleCancelForm = () => {
     setIsFormOpen(false);
-    setEditingCategory(null);
-    setFormData({ name: '', description: '', icon: '📌', type: 'both' });
-    setError('');
+    resetForm();
   };
 
-  
   // MARK: handleCreateClick
   const handleCreateClick = () => {
-    setEditingCategory(null);
-    setFormData({ name: '', description: '', icon: '📌', type: 'both' });
-    setError('');
+    resetForm();
     setIsFormOpen(true);
   };
-
 
   // MARK: handleFormOpenChange
   const handleFormOpenChange = (open) => {
     setIsFormOpen(open);
     if (!open) {
-      setEditingCategory(null);
-      setFormData({ name: '', description: '', icon: '📌', type: 'both' });
-      setError('');
+      resetForm();
     }
   };
-
-  
-  // MARK: typeBadge
-  const typeBadge = (type) => {
-    const style = { width: 'fit-content', paddingRight: 8 };
-    if (type === 'income') {
-      return <Badge color="mint" style={style}>Income</Badge>;
-    }
-    if (type === 'expense') {
-      return <Badge color="tomato" style={style}>Expense</Badge>;
-    }
-    return <Badge color="gray" style={style}>For all</Badge>;
-  };
-
-  
-  // MARK: Protected categories
-  // Назви категорій, які не можна редагувати чи видаляти
-  const protectedCategoryNames = ['Uncategorized', 'Adjust Balance'];
-  const isProtectedCategory = (category) =>
-    protectedCategoryNames.includes(category.name);
-
 
   // MARK: render
   return (

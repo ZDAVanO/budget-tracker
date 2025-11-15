@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Badge,
   Card,
@@ -22,7 +22,72 @@ const CHART_COLORS = [
   '#CDB4DB', '#F1C0E8', '#A3C4F3', '#B5EAD7', '#E2F0CB', '#FFB7B2', '#FFDAC1', '#B5EAD7', '#C7CEEA', '#E2F0CB'
 ];
 
-// MARK: Spending (All Spending)
+
+// MARK: filterTransactions
+const filterTransactions = (transactions, filters) => {
+  return transactions.filter(t => {
+    // Types
+    if (filters.type && filters.type.length && !filters.type.includes(t.type)) return false;
+
+    // Categories (handle nested or id fields)
+    if (filters.category_id && filters.category_id.length) {
+      const catId = String(t.category?.id ?? t.category_id ?? '');
+      if (!filters.category_id.includes(catId)) return false;
+    }
+
+    // Wallets
+    if (filters.wallet_id && filters.wallet_id.length) {
+      const walId = String(t.wallet?.id ?? t.wallet_id ?? '');
+      if (!filters.wallet_id.includes(walId)) return false;
+    }
+
+    // Dates (t.date expected ISO or YYYY-MM-DD)
+    if (filters.start_date) {
+      const d = new Date(t.date);
+      const s = new Date(filters.start_date);
+      s.setHours(0, 0, 0, 0);
+      if (d < s) return false;
+    }
+    if (filters.end_date) {
+      const d = new Date(t.date);
+      const e = new Date(filters.end_date);
+      e.setHours(23, 59, 59, 999);
+      if (d > e) return false;
+    }
+    return true;
+  });
+};
+
+
+// MARK: computeTotals
+const computeTotals = (filtered, convert, baseCurrency) => {
+  let expenses = 0;
+  let incomes = 0;
+  let expenseCount = 0;
+  let incomeCount = 0;
+  for (const t of filtered) {
+    const fromCur = t.wallet?.currency || 'USD';
+    const amt = convert(Number(t.amount) || 0, fromCur, baseCurrency);
+    if (t.type === 'expense') {
+      expenses += amt;
+      expenseCount += 1;
+    } else if (t.type === 'income') {
+      incomes += amt;
+      incomeCount += 1;
+    }
+  }
+  return {
+    expenses: Number(expenses.toFixed(2)),
+    incomes: Number(incomes.toFixed(2)),
+    balance: Number((incomes - expenses).toFixed(2)),
+    expenseCount,
+    incomeCount,
+    totalCount: filtered.length,
+  };
+};
+
+
+// MARK: Spending
 function Spending() {
   // MARK: state
   const [transactions, setTransactions] = useState([]);
@@ -42,35 +107,19 @@ function Spending() {
   const { baseCurrency, convert, format } = useCurrency();
 
 
-  // MARK: loadTransactions
-  const loadTransactions = useCallback(async () => {
+  // MARK: loadData (combined loading function)
+  const loadData = useCallback(async () => {
     try {
-      const { response, data } = await api.transactions.getAll();
-      if (response.ok) setTransactions(data || []);
+      const [txRes, catRes, walRes] = await Promise.all([
+        api.transactions.getAll(),
+        api.categories.getAll(),
+        api.wallets.getAll(),
+      ]);
+      if (txRes.response.ok) setTransactions(txRes.data || []);
+      if (catRes.response.ok) setCategories(catRes.data || []);
+      if (walRes.response.ok) setWallets(walRes.data || []);
     } catch (err) {
-      console.error('Error loading transactions:', err);
-    }
-  }, []);
-
-
-    // MARK: loadCategories
-  const loadCategories = useCallback(async () => {
-    try {
-      const { response, data } = await api.categories.getAll();
-      if (response.ok) setCategories(data || []);
-    } catch (err) {
-      console.error('Error loading categories:', err);
-    }
-  }, []);
-
-
-    // MARK: loadWallets
-  const loadWallets = useCallback(async () => {
-    try {
-      const { response, data } = await api.wallets.getAll();
-      if (response.ok) setWallets(data || []);
-    } catch (err) {
-      console.error('Error loading wallets:', err);
+      console.error('Error loading data:', err);
     }
   }, []);
 
@@ -80,77 +129,21 @@ function Spending() {
     const run = async () => {
       setLoading(true);
       try {
-        await Promise.all([loadTransactions(), loadCategories(), loadWallets()]);
+        await loadData();
       } finally {
         setLoading(false);
       }
     };
     run();
-  }, [loadTransactions, loadCategories, loadWallets]);
+  }, [loadData]);
 
 
   // MARK: filtered
-  const filtered = useMemo(() => {
-    return (transactions || []).filter(t => {
-      // Types
-      if (filters.type && filters.type.length && !filters.type.includes(t.type)) return false;
-
-      // Categories (handle nested or id fields)
-      if (filters.category_id && filters.category_id.length) {
-        const catId = String(t.category?.id ?? t.category_id ?? '');
-        if (!filters.category_id.includes(catId)) return false;
-      }
-
-      // Wallets
-      if (filters.wallet_id && filters.wallet_id.length) {
-        const walId = String(t.wallet?.id ?? t.wallet_id ?? '');
-        if (!filters.wallet_id.includes(walId)) return false;
-      }
-
-      // Dates (t.date expected ISO or YYYY-MM-DD)
-      if (filters.start_date) {
-        const d = new Date(t.date);
-        const s = new Date(filters.start_date);
-        s.setHours(0,0,0,0);
-        if (d < s) return false;
-      }
-      if (filters.end_date) {
-        const d = new Date(t.date);
-        const e = new Date(filters.end_date);
-        e.setHours(23,59,59,999);
-        if (d > e) return false;
-      }
-      return true;
-    });
-  }, [transactions, filters]);
+  const filtered = useMemo(() => filterTransactions(transactions || [], filters), [transactions, filters]);
 
 
   // MARK: totals
-  const totals = useMemo(() => {
-    let expenses = 0;
-    let incomes = 0;
-    let expenseCount = 0;
-    let incomeCount = 0;
-    for (const t of filtered) {
-      const fromCur = t.wallet?.currency || 'USD';
-      const amt = convert(Number(t.amount) || 0, fromCur, baseCurrency);
-      if (t.type === 'expense') {
-        expenses += amt;
-        expenseCount += 1;
-      } else if (t.type === 'income') {
-        incomes += amt;
-        incomeCount += 1;
-      }
-    }
-    return {
-      expenses: Number(expenses.toFixed(2)),
-      incomes: Number(incomes.toFixed(2)),
-      balance: Number((incomes - expenses).toFixed(2)),
-      expenseCount,
-      incomeCount,
-      totalCount: filtered.length,
-    };
-  }, [filtered, convert, baseCurrency]);
+  const totals = useMemo(() => computeTotals(filtered, convert, baseCurrency), [filtered, convert, baseCurrency]);
 
 
   // MARK: buildCategoryPie
@@ -224,7 +217,7 @@ function Spending() {
   return (
     <Section size="3" className="p-4">
       <Container size="3">
-        <Flex direction="column" gap="5">
+        <Flex direction="column" gap="4">
           {/* MARK: header row with title and filters button */}
           <Flex align="center" justify="between" wrap="wrap" gap="3">
             <Heading size="7">All Spending</Heading>
@@ -280,7 +273,7 @@ function Spending() {
           </Card>
 
           {/* MARK: charts */}
-          <Grid columns={{ initial: '1', md: '2' }} gap="5">
+          <Grid columns={{ initial: '1', md: '2' }} gap="4">
             <Card variant="surface" size="3">
               <Flex direction="column" gap="3">
                 <Heading size="5" align="center">Expenses by Category</Heading>

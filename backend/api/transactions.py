@@ -39,12 +39,14 @@ def get_transactions():
     if end_date:
         query = query.filter(Transaction.date <= datetime.fromisoformat(end_date))
     
-    # transactions = query.order_by(Transaction.date.desc()).all()
     transactions = query.options(
         selectinload(Transaction.category),
         selectinload(Transaction.wallet)
-    ).order_by(Transaction.date.desc()).all()
-
+    ).order_by(
+        Transaction.date.desc(),
+        Transaction.modified_at.desc()
+    ).all()
+    
     return jsonify([t.to_dict() for t in transactions])
 
 
@@ -71,7 +73,8 @@ def create_transaction():
         type=data.get('type'),
         category_id=data.get('category_id'),
         wallet_id=data.get('wallet_id'),
-        user_id=user_id
+        user_id=user_id,
+        modified_at=datetime.utcnow()
     )
 
     db.session.add(transaction)
@@ -117,6 +120,8 @@ def update_transaction(transaction_id):
         transaction.category_id = data['category_id']
     if 'wallet_id' in data:
         transaction.wallet_id = data['wallet_id']
+
+    transaction.modified_at = datetime.utcnow()
 
     db.session.commit()
 

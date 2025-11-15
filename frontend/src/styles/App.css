@@ -19,3 +19,12 @@
     display: block;
   }
 }
+
+
+
+.transaction-card {
+  transition: background 0.18s;
+}
+.transaction-card:hover {
+  background: var(--accent-3);
+}

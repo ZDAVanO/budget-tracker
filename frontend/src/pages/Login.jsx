@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Button,
@@ -11,17 +11,17 @@ import {
 import { LockClosedIcon } from '@radix-ui/react-icons';
 import api from '../services/api';
 
+// MARK: constants
+const INITIAL_FORM = { username: '', password: '' };
+
 // MARK: Login 
 function Login({ onLoginSuccess }) {
-
-  const [formData, setFormData] = useState({ username: '', password: '' });
+  const [formData, setFormData] = useState(INITIAL_FORM);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-
   console.log('🎨 Login page render');
-
 
   // MARK: handleChange
   const handleChange = (e) => {
@@ -37,22 +37,22 @@ function Login({ onLoginSuccess }) {
     setError('');
     setIsLoading(true);
 
-    console.log('🔐 Login: Спроба входу, username:', formData.username);
+    console.log('🔐 Login: Attempting login, username:', formData.username);
 
     try {
       const { response, data } = await api.auth.login(formData.username, formData.password);
 
       if (response.ok) {
-        console.log('✅ Login: Вхід успішний, викликаємо onLoginSuccess');
+        console.log('✅ Login: Login successful, calling onLoginSuccess');
         onLoginSuccess();
         navigate('/dashboard');
       } else {
-        console.warn('⚠️ Login: Помилка входу', data);
+        console.warn('⚠️ Login: Login error', data);
         setError(data?.msg || 'Invalid username or password');
       }
 
     } catch (err) {
-      console.error('❌ Login: Виняток при вході', err);
+      console.error('❌ Login: Exception during login', err);
       setError('Failed to connect to server');
 
     } finally {

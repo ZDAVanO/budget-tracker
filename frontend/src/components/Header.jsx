@@ -1,8 +1,6 @@
-import React from 'react';
 import moneyBagIcon from '../assets/money-bag-noto.svg';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
-  Avatar,
   Button,
   DropdownMenu,
   IconButton,
@@ -11,22 +9,13 @@ import {
   Text,
   Heading,
 } from '@radix-ui/themes';
-import { ExitIcon, GearIcon } from '@radix-ui/react-icons';
 
 import ThemeToggleButton from './ThemeToggleButton';
+import UserMenu from './UserMenu';
 
 
 // MARK: Header
 function Header({ isLoggedIn, user, onLogout }) {
-  const navigate = useNavigate();
-
-
-  // MARK: handleLogout
-  const handleLogout = () => {
-    onLogout();
-    navigate('/');
-  };
-
 
   // MARK: Render
   return (
@@ -61,37 +50,7 @@ function Header({ isLoggedIn, user, onLogout }) {
 
             <div className="flex items-center gap-2">
               {isLoggedIn ? (
-                <DropdownMenu.Root>
-                  <DropdownMenu.Trigger>
-
-                    <div className="flex items-center gap-3 cursor-pointer">
-                      <Text size="3" color="gray">
-                        {user}
-                      </Text>
-                      <Avatar
-                        // radius="full"
-                        fallback={user ? user[0]?.toUpperCase() : 'U'}
-                        color="mint"
-                      />
-                    </div>
-
-                  </DropdownMenu.Trigger>
-                  <DropdownMenu.Content align="end" variant="soft">
-
-                    <DropdownMenu.Item onClick={() => navigate('/settings')}>
-                      <GearIcon /> Settings
-                    </DropdownMenu.Item>
-
-                    <DropdownMenu.Separator />
-
-                    <DropdownMenu.Item color="red" onClick={handleLogout}>
-                      {/* <div className="flex items-center gap-2"> */}
-                        <ExitIcon /> Logout
-                      {/* </div> */}
-                    </DropdownMenu.Item>
-
-                  </DropdownMenu.Content>
-                </DropdownMenu.Root>
+                <UserMenu user={user} onLogout={onLogout} />
               ) : (
                 <div className="flex items-center gap-2">
                   <Button asChild variant="soft" color="gray" size="2">

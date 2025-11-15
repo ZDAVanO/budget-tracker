@@ -1,5 +1,4 @@
-
-import React, { useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { useThemeMode } from '../contexts/ThemeContext';
 import {
   Chart,
@@ -11,9 +10,7 @@ import {
 Chart.register(DoughnutController, ArcElement, Tooltip, Legend);
 
 const DonutPieChart = ({ data, labels, colors, title }) => {
-//   const { effectiveAppearance = 'light' } = useThemeMode?.() || {};
-    const { effectiveAppearance } = useThemeMode();
-
+  const { effectiveAppearance } = useThemeMode();
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
 

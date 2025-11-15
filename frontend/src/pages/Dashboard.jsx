@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Badge,
@@ -14,7 +14,7 @@ import {
   Table,
   Text,
 } from '@radix-ui/themes';
-import { ArrowRightIcon, LightningBoltIcon } from '@radix-ui/react-icons';
+import { LightningBoltIcon } from '@radix-ui/react-icons';
 import api from '../services/api';
 import DonutPieChart from '../components/DonutPieChart';
 import NetWorthChart from '../components/NetWorthChart';
@@ -240,6 +240,96 @@ function Dashboard({ user }) {
     .reduce((sum, t) => sum + convert(t.amount, t.wallet?.currency || 'USD', baseCurrency), 0);
 
 
+  // MARK: RecentTransactions component
+  function RecentTransactions({ transactions, isLoading, baseCurrency, convert, formatAmount }) {
+    if (isLoading) {
+      return (
+        <Flex align="center" justify="center" style={{ minHeight: 160 }}>
+          <Spinner />
+        </Flex>
+      );
+    }
+    if (transactions.length === 0) {
+      return (
+        <Callout.Root>
+          <Callout.Icon>
+            <LightningBoltIcon />
+          </Callout.Icon>
+          <Callout.Text>
+            <Text color="gray">No transactions yet. Create your first one now.</Text>
+          </Callout.Text>
+        </Callout.Root>
+      );
+    }
+    return (
+      <Table.Root>
+        <Table.Header>
+          <Table.Row>
+            <Table.ColumnHeaderCell>Category</Table.ColumnHeaderCell>
+            <Table.ColumnHeaderCell>Description</Table.ColumnHeaderCell>
+            <Table.ColumnHeaderCell align="end">Amount</Table.ColumnHeaderCell>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          {transactions.map((transaction) => (
+            <Table.Row key={`${transaction.type}-${transaction.id}`}>
+              <Table.Cell>{transaction.category?.name || 'No category'}</Table.Cell>
+              <Table.Cell>{transaction.description || transaction.title}</Table.Cell>
+              <Table.Cell align="end" style={{ whiteSpace: 'nowrap' }}>
+                <Text weight="bold" color={transaction.type === 'expense' ? 'tomato' : 'jade'}>
+                  {transaction.type === 'expense' ? '-' : '+'}
+                  {formatAmount(convert(transaction.amount, transaction.wallet?.currency || 'USD', baseCurrency), baseCurrency)}
+                </Text>
+              </Table.Cell>
+            </Table.Row>
+          ))}
+        </Table.Body>
+      </Table.Root>
+    );
+  }
+
+  // MARK: WalletsList component
+  function WalletsList({ wallets, isLoading, formatAmount }) {
+    if (isLoading) {
+      return (
+        <Flex align="center" justify="center" style={{ minHeight: 160 }}>
+          <Spinner />
+        </Flex>
+      );
+    }
+    if (wallets.length === 0) {
+      return (
+        <Callout.Root>
+          <Callout.Text>
+            <Text color="gray">
+              No wallets. <Link to="/wallets">Add your first wallet</Link>
+            </Text>
+          </Callout.Text>
+        </Callout.Root>
+      );
+    }
+    return (
+      <Flex direction="column" gap="3">
+        {wallets.slice(0, 4).map((wallet) => (
+          <Card key={wallet.id} variant="surface">
+            <Flex justify="between" align="center">
+              <Flex align="center" gap="3">
+                <Text size="4">{wallet.icon}</Text>
+                <Flex direction="column" gap="1">
+                  <Text weight="medium">{wallet.name}</Text>
+                  <Text size="2" color="gray">
+                    {wallet.description || 'No description'}
+                  </Text>
+                </Flex>
+              </Flex>
+              <Text weight="bold">{formatAmount(wallet.balance || 0, wallet.currency)}</Text>
+            </Flex>
+          </Card>
+        ))}
+      </Flex>
+    );
+  }
+
   // MARK: render
 
   return (
@@ -302,51 +392,18 @@ function Dashboard({ user }) {
                     <Link to="/transactions">View All</Link>
                   </Button>
                 </Flex>
-
-                {isLoading ? (
-                  <Flex align="center" justify="center" style={{ minHeight: 160 }}>
-                    <Spinner />
-                  </Flex>
-                ) : recentTransactions.length === 0 ? (
-                  <Callout.Root>
-                    <Callout.Icon>
-                      <LightningBoltIcon />
-                    </Callout.Icon>
-                    <Callout.Text>
-                      <Text color="gray">No transactions yet. Create your first one now.</Text>
-                    </Callout.Text>
-                  </Callout.Root>
-                ) : (
-                  <Table.Root>
-                    <Table.Header>
-                      <Table.Row>
-                        <Table.ColumnHeaderCell>Category</Table.ColumnHeaderCell>
-                        <Table.ColumnHeaderCell>Description</Table.ColumnHeaderCell>
-                        <Table.ColumnHeaderCell align="end">Amount</Table.ColumnHeaderCell>
-                      </Table.Row>
-                    </Table.Header>
-                    <Table.Body>
-                      {recentTransactions.map((transaction) => (
-                        <Table.Row key={`${transaction.type}-${transaction.id}`}>
-                          <Table.Cell>{transaction.category?.name || 'No category'}</Table.Cell>
-                          <Table.Cell>{transaction.description || transaction.title}</Table.Cell>
-                          <Table.Cell align="end" style={{ whiteSpace: 'nowrap' }}>
-                            <Text weight="bold" color={transaction.type === 'expense' ? 'tomato' : 'jade'}>
-                              {transaction.type === 'expense' ? '-' : '+'}
-                              {formatAmount(convert(transaction.amount, transaction.wallet?.currency || 'USD', baseCurrency), baseCurrency)}
-                            </Text>
-                          </Table.Cell>
-                        </Table.Row>
-                      ))}
-                    </Table.Body>
-                  </Table.Root>
-                )}
+                <RecentTransactions
+                  transactions={recentTransactions}
+                  isLoading={isLoading}
+                  baseCurrency={baseCurrency}
+                  convert={convert}
+                  formatAmount={formatAmount}
+                />
               </Flex>
             </Card>
 
             {/* MARK: Wallets */}
             <Card size="3" variant="classic">
-              
               <Flex direction="column" gap="4">
                 <Flex align="center" justify="between">
                   <Heading size="5">Wallets</Heading>
@@ -354,47 +411,12 @@ function Dashboard({ user }) {
                     <Link to="/wallets">Manage</Link>
                   </Button>
                 </Flex>
-
-                {isLoading ? (
-                  <Flex align="center" justify="center" style={{ minHeight: 160 }}>
-                    <Spinner />
-                  </Flex>
-                ) :wallets.length === 0 ? (
-                  <Callout.Root>
-                    <Callout.Text>
-                      <Text color="gray">
-                        No wallets. <Link to="/wallets">Add your first wallet</Link>
-                      </Text>
-                    </Callout.Text>
-                  </Callout.Root>
-                ) : (
-                  <Flex direction="column" gap="3">
-                    {wallets.slice(0, 4).map((wallet) => (
-                      <Card
-                        key={wallet.id}
-                        variant="surface"
-                      >
-
-                        <Flex justify="between" align="center">
-                          <Flex align="center" gap="3">
-                            <Text size="4">{wallet.icon}</Text>
-                            <Flex direction="column" gap="1">
-                              <Text weight="medium">{wallet.name}</Text>
-                              <Text size="2" color="gray">
-                                {wallet.description || 'No description'}
-                              </Text>
-                            </Flex>
-                          </Flex>
-                          <Text weight="bold">{formatAmount(wallet.balance || 0, wallet.currency)}</Text>
-                        </Flex>
-
-                      </Card>
-
-                    ))}
-                  </Flex>
-                )}
+                <WalletsList
+                  wallets={wallets}
+                  isLoading={isLoading}
+                  formatAmount={formatAmount}
+                />
               </Flex>
-
             </Card>
 
 

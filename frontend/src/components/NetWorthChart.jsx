@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { useThemeMode } from '../contexts/ThemeContext';
 import {
   Chart,

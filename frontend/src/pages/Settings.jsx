@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Container, Heading, Section, Text, Flex, Select, Callout, Button, Spinner } from '@radix-ui/themes';
 import { useCurrency } from '../contexts/CurrencyContext.jsx';
 import api from '../services/api.js';
@@ -66,15 +66,23 @@ function Settings() {
 
         <div className="mt-8">
           <Heading size="5" mb="3">Exchange rates</Heading>
-          <Callout.Root color="gray">
-            <Flex direction="column" gap="1">
-              {supported.map((cur) => (
-                <Text size="2" key={cur}>
-                  {cur}: {rates?.rates?.[cur] ?? '-'}
-                </Text>
-              ))}
-            </Flex>
-          </Callout.Root>
+
+            <div
+              style={{
+                maxHeight: 250,
+                overflowY: 'auto',
+                scrollbarWidth: 'thin',
+              }}
+            >
+              <Flex direction="column" gap="1">
+                {supported.map((cur) => (
+                  <Text size="2" key={cur}>
+                    {cur}: {rates?.rates?.[cur] ?? '-'}
+                  </Text>
+                ))}
+              </Flex>
+            </div>
+
         </div>
 
         <div className="mt-8">
