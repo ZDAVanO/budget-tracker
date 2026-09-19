@@ -1,5 +1,11 @@
 # Budget Tracker
 
+> 🚀 **Live Demo:** Try the application directly in your browser without any installation:  
+> **[https://zdavano.github.io/budget-tracker/](https://zdavano.github.io/budget-tracker/)**  
+> *(Runs entirely in-browser using `localStorage` and pre-populated sample data)*
+
+---
+
 ## How to Run the Project Locally
 
 ### 1. Start the Backend (Flask)

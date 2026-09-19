@@ -5,15 +5,14 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss(),],
+  base: process.env.VITE_BASE_URL || './',
+  plugins: [react(), tailwindcss()],
 
-  test:
-  {
-    // 👇 Налаштування Vitest
-    globals: true, // Дозволяє використовувати 'describe', 'it', 'expect' без імпортів
-    environment: 'jsdom', // Використовувати JSDOM для тестів
-    setupFiles: './src/setupTests.js', // Файл для глобальних налаштувань тестів
-    // Опціонально: налаштування для CSS/SVG файлів, якщо вони ламають тести
-    css: true, 
+  test: {
+    // Vitest configuration
+    globals: true, // Allows using 'describe', 'it', 'expect' without explicit imports
+    environment: 'jsdom', // Use JSDOM for tests
+    setupFiles: './src/setupTests.js', // Global test setup file
+    css: true,
   },
 })

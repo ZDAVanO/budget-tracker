@@ -10,54 +10,54 @@ export const AuthProvider = ({ children }) => {
 
   console.log('🎨 AuthProvider render:', { isLoggedIn, user, isLoading });
 
-  // Перевірка аутентифікації при завантаженні
+  // Check authentication on load
   useEffect(() => {
-    console.log('🔍 AuthProvider: useEffect - перевірка аутентифікації при завантаженні');
+    console.log('🔍 AuthProvider: useEffect - checking authentication on mount');
     checkAuth();
   }, []);
 
   const checkAuth = async () => {
-    console.log('🔍 AuthProvider: checkAuth() - початок перевірки');
+    console.log('🔍 AuthProvider: checkAuth() - starting verification');
     try {
-      // Передаємо logout як onLogout у checkAuth
+      // Pass logout as onLogout in checkAuth
       const { response, data } = await api.auth.checkAuth(logout);
 
       if (response.ok) {
-        console.log('✅ AuthProvider: Користувач авторизований', data);
+        console.log('✅ AuthProvider: User authenticated', data);
         setUser(data.username);
         setIsLoggedIn(true);
       } else {
-        console.log('⚠️ AuthProvider: Користувач не авторизований');
+        console.log('⚠️ AuthProvider: User not authenticated');
         setIsLoggedIn(false);
         setUser(null);
       }
 
     } catch (err) {
-      console.error('❌ AuthProvider: Помилка перевірки аутентифікації', err);
+      console.error('❌ AuthProvider: Authentication verification error', err);
       setIsLoggedIn(false);
       setUser(null);
 
     } finally {
       setIsLoading(false);
-      console.log('🔍 AuthProvider: checkAuth() - завершено');
+      console.log('🔍 AuthProvider: checkAuth() - finished');
     }
   };
 
   const login = async () => {
-    console.log('🔐 AuthProvider: login() - оновлення стану після входу');
+    console.log('🔐 AuthProvider: login() - updating state after login');
     await checkAuth();
   };
 
   const logout = async () => {
-    console.log('🚪 AuthProvider: logout() - початок виходу');
+    console.log('🚪 AuthProvider: logout() - starting logout');
     try {
       await api.auth.logout();
       setIsLoggedIn(false);
       setUser(null);
-      console.log('✅ AuthProvider: Вихід успішний');
+      console.log('✅ AuthProvider: Logout successful');
       
     } catch (err) {
-      console.error('❌ AuthProvider: Помилка виходу', err);
+      console.error('❌ AuthProvider: Logout error', err);
     }
   };
 

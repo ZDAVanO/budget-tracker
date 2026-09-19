@@ -1,6 +1,7 @@
 import moneyBagIcon from '../assets/money-bag-noto.svg';
 import { Link } from 'react-router-dom';
 import {
+  Badge,
   Button,
   DropdownMenu,
   IconButton,
@@ -12,6 +13,7 @@ import {
 
 import ThemeToggleButton from './ThemeToggleButton';
 import UserMenu from './UserMenu';
+import { isDemoMode, mockApi } from '../services/api';
 
 
 // MARK: Header
@@ -44,11 +46,31 @@ function Header({ isLoggedIn, user, onLogout }) {
                 </Heading>
               </Link>
 
+              {isDemoMode && (
+                <Badge color="amber" variant="surface" size="2">
+                  Demo
+                </Badge>
+              )}
+
               <ThemeToggleButton />
             </div>
 
 
             <div className="flex items-center gap-2">
+              {isDemoMode && (
+                <Button
+                  size="1"
+                  variant="outline"
+                  color="gray"
+                  onClick={() => {
+                    mockApi.resetDemoData();
+                    window.location.reload();
+                  }}
+                  title="Reset demo data to initial state"
+                >
+                  Reset Data
+                </Button>
+              )}
               {isLoggedIn ? (
                 <UserMenu user={user} onLogout={onLogout} />
               ) : (

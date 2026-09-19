@@ -1,5 +1,8 @@
+import mockApi from './mockApi';
+
 // MARK: Constants
-const API_BASE_URL = 'http://localhost:5000/api';
+const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 // MARK: Logging Utilities
 const logRequest = (method, endpoint, data = null) => {
@@ -270,4 +273,7 @@ const api = {
   }
 };
 
-export default api;
+const selectedApi = isDemoMode ? mockApi : api;
+
+export { mockApi, api as backendApi, isDemoMode };
+export default selectedApi;
