@@ -4,7 +4,8 @@ import {
   DropdownMenu,
   Text,
 } from '@radix-ui/themes';
-import { ExitIcon, GearIcon } from '@radix-ui/react-icons';
+import { ExitIcon, GearIcon, ReloadIcon } from '@radix-ui/react-icons';
+import { isDemoMode, mockApi } from '../services/api';
 
 function UserMenu({ user, onLogout }) {
   const navigate = useNavigate();
@@ -14,14 +15,22 @@ function UserMenu({ user, onLogout }) {
     navigate('/');
   };
 
+  const handleResetDemo = () => {
+    if (mockApi?.resetDemoData) {
+      mockApi.resetDemoData();
+      window.location.reload();
+    }
+  };
+
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger>
-        <div className="flex items-center gap-3 cursor-pointer">
-          <Text size="3" color="gray">
+        <div className="flex items-center gap-2 cursor-pointer">
+          <Text size="2" color="gray" className="hidden sm:inline font-medium">
             {user}
           </Text>
           <Avatar
+            size="2"
             fallback={user ? user[0]?.toUpperCase() : 'U'}
             color="mint"
           />
@@ -31,6 +40,11 @@ function UserMenu({ user, onLogout }) {
         <DropdownMenu.Item onClick={() => navigate('/settings')}>
           <GearIcon /> Settings
         </DropdownMenu.Item>
+        {isDemoMode && (
+          <DropdownMenu.Item color="amber" onClick={handleResetDemo}>
+            <ReloadIcon /> Reset Demo Data
+          </DropdownMenu.Item>
+        )}
         <DropdownMenu.Separator />
         <DropdownMenu.Item color="red" onClick={handleLogout}>
           <ExitIcon /> Logout
@@ -41,3 +55,4 @@ function UserMenu({ user, onLogout }) {
 }
 
 export default UserMenu;
+

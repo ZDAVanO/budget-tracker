@@ -13,7 +13,7 @@ import {
 
 import ThemeToggleButton from './ThemeToggleButton';
 import UserMenu from './UserMenu';
-import { isDemoMode, mockApi } from '../services/api';
+import { isDemoMode } from '../services/api';
 
 
 // MARK: Header
@@ -26,51 +26,34 @@ function Header({ isLoggedIn, user, onLogout }) {
         className="backdrop-blur-md backdrop-saturate-150 bg-[color-mix(in_srgb,var(--color-panel-solid)_80%,transparent)] border-b border-(--gray-a5) h-full"
       >
         <div className="w-full px-4 h-full">
-          <div className="flex items-center justify-between gap-4 flex-wrap h-full">
+          <div className="flex items-center justify-between gap-2 sm:gap-4 h-full">
             
-            <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <Link
                 to="/"
-                className="inline-flex items-center gap-3 text-inherit no-underline"
+                className="inline-flex items-center gap-2 sm:gap-3 text-inherit no-underline min-w-0"
               >
-                <span className="text-xl font-bold text-mint-600 sm:text-2xl">
-                  <img
-                    src={moneyBagIcon}
-                    alt="Money Bag"
-                    className="inline align-middle w-8 h-8  md:w-10 md:h-10"
-                    style={{ verticalAlign: 'middle' }}
-                  />
-                </span>
-                <Heading className="" size={{ initial: "3", sm: "5" }}>
+                <img
+                  src={moneyBagIcon}
+                  alt="Money Bag"
+                  className="inline align-middle w-7 h-7 sm:w-9 sm:h-9 shrink-0"
+                  style={{ verticalAlign: 'middle' }}
+                />
+                <Heading size={{ initial: "3", sm: "5" }} className="truncate">
                   Budget Tracker
                 </Heading>
               </Link>
 
               {isDemoMode && (
-                <Badge color="amber" variant="surface" size="2">
+                <Badge color="amber" variant="surface" size="1" className="shrink-0">
                   Demo
                 </Badge>
               )}
-
-              <ThemeToggleButton />
             </div>
 
 
-            <div className="flex items-center gap-2">
-              {isDemoMode && (
-                <Button
-                  size="1"
-                  variant="outline"
-                  color="gray"
-                  onClick={() => {
-                    mockApi.resetDemoData();
-                    window.location.reload();
-                  }}
-                  title="Reset demo data to initial state"
-                >
-                  Reset Data
-                </Button>
-              )}
+            <div className="flex items-center gap-2 shrink-0">
+              <ThemeToggleButton />
               {isLoggedIn ? (
                 <UserMenu user={user} onLogout={onLogout} />
               ) : (
